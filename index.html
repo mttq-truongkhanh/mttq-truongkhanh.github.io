@@ -1168,7 +1168,7 @@ const CRY = (() => {
    ========================================================= */
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien';
-const IDLE_MS = 30 * 60 * 1000, ITER = 20000, APPVER = '2026.11.04';
+const IDLE_MS = 30 * 60 * 1000, ITER = 20000, APPVER = '2026.11.05';
 const YEAR = new Date().getFullYear();
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -2342,11 +2342,17 @@ function showGate(mode, msg) {
     const legacy = readLegacy();
     g.innerHTML = `<div class="gate-card">${gateBrand('Thiết lập lần đầu trên máy này')}
       ${legacy && legacy.households.length ? `<div class="banner info" style="margin:0 0 12px">Phát hiện <b>${legacy.households.length} hộ</b> từ phiên bản trước trên máy này. Khi thiết lập quản trị viên, dữ liệu sẽ được chuyển sang và mã hóa.</div>` : ''}
-      <button class="opt" data-act="gate-admin"><b>${I('key', 16)} Tôi là quản trị viên</b><span>Thiết lập trên máy chính của đơn vị. Toàn quyền: xóa dữ liệu, tạo tài khoản và phân quyền cho cán bộ.</span></button>
-      <button class="opt" data-act="gate-member"><b>${I('users', 16)} Tôi là cán bộ được cấp quyền</b><span>Chọn file gói tài khoản (.json) do quản trị viên gửi, rồi nhập mật khẩu được báo.</span></button>
-      <button class="opt" data-act="gate-restore"><b>${I('db', 16)} Khôi phục từ file sao lưu</b><span>Dành cho quản trị viên chuyển sang máy mới hoặc cài lại trình duyệt.</span></button>
+      ${WEB ? '' : `<button class="opt" data-act="gate-admin"><b>${I('key', 16)} Tôi là quản trị viên</b><span>Thiết lập trên máy chính của đơn vị. Toàn quyền: xóa dữ liệu, tạo tài khoản và phân quyền cho cán bộ.</span></button>`}
+      <button class="opt" data-act="gate-member"${WEB ? ' style="border-color:var(--navy)"' : ''}><b>${I('users', 16)} Tôi là cán bộ được cấp quyền</b><span>Chọn file gói tài khoản do quản trị viên gửi (qua Zalo), rồi nhập mật khẩu được báo.</span></button>
+      <button class="opt" data-act="gate-restore"><b>${I('db', 16)} Khôi phục từ file sao lưu</b><span>Chỉ dành cho quản trị viên của đơn vị: cần file sao lưu hệ thống và mật khẩu hoặc mã khôi phục.</span></button>
+      ${WEB ? `<p class="muted small" style="margin:6px 0 0">${I('shield', 13)} Quản trị viên được thiết lập trên máy chính của đơn vị, không tạo ở đây. Nếu chưa có gói tài khoản, hãy liên hệ quản trị viên.</p>` : ''}
       <p class="muted small" style="margin:6px 0 0">Dữ liệu được mã hóa và chỉ lưu trên máy này, không gửi lên mạng.</p>
       ${isStandalone() ? '' : `<button class="linkbtn" data-act="install">📱 Cài ứng dụng lên điện thoại</button>`}</div>`;
+  } else if (mode === 'stray') {
+    g.innerHTML = `<div class="gate-card">${gateBrand('Thiết lập không hợp lệ trên máy này')}
+      <div class="banner warn" style="margin:0 0 12px"><div>Máy này đang có một <b>quản trị viên tự tạo</b> (${esc(A.admin && A.admin.name || '')}). Đây là một hệ thống riêng, <b>không thuộc dữ liệu của đơn vị</b>; mọi thứ nhập ở đây sẽ không đến được quản trị viên.</div></div>
+      <p style="font-size:13.5px;margin:0 0 12px">Ứng dụng mở qua đường link chỉ dành cho <b>cán bộ được cấp quyền</b>. Gỡ thiết lập này rồi nạp gói tài khoản do quản trị viên gửi.</p>
+      <button class="btn btn-primary" style="width:100%" data-act="gate-unstray">Gỡ thiết lập này</button></div>`;
   } else if (mode === 'admin-form') {
     const legacy = readLegacy();
     g.innerHTML = `<div class="gate-card">${gateBrand('Thiết lập quản trị viên')}
@@ -2484,7 +2490,7 @@ async function gateRestore(d) {
   if (keyCheck(mk) !== ad.check) { mk = await busy(() => unwrapKey(ad.rec, normCode(r))); viaCode = true; }
   if (keyCheck(mk) !== ad.check) throw new Error('Mật khẩu hoặc mã khôi phục không đúng.');
   const v = unseal(mk, d.vault);
-  A = { v: 2, app: APPID, unitId: d.unitId, mode: 'admin', createdAt: Date.now(), config: Object.assign(defaultConfig(), d.config || {}), admin: ad, users: d.auth.users || [] };
+  A = { v: 2, app: APPID, unitId: d.unitId, mode: 'admin', createdAt: Date.now(), config: Object.assign(defaultConfig(), d.config || {}), admin: ad, users: d.auth.users || [], restored: true };
   S = { config: A.config, households: (v.households || []).map(sanitizeHH), meta: Object.assign({ lastExport: null, changes: 0 }, v.meta || {}), log: v.log || [], sync: blankSync() };
   VK = mk;
   if (viaCode) { const np = await newPasswordDlg('Đặt mật khẩu mới'); if (!np) return; await busy(() => { A.admin.wrap = wrapKey(mk, np); }); }
@@ -2533,7 +2539,8 @@ async function onAct(act, el, e) {
   try {
   switch (act) {
     /* cổng */
-    case 'gate-admin': showGate('admin-form'); break;
+    case 'gate-admin': if (!WEB) showGate('admin-form'); break;
+    case 'gate-unstray': await removeStray(); break;
     case 'gate-back': showGate('setup'); break;
     case 'gate-member': case 'gate-member-new': ui.gateIntent = 'member'; $('#fileJson').click(); break;
     case 'gate-restore': ui.gateIntent = 'restore'; $('#fileJson').click(); break;
@@ -2671,9 +2678,16 @@ setInterval(() => { if (VK && ui.view !== 'edit' && Date.now() - lastAct > IDLE_
    KHỞI ĐỘNG
    ========================================================= */
 $$('i[data-ic]').forEach(i => { i.outerHTML = I(i.dataset.ic); });
+async function removeStray() {
+  const ok = await dialog('Gỡ thiết lập', '<p>Toàn bộ dữ liệu của hệ thống tự tạo trên máy này sẽ bị xóa. Dữ liệu của đơn vị trên máy quản trị viên <b>không</b> bị ảnh hưởng.</p><p>Gõ chữ <b>GO</b> để xác nhận:</p><input id="rmIn" autocomplete="off">', [{ label: 'Hủy', value: false }, { label: 'Gỡ thiết lập', cls: 'btn-primary', value: b => $('#rmIn', b).value.trim().toUpperCase() === 'GO' }]);
+  if (!ok) return;
+  try { localStorage.removeItem(KEY2); sessionStorage.removeItem(SKEY); } catch (e) {}
+  A = null; VK = null; showGate('setup');
+}
 (function boot() {
   A = readA();
   if (!A) { showGate('setup'); return; }
+  if (WEB && A.mode === 'admin' && !A.restored) { showGate('stray'); return; }
   S.config = Object.assign(defaultConfig(), A.config);
   try { const ss = JSON.parse(sessionStorage.getItem(SKEY) || 'null'); if (ss && ss.u === A.unitId) { unlock(unhex(ss.k)); return; } } catch (e) {}
   showGate('login');
