@@ -1168,7 +1168,8 @@ const CRY = (() => {
    ========================================================= */
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien';
-const IDLE_MS = 30 * 60 * 1000, ITER = 20000, APPVER = '2026.11.05';
+const IDLE_MS = 30 * 60 * 1000, ITER = 20000, APPVER = '2026.11.05b';
+const WEB_ADMIN = { s: '0dc50b1adf166b1c176cc03f43ce65fa', i: 60000, h: '7462d9964092d4c0ffc85e5fdaf81a69ef41d18aa9f4702cbedf9eafb23adf5c' };
 const YEAR = new Date().getFullYear();
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -2342,10 +2343,10 @@ function showGate(mode, msg) {
     const legacy = readLegacy();
     g.innerHTML = `<div class="gate-card">${gateBrand('Thiết lập lần đầu trên máy này')}
       ${legacy && legacy.households.length ? `<div class="banner info" style="margin:0 0 12px">Phát hiện <b>${legacy.households.length} hộ</b> từ phiên bản trước trên máy này. Khi thiết lập quản trị viên, dữ liệu sẽ được chuyển sang và mã hóa.</div>` : ''}
-      ${WEB ? '' : `<button class="opt" data-act="gate-admin"><b>${I('key', 16)} Tôi là quản trị viên</b><span>Thiết lập trên máy chính của đơn vị. Toàn quyền: xóa dữ liệu, tạo tài khoản và phân quyền cho cán bộ.</span></button>`}
+      ${WEB ? `<button class="opt" data-act="gate-admin-code"><b>${I('key', 16)} Tôi là quản trị viên</b><span>Cần <b>mã thiết lập quản trị</b> do người lập ứng dụng cấp. Toàn quyền: xóa dữ liệu, tạo tài khoản và phân quyền cho cán bộ.</span></button>` : `<button class="opt" data-act="gate-admin"><b>${I('key', 16)} Tôi là quản trị viên</b><span>Thiết lập trên máy chính của đơn vị. Toàn quyền: xóa dữ liệu, tạo tài khoản và phân quyền cho cán bộ.</span></button>`}
       <button class="opt" data-act="gate-member"${WEB ? ' style="border-color:var(--navy)"' : ''}><b>${I('users', 16)} Tôi là cán bộ được cấp quyền</b><span>Chọn file gói tài khoản do quản trị viên gửi (qua Zalo), rồi nhập mật khẩu được báo.</span></button>
       <button class="opt" data-act="gate-restore"><b>${I('db', 16)} Khôi phục từ file sao lưu</b><span>Chỉ dành cho quản trị viên của đơn vị: cần file sao lưu hệ thống và mật khẩu hoặc mã khôi phục.</span></button>
-      ${WEB ? `<p class="muted small" style="margin:6px 0 0">${I('shield', 13)} Quản trị viên được thiết lập trên máy chính của đơn vị, không tạo ở đây. Nếu chưa có gói tài khoản, hãy liên hệ quản trị viên.</p>` : ''}
+      ${WEB ? `<p class="muted small" style="margin:6px 0 0">${I('shield', 13)} Cán bộ không chọn mục quản trị viên. Nếu chưa có gói tài khoản, hãy liên hệ quản trị viên.</p>` : ''}
       <p class="muted small" style="margin:6px 0 0">Dữ liệu được mã hóa và chỉ lưu trên máy này, không gửi lên mạng.</p>
       ${isStandalone() ? '' : `<button class="linkbtn" data-act="install">📱 Cài ứng dụng lên điện thoại</button>`}</div>`;
   } else if (mode === 'stray') {
@@ -2390,8 +2391,9 @@ async function setupAdmin(v) {
   if (v.pw !== v.pw2) return gateErr('Hai lần nhập mật khẩu không khớp.');
   gateErr('Đang tạo khóa mã hóa…');
   const legacy = readLegacy(), mk = rnd(32), code = genCode();
+  if (WEB && !ui.webAdminOk) return gateErr('Cần mã thiết lập quản trị.');
   await busy(() => {
-    A = { v: 2, app: APPID, unitId: 'dv' + uid() + uid(), mode: 'admin', createdAt: Date.now(), config: legacy ? legacy.config : defaultConfig(),
+    A = { v: 2, app: APPID, unitId: 'dv' + uid() + uid(), mode: 'admin', createdAt: Date.now(), webAuth: WEB ? true : undefined, config: legacy ? legacy.config : defaultConfig(),
       admin: { name: v.name.trim(), chucVu: (v.chucVu || '').trim(), wrap: wrapKey(mk, v.pw), rec: wrapKey(mk, normCode(code)), check: keyCheck(mk) }, users: [] };
   });
   S = { config: A.config, households: legacy ? legacy.households : sampleData(), meta: { lastExport: null, changes: 0 }, log: [], sync: blankSync() };
@@ -2539,7 +2541,13 @@ async function onAct(act, el, e) {
   try {
   switch (act) {
     /* cổng */
-    case 'gate-admin': if (!WEB) showGate('admin-form'); break;
+    case 'gate-admin': if (!WEB || ui.webAdminOk) showGate('admin-form'); break;
+    case 'gate-admin-code': {
+      const code = await askSecret('Mã thiết lập quản trị', '<p>Nhập <b>mã thiết lập quản trị</b> (dạng XXXX-XXXX-XXXX-XXXX). Mã này chỉ người phụ trách ứng dụng của đơn vị giữ.</p>', 'Mã thiết lập');
+      if (!code) break;
+      const okCode = await busy(() => hex(CRY.pbkdf2(enc.encode(normCode(code)), unhex(WEB_ADMIN.s), WEB_ADMIN.i)) === WEB_ADMIN.h);
+      if (!okCode) { toast('Mã thiết lập không đúng.', 'err'); break; }
+      ui.webAdminOk = true; showGate('admin-form'); break; }
     case 'gate-unstray': await removeStray(); break;
     case 'gate-back': showGate('setup'); break;
     case 'gate-member': case 'gate-member-new': ui.gateIntent = 'member'; $('#fileJson').click(); break;
@@ -2687,7 +2695,7 @@ async function removeStray() {
 (function boot() {
   A = readA();
   if (!A) { showGate('setup'); return; }
-  if (WEB && A.mode === 'admin' && !A.restored) { showGate('stray'); return; }
+  if (WEB && A.mode === 'admin' && !A.restored && !A.webAuth) { showGate('stray'); return; }
   S.config = Object.assign(defaultConfig(), A.config);
   try { const ss = JSON.parse(sessionStorage.getItem(SKEY) || 'null'); if (ss && ss.u === A.unitId) { unlock(unhex(ss.k)); return; } } catch (e) {}
   showGate('login');
