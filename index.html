@@ -730,7 +730,7 @@ main{flex:1;display:flex;min-height:0}
 .btn[disabled]{opacity:.45;pointer-events:none}
 .icon-btn{border:0;background:transparent;padding:4px;border-radius:6px;cursor:pointer;color:var(--muted);display:inline-grid;place-items:center}
 .icon-btn:hover{background:var(--soft);color:var(--ink)}
-input[type=text],input[type=search],input[type=number],input[type=tel],input[type=date],input:not([type]),select,textarea{width:100%;border:1px solid #cfd5dd;border-radius:8px;padding:7px 9px;background:#fff;min-width:0}
+input[type=text],input[type=password],input[type=search],input[type=number],input[type=tel],input[type=date],input:not([type]),select,textarea{width:100%;border:1px solid #cfd5dd;border-radius:8px;padding:7px 9px;background:#fff;min-width:0}
 input:focus,select:focus,textarea:focus{outline:none;border-color:#3b6fd8;box-shadow:0 0 0 3px rgba(59,111,216,.15)}
 textarea{resize:vertical}
 .search{position:relative}
@@ -851,7 +851,8 @@ legend{font-weight:700;font-size:13px;color:var(--navy);padding:0 6px;text-trans
 .dlg-btns{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:16px}
 .toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:#1b2230;color:#fff;padding:9px 14px;border-radius:10px;font-size:13.5px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:all .2s;z-index:4000;max-width:90%}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.toast.err{background:var(--err)}
+.toast.err{background:var(--err);color:#fff;margin:0;min-height:0;font-size:13.5px}
+.toast.ok{color:#fff}
 .toast.ok{background:var(--ok)}
 #printArea{display:none}
 
@@ -943,6 +944,25 @@ code{background:var(--soft);padding:1px 5px;border-radius:5px;font-size:12.5px;w
   .p-sign{display:flex;justify-content:space-between;margin-top:22pt;text-align:center}
   .p-sign div{width:45%}
 }
+/* ===== v3: máy chủ Google Trang tính ===== */
+.busy{position:fixed;inset:0;z-index:3000;background:rgba(20,33,61,.35);display:grid;place-items:center}
+.busy[hidden]{display:none}
+.busy-box{background:#fff;border-radius:12px;padding:16px 20px;display:flex;gap:12px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.25);font-size:14px;max-width:86vw}
+.spin{width:22px;height:22px;border:3px solid #d6dbe6;border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite;flex:none;display:inline-block}
+.spin.sm{width:15px;height:15px;border-width:2px;margin-right:6px;vertical-align:-2px;border-color:rgba(255,255,255,.4);border-top-color:#fff}
+@keyframes spin{to{transform:rotate(360deg)}}
+.btn-lg{padding:12px 16px;font-size:16px}
+.btn-install{width:100%;margin-top:12px;padding:12px;font-size:15.5px;font-weight:700;background:#0b7a3b;color:#fff;border:0;border-radius:10px;cursor:pointer}
+.btn-install:hover{filter:brightness(1.08)}
+.ios-tip{margin-top:12px;background:#eef4ff;border:1px solid #c9d8f5;border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.5}
+.ios-ic{display:inline-block;border:1.5px solid currentColor;border-radius:4px;padding:0 4px;font-size:11px;line-height:15px}
+.cred{border:1px dashed var(--navy);border-radius:10px;padding:8px 12px;margin:6px 0 10px;background:#f7f9fd}
+.cred>div{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid #e3e8f2;flex-wrap:wrap}
+.cred>div:last-child{border-bottom:0}
+.cred span{color:var(--muted);font-size:13px}
+.cred b{font-size:15.5px;word-break:break-all}
+#listFoot{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.sync-btn{font-size:12px;white-space:nowrap}
 </style>
 </head>
 <body class="locked">
@@ -1036,7 +1056,8 @@ code{background:var(--soft);padding:1px 5px;border-radius:5px;font-size:12.5px;w
 
 <div id="dlg" class="dlg-back" hidden><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgTitle"><h3 id="dlgTitle"></h3><div class="dlg-body"></div><div class="dlg-btns"></div></div></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
-<input type="file" id="fileJson" hidden>
+<div id="busy" class="busy" hidden><div class="busy-box"><span class="spin"></span><span>Đang xử lý…</span></div></div>
+<input type="file" id="fileJson" accept=".json,application/json" hidden>
 <input type="file" id="fileXlsx" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
 <div id="printArea"></div>
 <noscript><p style="padding:20px">Ứng dụng cần bật JavaScript để hoạt động.</p></noscript>
@@ -1169,8 +1190,10 @@ const CRY = (() => {
    ========================================================= */
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.05c';
-const WEB_ADMIN = { s: '0dc50b1adf166b1c176cc03f43ce65fa', i: 60000, h: '7462d9964092d4c0ffc85e5fdaf81a69ef41d18aa9f4702cbedf9eafb23adf5c' };
+const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.06';
+/* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
+const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -1326,49 +1349,182 @@ function sampleData() {
 }
 
 /* =========================================================
-   LƯU TRỮ MÃ HÓA, TÀI KHOẢN, PHÂN QUYỀN
-   A  = phần lưu công khai trên máy (cấu hình, thông tin tài khoản đã bọc khóa, kho dữ liệu đã mã hóa)
-   VK = khóa giải mã kho dữ liệu, chỉ có trong bộ nhớ khi đã đăng nhập
+   MÁY CHỦ (Google Trang tính), TÀI KHOẢN, PHÂN QUYỀN
+   ME    = tài khoản đang đăng nhập (do máy chủ cấp)
+   TOKEN = phiên đăng nhập; OUT = các hộ đã lưu trên máy, chờ gửi lên máy chủ
    ========================================================= */
-let A = null, VK = null, storageOk = true;
-let S = { config: defaultConfig(), households: [], meta: { lastExport: null, changes: 0 }, log: [], sync: blankSync() };
-function readA() { try { const raw = localStorage.getItem(KEY2); return raw ? JSON.parse(raw) : null; } catch (e) { storageOk = false; return null; } }
-function readLegacy() {
-  try { const raw = localStorage.getItem(KEY); if (!raw) return null; const d = JSON.parse(raw); return { config: Object.assign(defaultConfig(), d.config || {}), households: (d.households || []).map(sanitizeHH) }; }
-  catch (e) { return null; }
+const lsGet = (k, st) => { try { return JSON.parse((st || localStorage).getItem(k) || 'null'); } catch (e) { return null; } };
+const lsSet = (k, v, st) => { try { const s = st || localStorage; if (v == null) s.removeItem(k); else s.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+const API_BAKED = /^https:\/\//.test(API_URL) ? API_URL : '';
+let API = API_BAKED || lsGet(AKEY) || '';
+let ME = null, TOKEN = null, storageOk = true, sheetUrl = '';
+let S = { config: defaultConfig(), srv: {}, households: [], rev: null, loadedAt: 0 };
+let OUT = [];
+const net = { online: true, syncing: false, flushing: false, lastErr: '', lastTry: 0 };
+const PREFS = lsGet(PKEY) || {};
+const savePrefs = () => lsSet(PKEY, PREFS);
+function mergeConfig(srv) {
+  const c = Object.assign(defaultConfig(), srv || {});
+  if (!Array.isArray(c.apList)) c.apList = [];
+  if (PREFS.center && !isAdmin()) { c.center = PREFS.center; c.zoom = PREFS.zoom || c.zoom; }
+  c.labels = PREFS.labels == null ? true : !!PREFS.labels; c.base = PREFS.base || 'sat';
+  return c;
 }
-function persist() {
-  if (!A || !VK) return;
+function saveCache() {
+  if (!ME) return;
+  const ok = lsSet(CKEY, { u: ME.u, api: API, me: ME, rev: S.rev, at: S.loadedAt, srv: S.srv, sheetUrl, households: S.households });
+  if (!ok && storageOk) { storageOk = false; renderBanners(); }
+}
+function loadCache(c) {
+  c = c || lsGet(CKEY);
+  if (!c || !ME || c.u !== ME.u || c.api !== API) return false;
+  S.srv = c.srv || {}; S.config = mergeConfig(S.srv); S.rev = c.rev || null; S.loadedAt = c.at || 0; sheetUrl = c.sheetUrl || '';
+  S.households = (c.households || []).map(sanitizeHH);
+  return true;
+}
+function persist() { PREFS.base = S.config.base; PREFS.labels = S.config.labels; savePrefs(); saveCache(); }
+const saveOut = () => { if (!lsSet(OKEY, { u: ME && ME.u, items: OUT })) toast('Bộ nhớ trình duyệt đầy — chưa lưu được hộ chờ gửi!', 'err'); };
+const pendIds = () => new Set(OUT.map(o => o.h.id));
+function setSession(token, remember) {
+  TOKEN = token;
+  if (remember) { lsSet(TKEY, token); lsSet(TKEY, null, sessionStorage); } else { lsSet(TKEY, null); lsSet(TKEY, token, sessionStorage); }
+}
+const remembered = () => !!lsGet(TKEY);
+
+async function api(action, data, opt) {
+  opt = opt || {};
+  if (!API) { const e = new Error('Ứng dụng chưa được kết nối với máy chủ dữ liệu.'); e.code = 'noapi'; throw e; }
+  const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), opt.timeout || 45000);
+  let txt;
   try {
-    A.config = S.config;
-    A.vault = seal(VK, { households: S.households, meta: S.meta, log: S.log, sync: S.sync });
-    localStorage.setItem(KEY2, JSON.stringify(A)); storageOk = true;
-  } catch (e) { storageOk = false; console.error(e); toast('Không lưu được vào trình duyệt. Hãy sao lưu/gửi dữ liệu ngay!', 'err'); }
+    const res = await fetch(API, { method: 'POST', body: JSON.stringify(Object.assign({ action, token: TOKEN || undefined }, data || {})), signal: ctl.signal, redirect: 'follow', credentials: 'omit' });
+    txt = await res.text();
+  } catch (e) {
+    const er = new Error(navigator.onLine === false ? 'Điện thoại đang mất mạng.' : 'Không kết nối được máy chủ. Kiểm tra 3G/4G hoặc Wi-Fi rồi thử lại.'); er.net = true; throw er;
+  } finally { clearTimeout(tm); }
+  let j; try { j = JSON.parse(txt); } catch (e) { const er = new Error('Máy chủ dữ liệu chưa sẵn sàng hoặc địa chỉ máy chủ không đúng.'); er.net = true; er.code = 'badserver'; throw er; }
+  if (!j.ok) {
+    const er = new Error(j.error || 'Máy chủ báo lỗi.'); er.code = j.code; er.data = j;
+    if (j.code === 'auth' && opt.authOk !== false) setTimeout(() => sessionExpired(j.error), 0);
+    throw er;
+  }
+  return j;
 }
-function save() { S.meta.changes = (S.meta.changes || 0) + 1; persist(); }
-const isAdmin = () => !!A && A.mode === 'admin';
-const curName = () => !A ? '' : isAdmin() ? A.admin.name : A.me.name;
-const curId = () => isAdmin() ? 'admin' : (A && A.me ? A.me.id : '');
-const curRole = () => isAdmin() ? 'admin' : (A && A.me ? A.me.role : '');
-const myAps = () => isAdmin() ? [] : (A.me.aps || []);
+/* Lớp phủ "đang xử lý" cho thao tác cần chờ máy chủ */
+async function withBusy(msg, fn) {
+  const b = $('#busy'); $('span', b).textContent = msg || 'Đang xử lý…'; b.hidden = false;
+  try { return await fn(); } finally { b.hidden = true; }
+}
+const busyText = m => { const s = $('#busy span'); if (s) s.textContent = m; };
+
+const isAdmin = () => !!ME && ME.role === 'admin';
+const curName = () => ME ? ME.name : '';
+const curId = () => ME ? ME.u : '';
+const curRole = () => ME ? ME.role : '';
+const myAps = () => (!ME || isAdmin()) ? [] : (ME.aps || []);
 const inScope = ap => { const a = myAps(); return !a.length || a.includes(ap); };
 function can(act, h) {
   if (isAdmin()) return true;
-  if (!A || !A.me) return false;
-  const p = A.me.perms || {}, ed = A.me.role === 'editor';
+  if (!ME) return false;
+  const p = ME.perms || {}, ed = ME.role === 'editor';
   if (act === 'add') return ed && !!p.add;
   if (act === 'edit') return ed && !!p.edit && (!h || inScope(h.ap));
   if (act === 'export') return !!p.export;
-  return false;   /* xóa hộ, xóa dữ liệu, nhập Excel, tài khoản, cấu hình đơn vị: chỉ quản trị viên */
+  return false;   /* xóa hộ, nhập Excel, tài khoản, cấu hình đơn vị: chỉ quản trị viên */
 }
-function logAct(a, h, m) {
-  S.log.unshift({ t: Date.now(), by: curName(), a, c: h ? h.chuHo : '', mh: h ? h.maHo : '', m: m || '' });
-  if (S.log.length > 3000) S.log.length = 3000;
-}
-const permText = u => u.role === 'viewer' ? ['Chỉ xem', u.perms.export ? 'xuất Excel' : ''].filter(Boolean).join(', ') : [u.perms.add && 'thêm hộ', u.perms.edit && 'sửa hộ', u.perms.export && 'xuất Excel'].filter(Boolean).join(', ') || 'chưa có quyền nào';
+const permText = u => u.role === 'admin' ? 'Toàn quyền' : u.role === 'viewer' ? ['Chỉ xem', u.perms.export ? 'xuất Excel' : ''].filter(Boolean).join(', ') : [u.perms.add && 'thêm hộ', u.perms.edit && 'sửa hộ', u.perms.export && 'xuất Excel'].filter(Boolean).join(', ') || 'chưa có quyền nào';
 const scopeText = aps => aps && aps.length ? aps.join(', ') : 'toàn xã';
-const userKey = u => xorb(unhex(u.kEnc), sub(VK, 'u:' + u.id));
 const initials = n => String(n || '?').trim().split(/\s+/).slice(-2).map(w => w[0]).join('').toUpperCase();
+const normU = s => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').toLowerCase().replace(/[^a-z0-9._]/g, '');
+const APP_LINK = () => WEB ? location.origin + location.pathname.replace(/index\.html$/, '') : 'https://mttq-truongkhanh.github.io';
+
+/* ---------- Đồng bộ với máy chủ ---------- */
+function replaceLocal(h) { const i = S.households.findIndex(x => x.id === h.id); if (i >= 0) S.households[i] = h; else S.households.push(h); }
+function applyServer(r) {
+  S.rev = r.rev; S.srv = Object.assign({}, r.config || {}); if (r.sheetUrl) sheetUrl = r.sheetUrl;
+  S.config = mergeConfig(S.srv);
+  const list = (r.households || []).map(sanitizeHH), pend = new Map(OUT.map(o => [o.h.id, o.h])), ids = new Set(list.map(h => h.id));
+  S.households = list.map(h => pend.get(h.id) || h).concat([...pend.values()].filter(h => !ids.has(h.id)));
+}
+function applyMe(me) {
+  if (!me) return;
+  const was = JSON.stringify(ME); ME = me;
+  if (was !== JSON.stringify(me)) applyRoleUI();
+}
+function queueSave(h, base) {
+  const o = OUT.find(x => x.h.id === h.id);
+  if (o) o.h = h; else OUT.push({ h, base: base || 0, at: Date.now() });
+  saveOut();
+}
+async function onConflict(o, srvH) {
+  srvH = sanitizeHH(srvH);
+  const r = await dialog('Hộ vừa được người khác cập nhật', `<p>Hộ <b>${esc(srvH.chuHo)}</b> đã được <b>${esc(srvH.updatedBy || 'người khác')}</b> cập nhật lúc ${dt(srvH.updatedAt)}, trong lúc bạn cũng sửa hộ này.</p><p><b>Giữ bản của tôi</b>: ghi bản bạn vừa sửa lên máy chủ.<br><b>Dùng bản mới</b>: bỏ phần bạn vừa sửa, xem bản của ${esc(srvH.updatedBy || 'người kia')}.</p>`,
+    [{ label: 'Dùng bản mới', value: 'srv' }, { label: 'Giữ bản của tôi', cls: 'btn-navy', value: 'mine' }], { modal: true });
+  if (r === 'mine') { o.base = srvH.updatedAt; OUT.unshift(o); saveOut(); return true; }
+  replaceLocal(srvH); return false;
+}
+/* Gửi các hộ chờ gửi lên máy chủ; trả về số hộ đã gửi */
+async function flushOut() {
+  if (net.flushing || !OUT.length || !TOKEN) return 0;
+  net.flushing = true; let sent = 0;
+  try {
+    while (OUT.length) {
+      const o = OUT[0]; let r;
+      try { r = await api('save', { h: o.h, base: o.base }); }
+      catch (e) {
+        if (e.net || e.code === 'busy' || e.code === 'server' || e.code === 'auth' || e.code === 'noapi') { if (e.net) net.online = false; net.lastErr = e.message; break; }
+        OUT.shift(); saveOut();
+        if (e.code === 'conflict') { await onConflict(o, e.data.h); continue; }
+        S.rev = null;
+        await dialog('Không lưu được lên máy chủ', `<p>Hộ <b>${esc(o.h.chuHo)}</b>: ${esc(e.message)}</p><p class="muted small">Phần sửa của hộ này trên máy được bỏ; dữ liệu sẽ được tải lại từ máy chủ.</p>`, [{ label: 'Đã hiểu', cls: 'btn-navy' }]);
+        continue;
+      }
+      OUT.shift(); saveOut(); net.online = true; sent++;
+      replaceLocal(sanitizeHH(r.h)); S.rev = null;
+      if (r.note) toast(`${r.h.chuHo}: ${r.note} ${r.h.maHo}.`);
+    }
+  } finally { net.flushing = false; saveCache(); }
+  return sent;
+}
+let syncWaiters = [];
+async function sync(opt) {
+  opt = opt || {};
+  if (!TOKEN || !ME) return;
+  if (net.syncing) return new Promise(res => syncWaiters.push(res));
+  net.syncing = true; net.lastTry = Date.now(); syncUI();
+  try {
+    const sent = await flushOut();
+    if (sent && opt.toastSent !== false) toast(OUT.length ? `Đã gửi ${sent} hộ; còn ${OUT.length} hộ chờ gửi.` : `Đã lưu lên máy chủ${sent > 1 ? ` (${sent} hộ)` : ''}.`, 'ok');
+    const r = await api('load', { rev: opt.force ? undefined : (S.rev || undefined) });
+    net.online = true; net.lastErr = '';
+    if (r.token) setSession(r.token, remembered());
+    applyMe(r.me);
+    if (!r.same) applyServer(r);
+    S.loadedAt = Date.now(); saveCache();
+    if (!r.same || sent) { if (ui.view !== 'edit') renderAll(); else renderBanners(); }
+  } catch (e) {
+    if (e.code !== 'auth') { if (e.net) net.online = false; net.lastErr = e.message; if (!opt.quiet) toast(e.message, 'err'); }
+  } finally {
+    net.syncing = false; syncUI(); renderBanners();
+    const w = syncWaiters; syncWaiters = []; w.forEach(f => f());
+  }
+}
+function syncUI() {
+  const el = $('#syncInfo'); if (!el) return;
+  el.innerHTML = net.syncing ? 'Đang đồng bộ…' : !net.online ? `<span style="color:var(--err)">Mất kết nối</span>` : S.loadedAt ? `Cập nhật ${new Date(S.loadedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}` : '';
+}
+function sessionExpired(msg) {
+  if (!ME) return;
+  if (draft) leaveEdit();
+  lsSet(CKEY, null);
+  endSession(msg || 'Phiên đăng nhập đã hết. Vui lòng đăng nhập lại.');
+}
+function endSession(msg) {
+  TOKEN = null; ME = null; lsSet(TKEY, null); lsSet(TKEY, null, sessionStorage);
+  S.households = []; S.rev = null; ui.selId = null; USERS = null;
+  mLayer.clearLayers(); markers.clear(); map.closePopup();
+  showGate('login', msg);
+}
 
 /* =========================================================
    TIỆN ÍCH NGHIỆP VỤ
@@ -1394,12 +1550,6 @@ function goiY(h) {
   if (h.thuNhap <= ng) { const l = n >= 3 ? 'ngheo' : 'canngheo'; return { loai: l, text: `Thu nhập ${fmt(h.thuNhap * 1000)} đ ≤ ${fmt(ng * 1000)} đ/người/tháng và thiếu hụt <b>${n}</b> chỉ số → theo tiêu chí là <b>${LOAI[l].ten.toLowerCase()}</b>.` }; }
   if (C.tb && h.thuNhap <= C.tb[kv]) return { loai: 'trungbinh', text: `Thu nhập trên chuẩn nghèo nhưng ≤ ${fmt(C.tb[kv] * 1000)} đ → theo tiêu chí là <b>hộ có mức sống trung bình</b>.` };
   return { loai: 'khong', text: `Thu nhập ${fmt(h.thuNhap * 1000)} đ > ${fmt(ng * 1000)} đ/người/tháng → không thuộc tiêu chí hộ nghèo, hộ cận nghèo.` };
-}
-function nextMaHo() {
-  if (!isAdmin()) return 'TAM-' + Array.from(rnd(5), b => CODE_ABC[b & 31]).join('');
-  let mx = 0;
-  for (const h of S.households) { const m = String(h.maHo).match(/^H(\d+)$/i); if (m) mx = Math.max(mx, +m[1]); }
-  return 'H' + String(mx + 1).padStart(4, '0');
 }
 function parseCoords(s) {
   s = String(s || '').trim(); if (!s) return null;
@@ -1492,7 +1642,7 @@ function pinIcon(h, sel) {
     html: `<svg viewBox="0 0 28 38" width="28" height="38"><path d="M14 1.2C7 1.2 1.6 6.6 1.6 13.3 1.6 22.6 14 36.8 14 36.8S26.4 22.6 26.4 13.3C26.4 6.6 21 1.2 14 1.2z" fill="${c}" stroke="#fff" stroke-width="2"/><circle cx="14" cy="13.2" r="7.6" fill="#fff"/><text x="14" y="17" text-anchor="middle" font-family="Arial,sans-serif" font-size="10.5" font-weight="700" fill="${c}">${n}</text></svg>` });
 }
 function popupHTML(h) {
-  return `<b>${esc(h.chuHo)}</b><div class="sub2">${esc(h.maHo)} · ${esc(h.ap || 'Chưa rõ ấp')}</div>
+  return `<b>${esc(h.chuHo)}</b><div class="sub2">${esc(h.maHo || 'chờ cấp mã')} · ${esc(h.ap || 'Chưa rõ ấp')}</div>
     <div style="margin-top:4px"><span class="badge" style="--c:${LOAI[h.loai].mau}">${LOAI[h.loai].ten}</span> <span class="sub2">${h.thanhVien.length} nhân khẩu</span></div>
     <div class="pop-actions"><button class="btn btn-sm btn-navy" data-act="open" data-id="${h.id}">Chi tiết</button><a class="btn btn-sm" href="${dirLink(h)}" target="_blank" rel="noopener">${I('route', 14)}Chỉ đường</a></div>`;
 }
@@ -1571,34 +1721,29 @@ function renderFilters() {
 }
 function renderList() {
   renderFilters();
-  const list = sortHH(filtered()), ch = S.sync.changed || {};
+  const list = sortHH(filtered()), pend = pendIds();
   let html = '', lastAp = null;
   for (const h of list) {
     const ap = h.ap || 'Chưa rõ ấp';
     if (ap !== lastAp) { html += `<div class="ap-group">${esc(ap)}</div>`; lastAp = ap; }
     html += `<button class="hh ${h.id === ui.selId ? 'sel' : ''}" data-act="open" data-id="${h.id}" style="--c:${LOAI[h.loai].mau}">
-      <div class="hh-main"><div class="hh-name">${esc(h.chuHo)}${h.sample ? '<span class="tag">mẫu</span>' : ''}${!isAdmin() && ch[h.id] ? '<span class="tag info">chưa gửi</span>' : ''}</div>
-      <div class="hh-meta">${esc(h.maHo)} · ${h.thanhVien.length} nhân khẩu${h.diaChi ? ' · ' + esc(h.diaChi) : ''}</div></div>
+      <div class="hh-main"><div class="hh-name">${esc(h.chuHo)}${h.sample ? '<span class="tag">mẫu</span>' : ''}${pend.has(h.id) ? '<span class="tag info">chưa gửi</span>' : ''}</div>
+      <div class="hh-meta">${esc(h.maHo || 'chờ cấp mã')} · ${h.thanhVien.length} nhân khẩu${h.diaChi ? ' · ' + esc(h.diaChi) : ''}</div></div>
       <div class="hh-side"><span class="badge" style="--c:${LOAI[h.loai].mau}">${LOAI[h.loai].ten}</span>${hasLoc(h) ? '' : '<span class="tag warn">Chưa định vị</span>'}</div></button>`;
   }
-  $('#list').innerHTML = html || `<div class="empty">${S.households.length ? 'Không có hộ nào khớp bộ lọc.' : isAdmin() ? 'Chưa có hộ nào. Bấm <b>Thêm hộ</b> hoặc vào mục <b>Dữ liệu</b> để nhập từ Excel.' : can('add') ? 'Chưa có hộ nào trong phạm vi được giao. Bấm <b>Thêm hộ</b> để nhập.' : 'Chưa có hộ nào trong phạm vi được giao.'}</div>`;
+  $('#list').innerHTML = html || `<div class="empty">${S.households.length ? 'Không có hộ nào khớp bộ lọc.' : isAdmin() ? 'Chưa có hộ nào. Bấm <b>Thêm hộ</b>, hoặc vào mục <b>Dữ liệu</b> để nhập từ Excel / chuyển dữ liệu phiên bản cũ.' : can('add') ? 'Chưa có hộ nào trong phạm vi được giao. Bấm <b>Thêm hộ</b> để nhập.' : 'Chưa có hộ nào trong phạm vi được giao.'}</div>`;
   const nk = list.reduce((s, h) => s + h.thanhVien.length, 0), noLoc = list.filter(h => !hasLoc(h)).length;
-  $('#listFoot').textContent = `Hiển thị ${list.length}/${S.households.length} hộ · ${fmt(nk)} nhân khẩu · ${noLoc} hộ chưa định vị`;
+  $('#listFoot').innerHTML = `<span>Hiển thị ${list.length}/${S.households.length} hộ · ${fmt(nk)} nhân khẩu · ${noLoc} hộ chưa định vị</span><button class="linkbtn sync-btn" data-act="sync-now" title="Tải số liệu mới nhất">⟳ <span id="syncInfo"></span></button>`; syncUI();
   refreshMarkers(list); renderLegend(list); renderBanners();
 }
 function renderLegend(list) { $('#legend').innerHTML = Object.entries(LOAI).map(([k, v]) => `<div style="--c:${v.mau}"><i></i>${v.ten}<b class="lg-n">${list.filter(h => h.loai === k && hasLoc(h)).length}</b></div>`).join(''); }
 function renderBanners() {
+  if (!ME) return;
   let h = '';
-  if (!storageOk) h += `<div class="banner warn">${I('x')}<div>Trình duyệt này không cho lưu dữ liệu. Mọi thay đổi sẽ mất khi đóng trang.</div></div>`;
-  if (isAdmin()) {
-    const nSample = S.households.filter(x => x.sample).length;
-    if (nSample) h += `<div class="banner info"><div>Đang có <b>${nSample} hộ dữ liệu mẫu</b> để làm quen. Khi bắt đầu nhập thật, hãy xóa đi.</div><button class="btn btn-sm" data-act="del-sample">Xóa mẫu</button></div>`;
-    const ch = S.meta.changes || 0, days = S.meta.lastExport ? (Date.now() - S.meta.lastExport) / 864e5 : Infinity;
-    if (ch >= 10 || (ch > 0 && days > 7 && !nSample)) h += `<div class="banner warn"><div>Có <b>${ch}</b> thay đổi chưa sao lưu${S.meta.lastExport ? ` (lần gần nhất ${dd(S.meta.lastExport)})` : ''}.</div><button class="btn btn-sm" data-act="export-backup">Sao lưu</button></div>`;
-  } else {
-    const n = Object.keys(S.sync.changed || {}).length;
-    if (n) h += `<div class="banner warn"><div>Có <b>${n} hộ</b> đã thêm/sửa chưa được quản trị viên cập nhật.</div><button class="btn btn-sm" data-act="send-changes">${I('send', 14)}Gửi</button></div>`;
-  }
+  if (!storageOk) h += `<div class="banner warn">${I('x')}<div>Bộ nhớ trình duyệt đầy hoặc bị chặn — dữ liệu chưa gửi có thể mất khi đóng ứng dụng.</div></div>`;
+  if (OUT.length) h += `<div class="banner warn"><div><b>${OUT.length} hộ</b> đã lưu trên máy nhưng <b>chưa gửi</b> lên máy chủ${net.online ? '' : ' (đang mất mạng)'}. Ứng dụng sẽ tự gửi khi có mạng.</div><button class="btn btn-sm" data-act="sync-now">Gửi ngay</button></div>`;
+  else if (!net.online) h += `<div class="banner info"><div>Đang mất kết nối — bạn đang xem dữ liệu lưu trên máy${S.loadedAt ? ` (cập nhật ${dt(S.loadedAt)})` : ''}.</div><button class="btn btn-sm" data-act="sync-now">Thử lại</button></div>`;
+  if (isAdmin() && (oldLocal() || (readLegacy() || { households: [] }).households.length)) h += `<div class="banner info"><div>Máy này còn <b>dữ liệu nhập ở phiên bản cũ</b>. Chuyển lên Google Trang tính để mọi người cùng dùng.</div><button class="btn btn-sm" data-act="${oldLocal() ? 'migrate-local' : 'migrate-legacy'}">Chuyển</button></div>`;
   $('#banners').innerHTML = h;
 }
 
@@ -1617,8 +1762,8 @@ function renderDetail() {
   const tongHT = h.hoTro.reduce((s, x) => s + (x.giaTri || 0), 0);
   const tv = h.thanhVien.map(m => { const a = age(m); const s2 = [m.gioiTinh, m.danToc, m.ngheNghiep, m.cccd ? 'CCCD ' + maskCCCD(m.cccd) : ''].filter(Boolean).map(esc).join(' · '); return `<tr><td><b>${esc(m.hoTen)}</b>${s2 ? `<div class="sub2">${s2}</div>` : ''}<div>${memberTags(m).map(([t, c]) => `<span class="tag ${c}" style="margin:3px 3px 0 0">${t}</span>`).join('')}</div></td><td class="num">${m.namSinh || ''}${a != null ? `<div class="sub2">${a} tuổi</div>` : ''}</td><td>${esc(m.quanHe)}</td></tr>`; }).join('');
   $('#detail').innerHTML = `
-    <div class="d-head" style="--c:${L0.mau}"><span class="badge" style="--c:${L0.mau}">${L0.ten}</span>${h.sample ? '<span class="tag">Dữ liệu mẫu</span>' : ''}${!isAdmin() && S.sync.changed[h.id] ? '<span class="tag info">Chưa gửi quản trị viên</span>' : ''}
-      <h2>${esc(h.chuHo)}</h2><div class="muted">Mã hộ <b>${esc(h.maHo)}</b> · ${esc(h.ap || 'Chưa rõ ấp')}${h.namCongNhan ? ' · Công nhận năm ' + h.namCongNhan : ''}</div></div>
+    <div class="d-head" style="--c:${L0.mau}"><span class="badge" style="--c:${L0.mau}">${L0.ten}</span>${h.sample ? '<span class="tag">Dữ liệu mẫu</span>' : ''}${pendIds().has(h.id) ? '<span class="tag info">Chưa gửi lên máy chủ</span>' : ''}
+      <h2>${esc(h.chuHo)}</h2><div class="muted">Mã hộ <b>${esc(h.maHo || 'chờ cấp')}</b> · ${esc(h.ap || 'Chưa rõ ấp')}${h.namCongNhan ? ' · Công nhận năm ' + h.namCongNhan : ''}</div></div>
     <div class="d-actions">
       ${ce ? `<button class="btn btn-sm btn-navy" data-act="edit" data-id="${h.id}">${I('edit', 15)}Sửa</button>` : ''}
       ${hasLoc(h) ? `<button class="btn btn-sm" data-act="fly" data-id="${h.id}">${I('map', 15)}Xem trên bản đồ</button><a class="btn btn-sm" href="${dirLink(h)}" target="_blank" rel="noopener">${I('route', 15)}Chỉ đường</a>` : ce ? `<button class="btn btn-sm" data-act="edit-gps" data-id="${h.id}">${I('gps', 15)}Định vị ngay</button>` : ''}
@@ -1651,7 +1796,7 @@ function enterEdit(h, { gps = false } = {}) {
   const aps = apOrder().filter(inScope);
   const defAp = ui.f.ap && ui.f.ap !== '__none' && inScope(ui.f.ap) ? ui.f.ap : (myAps().length === 1 ? myAps()[0] : '');
   draft = h ? clone(h) : Object.assign(blankHH(), { ap: defAp, thanhVien: [Object.assign(blankTV(), { quanHe: 'Chủ hộ' })] });
-  draft._new = !h; if (!aps.length && myAps().length) draft.ap = myAps()[0];
+  draft._new = !h; draft._base = h ? h.updatedAt : 0; if (!aps.length && myAps().length) draft.ap = myAps()[0];
   $('#editTitle').textContent = h ? 'Sửa thông tin hộ' : 'Thêm hộ mới';
   renderEdit(); draftSnap = JSON.stringify(collectForm(true));
   showView('edit'); $('#mapWrap').classList.add('editing'); map.closePopup();
@@ -1691,7 +1836,7 @@ function renderEdit() {
   <fieldset><legend>Thông tin chung</legend>
     <div class="grid2">
       <label class="f span2"><span>Họ tên chủ hộ <em>*</em></span><input name="chuHo" value="${esc(d.chuHo)}" required></label>
-      <label class="f"><span>Mã hộ</span><input name="maHo" value="${esc(d.maHo)}" placeholder="${isAdmin() ? 'Tự cấp nếu để trống' : 'QTV cấp mã nếu để trống'}"></label>
+      <label class="f"><span>Mã hộ</span><input name="maHo" value="${esc(d.maHo)}" placeholder="Để trống: tự cấp mã"></label>
       <label class="f"><span>Ấp</span><select name="ap"><option value="">— Chọn ấp —</option>${aps.map(a => `<option ${a === d.ap ? 'selected' : ''}>${esc(a)}</option>`).join('')}</select></label>
       <label class="f"><span>Phân loại</span><select name="loai">${Object.entries(LOAI).map(([k, v]) => `<option value="${k}" ${k === d.loai ? 'selected' : ''}>${v.ten}</option>`).join('')}</select></label>
       <label class="f"><span>Năm công nhận</span><input name="namCongNhan" type="number" min="2000" max="2100" value="${d.namCongNhan ?? ''}"></label>
@@ -1793,21 +1938,19 @@ async function saveEdit() {
   if (!isAdmin() && myAps().length && !inScope(d.ap)) { toast(`Bạn chỉ được nhập hộ thuộc: ${scopeText(myAps())}.`, 'err'); return; }
   if ((d.lat == null) !== (d.lng == null)) { toast('Vị trí cần có đủ vĩ độ và kinh độ.', 'err'); return; }
   if (hasLoc(d) && !inVN(d.lat, d.lng)) { const ok = await confirmDlg('Tọa độ bất thường', 'Tọa độ nằm ngoài lãnh thổ Việt Nam. Có thể bạn đã nhập nhầm thứ tự vĩ độ/kinh độ. Vẫn lưu?', 'Vẫn lưu'); if (!ok) return; }
-  if (!d.maHo) d.maHo = nextMaHo();
-  const dup = S.households.find(h => h.id !== d.id && norm(h.maHo) === norm(d.maHo));
+  const dup = d.maHo && S.households.find(h => h.id !== d.id && norm(h.maHo) === norm(d.maHo));
   if (dup) { toast(`Mã hộ “${d.maHo}” đã dùng cho hộ ${dup.chuHo}.`, 'err'); $('#editForm [name=maHo]').focus(); return; }
   d.thanhVien = d.thanhVien.filter(m => m.hoTen);
   if (!d.thanhVien.length) d.thanhVien.push(Object.assign(blankTV(), { hoTen: d.chuHo, quanHe: 'Chủ hộ' }));
   d.hoTro = d.hoTro.filter(x => x.noiDung || x.giaTri);
   d.updatedAt = Date.now(); d.updatedBy = curName(); d.updatedById = curId();
   if (isNew) { d.createdAt = d.updatedAt; d.createdBy = curName(); d.createdById = curId(); }
-  const clean = sanitizeHH(d); clean.sample = !!d.sample;
-  const i = S.households.findIndex(h => h.id === clean.id);
-  if (i >= 0) S.households[i] = clean; else S.households.push(clean);
-  if (!isAdmin()) S.sync.changed[clean.id] = true;
-  logAct(isNew ? 'them' : 'sua', clean);
-  save(); leaveEdit(); renderList(); openDetail(clean.id, { fly: true });
-  toast(isAdmin() ? 'Đã lưu thông tin hộ.' : 'Đã lưu. Nhớ gửi dữ liệu cho quản trị viên.', 'ok');
+  const clean = sanitizeHH(d);
+  replaceLocal(clean); queueSave(clean, isNew ? 0 : d._base); saveCache();
+  leaveEdit(); renderList(); openDetail(clean.id, { fly: true });
+  await sync({ quiet: true, toastSent: false });
+  if (OUT.some(o => o.h.id === clean.id)) toast('Đã lưu trên máy. Chưa gửi được lên máy chủ — ứng dụng sẽ tự gửi khi có mạng.', 'err');
+  else { const h = byId(clean.id); toast(`Đã lưu lên máy chủ${h && h.maHo && isNew ? ` — mã hộ ${h.maHo}` : ''}.`, 'ok'); if (ui.view === 'detail' && ui.selId === clean.id) renderDetail(); }
 }
 const draftChanged = () => JSON.stringify(collectForm(true)) !== draftSnap;
 async function cancelEdit() {
@@ -1859,45 +2002,44 @@ function renderStats() {
 
 /* ---------- Dữ liệu ---------- */
 function renderData() {
-  let bytes = 0; try { bytes = (localStorage.getItem(KEY2) || '').length * 2; } catch (e) {}
   const excelCard = can('export') ? `<div class="card"><h3>${I('download')} Xuất ra Excel</h3><p>File .xlsx gồm các trang: Danh sách hộ, Thành viên, Hỗ trợ, Thống kê theo ấp — dùng để báo cáo, in ấn.</p>
       <div class="row gap wrap"><button class="btn btn-navy" data-act="export-xlsx">Xuất toàn bộ (${S.households.length} hộ)</button><button class="btn" data-act="export-xlsx-filter">Chỉ các hộ đang lọc (${filtered().length})</button></div></div>` : '';
-  const note = `<p class="muted small">Dữ liệu trên máy này được <b>mã hóa</b> và chỉ mở được khi đăng nhập. Thông tin hộ nghèo, số CCCD là dữ liệu cá nhân, phải quản lý, sử dụng đúng mục đích theo quy định về bảo vệ dữ liệu cá nhân. File Excel xuất ra <b>không</b> mã hóa — không chia sẻ qua kênh công khai.</p>`;
+  const note = `<p class="muted small">Thông tin hộ nghèo, số CCCD là dữ liệu cá nhân, phải quản lý, sử dụng đúng mục đích theo quy định về bảo vệ dữ liệu cá nhân. File Excel xuất ra không có mật khẩu — không chia sẻ qua kênh công khai.</p>`;
+  const syncCard = `<div class="card"><h3>${I('shield')} Đồng bộ dữ liệu</h3>
+      <p style="margin-bottom:4px"><b>${esc(ME.name)}</b>${ME.chucVu ? ' — ' + esc(ME.chucVu) : ''} · ${ROLE[ME.role]} · tên đăng nhập <b>${esc(ME.u)}</b></p>
+      ${isAdmin() ? '' : `<p>Quyền: ${esc(permText(ME))} · Phạm vi: <b>${esc(scopeText(ME.aps))}</b>. Xóa hộ chỉ quản trị viên thực hiện.</p>`}
+      <p class="small" style="margin-bottom:8px">Dữ liệu cập nhật lúc <b>${S.loadedAt ? dt(S.loadedAt) : 'chưa tải'}</b>${OUT.length ? ` · <b style="color:var(--err)">${OUT.length} hộ chờ gửi</b>` : ' · đã gửi hết'}${net.online ? '' : ' · <b style="color:var(--err)">đang mất kết nối</b>'}</p>
+      <button class="btn btn-navy" data-act="sync-now">${I('upload', 15)} Đồng bộ ngay</button></div>`;
   if (isAdmin()) {
-    $('#dataTitle').textContent = 'Dữ liệu: nhập, xuất, sao lưu';
+    $('#dataTitle').textContent = 'Dữ liệu: nhập, xuất, chuyển dữ liệu';
+    const old = oldLocal(), leg = readLegacy();
     $('#dataView').innerHTML = `
-    <div class="card"><h3>${I('send')} Nhận dữ liệu từ cán bộ</h3><p>Cán bộ được cấp quyền gửi file <code>DuLieuGuiQTV_….json</code> (đã mã hóa). Ứng dụng kiểm tra chữ ký, đối chiếu quyền và phạm vi ấp, cho anh/chị duyệt từng hộ trước khi nhận. Dữ liệu từ cán bộ <b>không bao giờ xóa</b> hộ nào trên máy quản trị.</p>
-      <button class="btn btn-navy" data-act="pick-json">Chọn file dữ liệu của cán bộ…</button></div>
+    <div class="card"><h3>${I('db')} Google Trang tính</h3><p>Toàn bộ dữ liệu hộ, tài khoản và nhật ký được lưu trong Google Trang tính của quản trị viên. Cán bộ nhập hộ trên điện thoại là dữ liệu về ngay đây. Google tự lưu <b>lịch sử phiên bản</b> (Tệp → Nhật ký phiên bản) để xem lại khi cần.</p>
+      ${sheetUrl ? `<a class="btn btn-navy" href="${esc(sheetUrl)}" target="_blank" rel="noopener">${I('file', 15)} Mở Google Trang tính</a>` : ''}
+      <p class="muted small" style="margin:8px 0 0">Không sửa tay các trang <b>HoNgheo</b>, <b>TaiKhoan</b> — mọi thay đổi làm trong ứng dụng.</p></div>
+    ${syncCard}
     ${excelCard}
     <div class="card"><h3>${I('upload')} Nhập từ Excel</h3><p>Nhập danh sách hộ đã có sẵn. Tải <b>file mẫu</b>, dán dữ liệu vào đúng cột (giữ nguyên dòng tiêu đề), rồi chọn file để nhập. Hộ trùng <b>mã hộ</b> sẽ được cập nhật.</p>
       <div class="row gap wrap"><button class="btn" data-act="template">Tải file Excel mẫu</button><button class="btn btn-navy" data-act="import-xlsx">Chọn file Excel để nhập…</button></div></div>
-    <div class="card"><h3>${I('db')} Sao lưu hệ thống</h3><p>File sao lưu chứa toàn bộ dữ liệu hộ, tài khoản cán bộ và nhật ký, <b>đã mã hóa</b> — chỉ mở được bằng mật khẩu hoặc mã khôi phục của quản trị viên. Dùng để phòng mất dữ liệu hoặc chuyển sang máy mới.</p>
-      <div class="row gap wrap"><button class="btn btn-navy" data-act="export-backup">Tải file sao lưu</button><button class="btn" data-act="pick-json">Khôi phục từ file sao lưu…</button></div>
-      <p class="muted small" style="margin:10px 0 0">Lần sao lưu gần nhất: <b>${S.meta.lastExport ? dt(S.meta.lastExport) : 'chưa có'}</b> · Thay đổi chưa sao lưu: <b>${S.meta.changes || 0}</b> · Dung lượng: ${fmt(Math.round(bytes / 1024))} KB</p></div>
-    <div class="card"><h3>${I('trash')} Dọn dữ liệu <span class="tag red">Chỉ quản trị viên</span></h3><p>Xóa các hộ mẫu, hoặc xóa sạch danh sách hộ để nhập lại (tài khoản cán bộ vẫn giữ). Nên sao lưu trước.</p>
-      <div class="row gap wrap"><button class="btn" data-act="del-sample" ${S.households.some(h => h.sample) ? '' : 'disabled'}>Xóa dữ liệu mẫu</button><button class="btn btn-danger" data-act="wipe">Xóa toàn bộ danh sách hộ</button></div></div>
+    <div class="card"><h3>${I('send')} Chuyển dữ liệu từ phiên bản cũ</h3><p>Dữ liệu nhập ở phiên bản trước (lưu riêng trên từng máy) có thể chuyển lên Google Trang tính để mọi người cùng dùng.</p>
+      <div class="row gap wrap">${old ? `<button class="btn btn-navy" data-act="migrate-local">Chuyển dữ liệu cũ trên máy này</button>` : ''}${leg && leg.households.length ? `<button class="btn btn-navy" data-act="migrate-legacy">Chuyển ${leg.households.length} hộ (bản đầu tiên) trên máy này</button>` : ''}<button class="btn" data-act="pick-json">Chọn file sao lưu bản cũ…</button></div>
+      <p class="muted small" style="margin:8px 0 0">${old ? 'Máy này còn dữ liệu phiên bản cũ — cần mật khẩu cũ để mở.' : 'Máy này không còn dữ liệu phiên bản cũ.'} File sao lưu cũ có tên bắt đầu bằng <code>SaoLuu_HeThong_</code>.</p></div>
+    <div class="card"><h3>${I('trash')} Dọn dữ liệu <span class="tag red">Chỉ quản trị viên</span></h3><p>Xóa sạch danh sách hộ để nhập lại (tài khoản cán bộ vẫn giữ). Các hộ bị xóa vẫn còn trong Google Trang tính với trạng thái “Đã xóa”.</p>
+      <button class="btn btn-danger" data-act="wipe" ${S.households.length ? '' : 'disabled'}>Xóa toàn bộ danh sách hộ</button></div>
     <div class="card"><h3>Hướng dẫn nhanh</h3>
       <ol style="margin:0;padding-left:18px;font-size:13px;color:#333">
         <li><b>Cài đặt</b>: nhập danh sách ấp, kéo bản đồ về đúng địa bàn rồi bấm “Lấy khung bản đồ đang xem làm mặc định”.</li>
-        <li><b>Nhập danh sách</b> hộ nghèo, cận nghèo từ Excel; xóa dữ liệu mẫu.</li>
-        <li><b>Tài khoản</b>: tạo tài khoản cho cán bộ, chọn quyền và ấp được giao → “Tạo gói tài khoản” → gửi file gói cho cán bộ, báo mật khẩu riêng qua điện thoại.</li>
-        <li>Cán bộ nhập liệu, định vị trên máy của họ rồi gửi file dữ liệu về → anh/chị vào đây “Nhận dữ liệu từ cán bộ”, duyệt và nhận.</li>
-        <li>Sau mỗi đợt nhận dữ liệu, tạo gói mới gửi lại để máy cán bộ có số liệu cập nhật. <b>Sao lưu</b> hằng tuần.</li>
+        <li><b>Nhập danh sách</b> hộ từ Excel hoặc chuyển dữ liệu từ phiên bản cũ.</li>
+        <li><b>Tài khoản</b>: tạo tài khoản cho cán bộ (chọn quyền, ấp được giao) → gửi cho cán bộ <b>link, tên đăng nhập và mật khẩu</b>.</li>
+        <li>Cán bộ cài ứng dụng, đăng nhập, nhập hộ và định vị tại nhà dân — dữ liệu tự về Google Trang tính, mọi người thấy ngay.</li>
       </ol></div>${note}`;
   } else {
-    const n = Object.keys(S.sync.changed || {}).length;
     $('#dataTitle').textContent = 'Dữ liệu và đồng bộ';
-    $('#dataView').innerHTML = `
-    <div class="card"><h3>${I('shield')} Tài khoản trên máy này</h3><p style="margin-bottom:4px"><b>${esc(A.me.name)}</b>${A.me.chucVu ? ' — ' + esc(A.me.chucVu) : ''} · ${ROLE[A.me.role]}</p>
-      <p>Quyền: ${esc(permText(A.me))} · Phạm vi: ${esc(scopeText(A.me.aps))}. Xóa hộ chỉ quản trị viên (${esc(A.me.issuedBy || 'quản trị viên')}) thực hiện.</p>
-      <p class="muted small" style="margin:0">Gói dữ liệu nhận lúc ${dt(S.sync.packageAt)}${S.sync.lastSentAt ? ` · Gửi dữ liệu gần nhất ${dt(S.sync.lastSentAt)}` : ''}</p></div>
-    ${A.me.role === 'editor' ? `<div class="card"><h3>${I('send')} Gửi dữ liệu cho quản trị viên</h3><p>Có <b>${n} hộ</b> đã thêm/sửa chưa được quản trị viên cập nhật. Bấm nút dưới để tạo file (đã mã hóa, chỉ quản trị viên mở được), rồi gửi file qua Zalo, email hoặc USB.</p>
-      <button class="btn btn-navy" data-act="send-changes" ${n ? '' : 'disabled'}>Tạo file gửi quản trị viên</button></div>` : ''}
-    <div class="card"><h3>${I('download')} Nạp gói cập nhật từ quản trị viên</h3><p>Khi quản trị viên gửi gói mới (sau khi nhận dữ liệu, đổi quyền hoặc cập nhật danh sách), chọn file gói để cập nhật máy này. Các hộ bạn sửa mà chưa được nhận vẫn được giữ lại.</p>
-      <button class="btn" data-act="pick-json">Chọn file gói…</button></div>
-    ${excelCard}
-    <div class="card"><h3>Gỡ tài khoản khỏi máy này</h3><p>Dùng khi giao lại máy cho người khác. Dữ liệu trên máy này sẽ bị gỡ; dữ liệu gốc trên máy quản trị không ảnh hưởng.</p>
-      <button class="btn btn-danger" data-act="remove-device">Gỡ khỏi máy này</button></div>${note}`;
+    $('#dataView').innerHTML = `${syncCard}${excelCard}
+    <div class="card"><h3>Cách làm việc</h3><ol style="margin:0;padding-left:18px;font-size:13px;color:#333">
+      <li>Mở ứng dụng là có số liệu mới nhất (cần 3G/4G hoặc Wi-Fi).</li>
+      <li>Thêm, sửa hộ rồi bấm <b>Lưu hộ</b> — dữ liệu tự gửi về quản trị viên.</li>
+      <li>Ở nơi mất sóng vẫn nhập được: hộ được giữ trên máy (hiện “chưa gửi”) và tự gửi khi có sóng.</li></ol></div>${note}`;
   }
 }
 function download(blob, name) {
@@ -1908,7 +2050,7 @@ const isTouch = () => matchMedia('(pointer:coarse)').matches;
 function shareable(blob, name) {
   if (!navigator.canShare || !navigator.share) return null;
   const tryF = (n, type) => { try { const f = new File([blob], n, { type }); return navigator.canShare({ files: [f] }) ? f : null; } catch (e) { return null; } };
-  return tryF(name, blob.type || 'application/octet-stream') || (/\.json$/i.test(name) ? tryF(name.replace(/\.json$/i, '.txt'), 'text/plain') : null);
+  return tryF(name, blob.type || 'application/octet-stream');
 }
 /* Máy tính: tải file về. Điện thoại: hỏi lưu vào máy hay gửi thẳng qua Zalo/Messenger/email… */
 async function deliverFile(blob, name, note) {
@@ -1919,50 +2061,110 @@ async function deliverFile(blob, name, note) {
     { label: 'Gửi qua Zalo / ứng dụng khác', cls: 'btn-navy', value: () => { navigator.share({ files: [f], title: f.name }).catch(e => { if (e && e.name !== 'AbortError') { download(blob, name); toast('Không mở được mục chia sẻ — đã lưu file vào máy.', 'err'); } }); return 'share'; } }
   ], { modal: true });
 }
-const dlJSON = (obj, name, note) => deliverFile(new Blob([JSON.stringify(obj)], { type: 'application/json' }), name, note);
 const stamp = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`; };
 const slugXa = () => slug(S.config.tenXa);
-const vaultObj = () => ({ households: S.households, meta: S.meta, log: S.log, sync: S.sync });
 
-/* ----- Sao lưu hệ thống (quản trị viên) ----- */
-async function exportBackup() {
-  if (!isAdmin()) return;
-  const file = { app: APPID, type: 'sao-luu-he-thong', v: 2, unitId: A.unitId, unitName: S.config.donVi, createdAt: new Date().toISOString(), count: S.households.length, auth: { admin: A.admin, users: A.users }, config: S.config, vault: seal(VK, vaultObj()) };
-  await dlJSON(file, `SaoLuu_HeThong_${slugXa()}_${stamp()}.json`, 'File sao lưu đã mã hóa. Nên gửi vào Zalo/email của chính mình hoặc lưu vào nơi an toàn.');
-  S.meta.lastExport = Date.now(); S.meta.changes = 0; logAct('saoluu', null, `${S.households.length} hộ`); persist(); renderBanners(); if (ui.view === 'data') renderData();
-  toast('Đã tạo file sao lưu (đã mã hóa). Hãy cất ở nơi an toàn.', 'ok');
+/* ----- Gửi hàng loạt lên máy chủ (quản trị viên) ----- */
+async function sendBulk(upserts, deletes, note, apList) {
+  const N = 150, total = upserts.length; let done = 0, add = 0, upd = 0, del = 0;
+  await withBusy('Đang gửi dữ liệu lên máy chủ…', async () => {
+    if (!total) { const r = await api('bulk', { upserts: [], deletes, note, apList }); del += r.del; return; }
+    for (let i = 0; i < total; i += N) {
+      busyText(`Đang gửi lên máy chủ: ${Math.min(i + N, total)}/${total} hộ…`);
+      const r = await api('bulk', { upserts: upserts.slice(i, i + N), deletes: i === 0 ? deletes : [], note, apList: i === 0 ? apList : undefined }, { timeout: 120000 });
+      add += r.add; upd += r.upd; del += r.del; done = i + N;
+    }
+  });
+  await sync({ quiet: true, force: true });
+  return { add, upd, del };
 }
-async function restoreLoggedIn(d) {
-  if (d.unitId !== A.unitId) throw new Error('File sao lưu này của đơn vị/hệ thống khác.');
-  let v; try { v = unseal(VK, d.vault); } catch (e) { throw new Error('Không mở được file sao lưu (file hỏng hoặc bị sửa).'); }
-  const ok = await confirmDlg('Khôi phục từ file sao lưu', `File tạo lúc <b>${dt(d.createdAt)}</b>, gồm <b>${(v.households || []).length}</b> hộ. Danh sách hộ và nhật ký hiện tại (${S.households.length} hộ) sẽ được thay bằng nội dung trong file. Danh sách tài khoản giữ nguyên.`, 'Khôi phục', true);
-  if (!ok) return;
-  S.households = (v.households || []).map(sanitizeHH); S.log = v.log || []; logAct('khoiphuc', null, `Từ bản sao lưu ${dt(d.createdAt)}`);
-  save(); ui.selId = null; renderAll(); showView('list'); toast('Đã khôi phục dữ liệu.', 'ok'); setTimeout(fitAll, 300);
+
+/* ----- Chuyển dữ liệu từ phiên bản cũ (lưu mã hóa trên từng máy) ----- */
+function oldLocal() { const a = lsGet(KEY2); return a && a.mode === 'admin' && a.vault && a.admin ? a : null; }
+function readLegacy() {
+  try { const raw = localStorage.getItem(KEY); if (!raw) return null; const d = JSON.parse(raw); return { config: Object.assign(defaultConfig(), d.config || {}), households: (d.households || []).map(sanitizeHH) }; }
+  catch (e) { return null; }
+}
+async function askSecret(title, html, label = 'Mật khẩu') {
+  return dialog(title, `${html}<label class="f"><span>${label}</span>${pwField('id="secIn" autocomplete="off"')}</label>`, [{ label: 'Hủy', value: null }, { label: 'Tiếp tục', cls: 'btn-navy', value: b => $('#secIn', b).value }]);
+}
+function openOldVault(admin, vault, secret) {
+  let mk = null;
+  for (const v of pwVariants(secret)) { const k = unwrapKey(admin.wrap, v); if (keyCheck(k) === admin.check) { mk = k; break; } }
+  if (!mk && admin.rec) { const k = unwrapKey(admin.rec, normCode(secret)); if (keyCheck(k) === admin.check) mk = k; }
+  if (!mk) return null;
+  return unseal(mk, vault);
+}
+async function migrateLocal() {
+  const a = oldLocal(); if (!a) { toast('Máy này không còn dữ liệu phiên bản cũ.', 'err'); return; }
+  const pw = await askSecret('Chuyển dữ liệu phiên bản cũ', `<p>Máy này có dữ liệu của phiên bản cũ (quản trị viên <b>${esc(a.admin.name)}</b>). Nhập <b>mật khẩu cũ</b> của phiên bản đó (hoặc mã khôi phục) để mở và chuyển lên Google Trang tính.</p>`, 'Mật khẩu cũ');
+  if (!pw) return;
+  const v = await withBusy('Đang mở dữ liệu cũ…', () => busy(() => openOldVault(a.admin, a.vault, pw)));
+  if (!v) throw new Error('Mật khẩu cũ (hoặc mã khôi phục) không đúng.');
+  const ok = await uploadOld((v.households || []).map(sanitizeHH), a.config, 'Chuyển từ phiên bản cũ trên máy');
+  if (ok) {
+    const rm = await confirmDlg('Gỡ dữ liệu cũ khỏi máy?', 'Dữ liệu đã nằm trên Google Trang tính. Gỡ bản cũ trên máy này để tránh nhầm lẫn?', 'Gỡ bản cũ');
+    if (rm) { try { localStorage.removeItem(KEY2); localStorage.removeItem(RKEY); sessionStorage.removeItem(SKEY); } catch (e) {} renderAll(); }
+  }
+}
+async function migrateLegacy() {
+  const leg = readLegacy(); if (!leg || !leg.households.length) return;
+  const ok = await uploadOld(leg.households, leg.config, 'Chuyển từ bản đầu tiên trên máy');
+  if (ok) { try { localStorage.removeItem(KEY); } catch (e) {} renderAll(); }
+}
+async function importOldBackup(d) {
+  const ad = d.auth && d.auth.admin; if (!ad || !d.vault) throw new Error('File sao lưu thiếu thông tin.');
+  const pw = await askSecret('Mở file sao lưu bản cũ', `<p>File của <b>${esc(d.unitName || '')}</b>, tạo lúc ${dt(d.createdAt)}, gồm ${d.count ?? '?'} hộ.</p><p>Nhập mật khẩu quản trị viên <b>lúc tạo file</b> hoặc mã khôi phục.</p>`, 'Mật khẩu cũ hoặc mã khôi phục');
+  if (!pw) return;
+  const v = await withBusy('Đang mở file sao lưu…', () => busy(() => openOldVault(ad, d.vault, pw)));
+  if (!v) throw new Error('Mật khẩu hoặc mã khôi phục không đúng.');
+  await uploadOld((v.households || []).map(sanitizeHH), d.config, `Từ file sao lưu ${dd(d.createdAt)}`);
+}
+async function uploadOld(list, cfg, note) {
+  const nSample = list.filter(h => h.sample).length; list = list.filter(h => !h.sample);
+  if (!list.length) { toast('Không có hộ nào (ngoài dữ liệu mẫu) để chuyển.', 'err'); return false; }
+  const up = list.filter(h => { const ex = byId(h.id); return !ex || h.updatedAt > ex.updatedAt; });
+  const same = list.length - up.length;
+  const ok = await confirmDlg('Chuyển lên Google Trang tính', `<p>Có <b>${list.length}</b> hộ${nSample ? ` (đã bỏ ${nSample} hộ mẫu)` : ''}.${same ? ` ${same} hộ đã có trên máy chủ với bản mới hơn sẽ được giữ nguyên.` : ''}</p><p>Gửi <b>${up.length}</b> hộ lên máy chủ?</p>`, 'Gửi lên');
+  if (!ok || !up.length) return ok;
+  const aps = [...new Set([...((cfg && cfg.apList) || []), ...up.map(h => h.ap)].filter(a => a && a !== 'Ấp mẫu'))];
+  const r = await sendBulk(up, [], note, aps);
+  if (cfg && !(S.srv.apList && S.srv.apList.length > 1) && (cfg.donVi || cfg.center)) {
+    try { const c = await api('config', { config: { donVi: cfg.donVi, tenXa: cfg.tenXa, tinh: cfg.tinh, chuan: cfg.chuan, khuVuc: cfg.khuVuc, center: cfg.center, zoom: cfg.zoom, apList: [...new Set([...(S.srv.apList || []), ...aps])] } }); S.srv = c.config; S.config = mergeConfig(S.srv); } catch (e) {}
+  }
+  await dialog('Đã chuyển dữ liệu', `<p>Đã gửi lên Google Trang tính: <b>${r.add}</b> hộ mới, <b>${r.upd}</b> hộ cập nhật.</p>`, [{ label: 'Xong', cls: 'btn-navy' }]);
+  setTimeout(fitAll, 300);
+  return true;
 }
 
 /* ----- Tài khoản cán bộ (quản trị viên) ----- */
+let USERS = null, LOG = [];
+async function loadAccounts() { const [u, l] = await Promise.all([api('users'), api('log')]); USERS = u.users; LOG = l.log || []; }
 function renderAccounts() {
-  const us = A.users || [];
-  const logRows = S.log.slice(0, 200).map(e => `<tr><td style="white-space:nowrap">${dt(e.t)}</td><td>${esc(e.by)}${e.src && e.src !== e.by ? `<div class="sub2">qua ${esc(e.src)}</div>` : ''}</td><td>${esc(ACT[e.a] || e.a)}</td><td>${esc(e.c)}${e.mh ? `<div class="sub2">${esc(e.mh)}</div>` : ''}${e.m ? `<div class="sub2">${esc(e.m)}</div>` : ''}</td></tr>`).join('');
-  $('#accounts').innerHTML = `
-    <div class="card"><h3>${I('key')} Quản trị viên</h3><p style="margin-bottom:6px"><b>${esc(A.admin.name)}</b>${A.admin.chucVu ? ' — ' + esc(A.admin.chucVu) : ''}. Toàn quyền: xóa hộ, xóa dữ liệu, nhập Excel, tạo và phân quyền tài khoản, nhận dữ liệu từ cán bộ.</p>
-      <div class="row gap wrap"><button class="btn btn-sm" data-act="change-pw">Đổi mật khẩu</button><button class="btn btn-sm" data-act="new-recovery">Tạo mã khôi phục mới</button></div></div>
+  const box = $('#accounts');
+  if (!USERS) {
+    box.innerHTML = '<p class="muted">Đang tải danh sách tài khoản…</p>';
+    loadAccounts().then(() => { if (ui.view === 'accounts') renderAccounts(); }).catch(e => { box.innerHTML = `<div class="banner warn"><div>${esc(e.message)}</div><button class="btn btn-sm" data-act="acc-reload">Thử lại</button></div>`; });
+    return;
+  }
+  const us = USERS.filter(u => u.role !== 'admin'), ad = USERS.find(u => u.role === 'admin') || ME;
+  const logRows = LOG.slice(0, 300).map(e => `<tr><td style="white-space:nowrap">${dt(e.t)}</td><td>${esc(e.by)}</td><td>${esc(e.a)}</td><td>${esc(e.c)}${e.mh ? `<div class="sub2">${esc(e.mh)}</div>` : ''}${e.m ? `<div class="sub2">${esc(e.m)}</div>` : ''}</td></tr>`).join('');
+  box.innerHTML = `
+    <div class="card"><h3>${I('key')} Quản trị viên</h3><p style="margin-bottom:6px"><b>${esc(ad.name)}</b>${ad.chucVu ? ' — ' + esc(ad.chucVu) : ''} · tên đăng nhập <b>${esc(ad.u)}</b>. Toàn quyền: xóa hộ, nhập Excel, tạo và phân quyền tài khoản.</p>
+      <div class="row gap wrap"><button class="btn btn-sm" data-act="change-pw">Đổi mật khẩu</button><button class="btn btn-sm" data-act="acc-reload">Làm mới</button></div></div>
     <div class="sec">Cán bộ được cấp quyền (${us.length})</div>
     ${us.length ? us.map(u => `<div class="acc">
         <div class="row gap"><b>${esc(u.name)}</b><span class="tag ${u.role === 'editor' ? 'info' : ''}">${ROLE[u.role]}</span>${u.locked ? '<span class="tag red">Đã khóa</span>' : ''}</div>
         ${u.chucVu ? `<div class="sub2">${esc(u.chucVu)}</div>` : ''}
-        <div class="small" style="margin-top:3px">Quyền: ${esc(permText(u))} · Phạm vi: <b>${esc(scopeText(u.aps))}</b></div>
-        <div class="sub2">Tạo ${dd(u.createdAt)} · Gói gần nhất: ${u.lastPkgAt ? dt(u.lastPkgAt) : '<b>chưa cấp</b>'} · Nhận dữ liệu gần nhất: ${u.lastRecvAt ? dt(u.lastRecvAt) : 'chưa có'}</div>
+        <div class="small" style="margin-top:3px">Tên đăng nhập: <b>${esc(u.u)}</b> · Quyền: ${esc(permText(u))} · Phạm vi: <b>${esc(scopeText(u.aps))}</b></div>
+        <div class="sub2">Tạo ${dd(u.createdAt)} · Đăng nhập gần nhất: ${u.lastLogin ? dt(u.lastLogin) : '<b>chưa đăng nhập</b>'}</div>
         <div class="row gap mt8">
-          <button class="btn btn-sm btn-navy" data-act="acc-pkg" data-uid="${u.id}" ${u.locked ? 'disabled' : ''}>${I('download', 14)}Tạo gói tài khoản</button>
-          <button class="btn btn-sm" data-act="acc-edit" data-uid="${u.id}">Sửa quyền</button>
-          <button class="btn btn-sm" data-act="acc-reset" data-uid="${u.id}">Đặt lại mật khẩu</button>
-          <button class="btn btn-sm" data-act="acc-lock" data-uid="${u.id}">${u.locked ? 'Mở khóa' : 'Khóa'}</button>
-          <button class="btn btn-sm btn-danger" data-act="acc-del" data-uid="${u.id}">Xóa tài khoản</button>
+          <button class="btn btn-sm btn-navy" data-act="acc-reset" data-uid="${esc(u.u)}">${I('key', 14)}Cấp lại mật khẩu</button>
+          <button class="btn btn-sm" data-act="acc-edit" data-uid="${esc(u.u)}">Sửa quyền</button>
+          <button class="btn btn-sm" data-act="acc-lock" data-uid="${esc(u.u)}">${u.locked ? 'Mở khóa' : 'Khóa'}</button>
+          <button class="btn btn-sm btn-danger" data-act="acc-del" data-uid="${esc(u.u)}">Xóa</button>
         </div></div>`).join('') : '<p class="muted">Chưa có tài khoản nào. Bấm <b>Thêm tài khoản</b> để cấp quyền cho cán bộ.</p>'}
-    <div class="card mt12"><h3>${I('send')} Nhận dữ liệu từ cán bộ</h3><p>Chọn file cán bộ gửi về để duyệt và nhận.</p><button class="btn btn-navy" data-act="pick-json">Chọn file…</button></div>
-    <div class="sec">Nhật ký hoạt động (200 mục gần nhất)</div>
+    <div class="sec">Nhật ký hoạt động (300 mục gần nhất)</div>
     ${logRows ? `<div style="overflow-x:auto"><table class="tbl log"><thead><tr><th>Thời gian</th><th>Người thực hiện</th><th>Thao tác</th><th>Hộ / nội dung</th></tr></thead><tbody>${logRows}</tbody></table></div>` : '<p class="muted">Chưa có hoạt động.</p>'}`;
 }
 function userForm(v, isNew) {
@@ -1970,7 +2172,9 @@ function userForm(v, isNew) {
   const chk = (n, on) => `name="${n}" ${on ? 'checked' : ''}`;
   return `<div class="grid2">
       <label class="f span2"><span>Họ và tên cán bộ <em>*</em></span><input name="name" value="${esc(v.name || '')}"></label>
-      <label class="f span2"><span>Chức vụ / đơn vị</span><input name="chucVu" value="${esc(v.chucVu || '')}" placeholder="VD: Trưởng ấp Phố; Chi hội trưởng Nông dân ấp…"></label></div>
+      <label class="f span2"><span>Chức vụ / đơn vị</span><input name="chucVu" value="${esc(v.chucVu || '')}" placeholder="VD: Trưởng ấp Phố; Chi hội trưởng Nông dân ấp…"></label>
+      ${isNew ? `<label class="f"><span>Tên đăng nhập</span><input name="u" value="${esc(v.u || '')}" autocapitalize="none" placeholder="Để trống: tự tạo từ tên"></label>
+      <label class="f"><span>Mật khẩu <em>*</em></span><input name="pw" value="${esc(v.pw ?? genPw())}" autocomplete="off"></label>` : ''}</div>
     <div class="f"><span>Vai trò</span>
       <label class="chk"><input type="radio" name="role" value="editor" ${v.role !== 'viewer' ? 'checked' : ''}> Cán bộ nhập liệu — thêm, sửa dữ liệu theo quyền bên dưới</label>
       <label class="chk"><input type="radio" name="role" value="viewer" ${v.role === 'viewer' ? 'checked' : ''}> Chỉ xem — xem bản đồ, danh sách, thống kê</label></div>
@@ -1978,125 +2182,61 @@ function userForm(v, isNew) {
       <label class="chk"><input type="checkbox" ${chk('add', v.add ?? true)}> Thêm hộ mới</label>
       <label class="chk"><input type="checkbox" ${chk('edit', v.edit ?? true)}> Sửa thông tin hộ (gồm thêm/bớt thành viên, lượt hỗ trợ, định vị)</label>
       <label class="chk"><input type="checkbox" ${chk('export', v.export ?? false)}> Xuất Excel</label>
-      <label class="chk muted"><input type="checkbox" disabled> Xóa hộ, xóa dữ liệu — chỉ quản trị viên</label></div>
+      <label class="chk muted"><input type="checkbox" disabled> Xóa hộ — chỉ quản trị viên</label></div>
     <div class="f"><span>Phạm vi ấp được giao (không chọn = toàn xã)</span><div class="ck-grid">${aps.map(a => `<label class="chk"><input type="checkbox" name="aps" data-multi="1" value="${esc(a)}" ${sel.includes(a) ? 'checked' : ''}>${esc(a)}</label>`).join('') || '<span class="muted">Chưa có danh sách ấp — nhập trong Cài đặt.</span>'}</div></div>
-    ${isNew ? `<label class="f"><span>Mật khẩu ban đầu <em>*</em> (ứng dụng tạo sẵn 8 số cho dễ gõ; có thể sửa)</span><input name="pw" value="${esc(v.pw ?? genPw())}" autocomplete="off"></label><p class="hint">Báo mật khẩu này cho cán bộ qua điện thoại, <b>không</b> gửi chung với file gói tài khoản.</p>` : ''}`;
+    ${isNew ? `<p class="hint">Tạo xong, ứng dụng hiện sẵn tin nhắn gồm <b>link cài ứng dụng, tên đăng nhập và mật khẩu</b> để gửi cho cán bộ.</p>` : ''}`;
 }
-const validUser = (r, isNew, self) => { if (!r.name.trim()) return 'Vui lòng nhập họ tên.'; if (A.users.some(u => u !== self && norm(u.name) === norm(r.name))) return 'Đã có tài khoản trùng tên.'; if (isNew && String(r.pw).replace(/\s+/g, '').length < 6) return 'Mật khẩu ít nhất 6 ký tự.'; return ''; };
+function suggestU(name) {
+  const w = String(name || '').trim().split(/\s+/).filter(Boolean); if (!w.length) return '';
+  let base = normU(w[w.length - 1]) || 'canbo'; if (w.length > 1) base = normU(w.slice(0, -1).map(x => x[0]).join('')) + base;
+  base = base.slice(0, 20); let u = base, i = 2;
+  while ((USERS || []).some(x => x.u === u)) u = base + i++;
+  return u;
+}
+const validUser = (r, isNew, self) => {
+  if (!String(r.name || '').trim()) return 'Vui lòng nhập họ tên.';
+  if (isNew) {
+    const u = normU(r.u);
+    if (r.u && u.length < 3) return 'Tên đăng nhập cần ít nhất 3 chữ cái hoặc số (không dấu).';
+    if (u && (USERS || []).some(x => x.u === u)) return `Tên đăng nhập “${u}” đã có người dùng.`;
+    if (String(r.pw || '').replace(/\s+/g, '').length < 6) return 'Mật khẩu ít nhất 6 ký tự.';
+  }
+  return '';
+};
+const userPayload = (r, base) => ({ u: base ? base.u : (normU(r.u) || suggestU(r.name)), name: String(r.name).trim(), chucVu: String(r.chucVu || '').trim(), role: r.role === 'viewer' ? 'viewer' : 'editor', perms: { add: !!r.add, edit: !!r.edit, export: !!r.export }, aps: r.aps || [], locked: base ? !!base.locked : false });
 async function addUser() {
+  if (!USERS) await loadAccounts();
   const r = await formDialog('Thêm tài khoản cán bộ', v => userForm(v, true), 'Tạo tài khoản', x => validUser(x, true));
   if (!r) return;
-  const u = { id: 'u' + uid(), name: r.name.trim(), chucVu: (r.chucVu || '').trim(), role: r.role || 'editor', perms: { add: !!r.add, edit: !!r.edit, export: !!r.export }, aps: r.aps || [], locked: false, createdAt: Date.now() };
-  const K = rnd(32);
-  await busy(() => { u.kEnc = hex(xorb(K, sub(VK, 'u:' + u.id))); u.pkg = wrapKey(K, String(r.pw).replace(/\s+/g, '')); });
-  A.users.push(u); logAct('taotk', null, `${u.name} — ${ROLE[u.role]}, ${permText(u)}, phạm vi ${scopeText(u.aps)}`); persist(); renderAccounts();
-  const go = await dialog('Đã tạo tài khoản', `<p>Tài khoản <b>${esc(u.name)}</b> đã được tạo với mật khẩu ban đầu:</p><div class="code">${esc(r.pw)}</div><p>Bước tiếp theo: <b>Tạo gói tài khoản</b> và gửi file gói cho cán bộ. Báo mật khẩu qua điện thoại, không gửi chung với file.</p>`, [{ label: 'Để sau', value: false }, { label: 'Tạo gói ngay', cls: 'btn-navy', value: true }]);
-  if (go) makePackage(u);
+  const res = await withBusy('Đang tạo tài khoản…', () => api('userSave', { isNew: true, user: userPayload(r), password: r.pw }));
+  USERS.push(res.user); USERS = null; renderAccounts();
+  await showCredentials(res.user, r.pw, true);
 }
 async function editUser(u) {
   const r = await formDialog(`Sửa quyền — ${u.name}`, v => userForm(v || { name: u.name, chucVu: u.chucVu, role: u.role, aps: u.aps, ...u.perms }, false), 'Lưu', x => validUser(x, false, u));
   if (!r) return;
-  Object.assign(u, { name: r.name.trim(), chucVu: (r.chucVu || '').trim(), role: r.role || 'editor', perms: { add: !!r.add, edit: !!r.edit, export: !!r.export }, aps: r.aps || [] });
-  logAct('suatk', null, `${u.name} — ${ROLE[u.role]}, ${permText(u)}, phạm vi ${scopeText(u.aps)}`); persist(); renderAccounts();
-  toast('Đã lưu. Quyền mới áp dụng ngay khi nhận dữ liệu; tạo gói mới để máy cán bộ cập nhật giao diện.', 'ok');
+  await withBusy('Đang lưu…', () => api('userSave', { user: userPayload(r, u) }));
+  USERS = null; renderAccounts(); toast('Đã lưu. Quyền mới có hiệu lực ngay trên máy của cán bộ.', 'ok');
 }
 async function resetUserPw(u) {
-  const r = await formDialog(`Đặt lại mật khẩu — ${u.name}`, v => `<label class="f"><span>Mật khẩu mới (8 số tạo sẵn; có thể sửa)</span><input name="pw" value="${esc((v && v.pw) || genPw())}"></label><p class="hint">Sau khi đặt lại, tạo gói tài khoản mới và gửi cho cán bộ. Trên máy cán bộ chọn “Quên mật khẩu?” → nạp gói mới → nhập mật khẩu này; các hộ chưa gửi trên máy đó vẫn được giữ.</p>`, 'Đặt lại', x => String(x.pw).replace(/\s+/g, '').length < 6 ? 'Mật khẩu ít nhất 6 ký tự.' : '');
+  const r = await formDialog(`Cấp lại mật khẩu — ${u.name}`, v => `<p>Dùng khi cán bộ quên mật khẩu hoặc cần đăng nhập trên máy mới. Mật khẩu cũ hết hiệu lực ngay.</p><label class="f"><span>Mật khẩu mới (8 số tạo sẵn; có thể sửa)</span><input name="pw" value="${esc((v && v.pw) || genPw())}"></label>`, 'Cấp mật khẩu', x => String(x.pw).replace(/\s+/g, '').length < 6 ? 'Mật khẩu ít nhất 6 ký tự.' : '');
   if (!r) return;
-  await busy(() => { u.pkg = wrapKey(userKey(u), String(r.pw).replace(/\s+/g, '')); });
-  logAct('datlaimk', null, u.name); persist();
-  const go = await dialog('Đã đặt lại mật khẩu', `<div class="code">${esc(r.pw)}</div><p>Tạo gói tài khoản mới cho <b>${esc(u.name)}</b> ngay bây giờ?</p>`, [{ label: 'Để sau', value: false }, { label: 'Tạo gói', cls: 'btn-navy', value: true }]);
-  if (go) makePackage(u);
+  await withBusy('Đang cấp mật khẩu…', () => api('userSave', { user: { u: u.u, name: u.name, chucVu: u.chucVu, role: u.role, perms: u.perms, aps: u.aps }, password: r.pw }));
+  USERS = null; renderAccounts();
+  await showCredentials(u, r.pw, false);
 }
-async function makePackage(u) {
-  if (u.locked) { toast('Tài khoản đang bị khóa.', 'err'); return; }
-  const hh = S.households.filter(h => !h.sample && (!u.aps.length || u.aps.includes(h.ap)));
-  const payload = { config: S.config, account: { id: u.id, name: u.name, chucVu: u.chucVu, role: u.role, perms: u.perms, aps: u.aps }, households: hh, issuedBy: A.admin.name, issuedAt: Date.now() };
-  await dlJSON({ app: APPID, type: 'goi-tai-khoan', v: 2, unitId: A.unitId, unitName: S.config.donVi, userId: u.id, name: u.name, createdAt: new Date().toISOString(), count: hh.length, wrap: u.pkg, box: seal(userKey(u), payload) }, `GoiTaiKhoan_${slug(u.name)}_${stamp()}.json`, `Gói tài khoản của <b>${esc(u.name)}</b> (${hh.length} hộ, đã mã hóa). Gửi file cho cán bộ; báo mật khẩu riêng qua điện thoại.`);
-  u.lastPkgAt = Date.now(); logAct('capgoi', null, `${u.name}: ${hh.length} hộ`); persist(); if (ui.view === 'accounts') renderAccounts();
-  toast(`Đã tạo gói cho ${u.name} (${hh.length} hộ). Gửi file cho cán bộ.`, 'ok');
+function credText(u, pw) {
+  return `Ứng dụng Bản đồ hộ nghèo — ${S.config.donVi}\n1. Mở link bằng Chrome (Android) hoặc Safari (iPhone): ${APP_LINK()}\n2. Bấm "Cài ứng dụng" để đưa ra màn hình chính.\n3. Đăng nhập — Tên đăng nhập: ${u.u} — Mật khẩu: ${pw}`;
 }
-
-/* ----- Nhận dữ liệu từ cán bộ (quản trị viên) ----- */
-async function receiveChanges(d) {
-  if (d.unitId !== A.unitId) throw new Error('File này của đơn vị/hệ thống khác.');
-  const u = A.users.find(x => x.id === d.userId);
-  if (!u) throw new Error(`Tài khoản “${d.name}” không còn trong danh sách (có thể đã bị xóa). Không nhận dữ liệu.`);
-  if (u.locked) throw new Error(`Tài khoản ${u.name} đang bị khóa. Mở khóa nếu muốn nhận dữ liệu từ tài khoản này.`);
-  let p; try { p = unseal(userKey(u), d.box); } catch (e) { throw new Error('File không hợp lệ hoặc đã bị chỉnh sửa sau khi gửi. Không nhận dữ liệu.'); }
-  const sc = ap => !u.aps.length || u.aps.includes(ap);
-  const rows = (p.households || []).map(raw => {
-    const baseAt = +raw._baseAt || 0, h = sanitizeHH(raw), ex = byId(h.id); let kind, ok = true, why = '';
-    if (!ex) { kind = 'new'; if (u.role !== 'editor' || !u.perms.add) { ok = false; why = 'Tài khoản không có quyền thêm hộ'; } else if (!sc(h.ap)) { ok = false; why = 'Ngoài phạm vi ấp được giao'; } }
-    else if (ex.updatedAt === h.updatedAt) { kind = 'same'; ok = false; why = 'Đã nhận trước đó, không có thay đổi mới'; }
-    else { kind = 'upd'; if (u.role !== 'editor' || !u.perms.edit) { ok = false; why = 'Tài khoản không có quyền sửa'; } else if (!sc(ex.ap) || !sc(h.ap)) { ok = false; why = 'Ngoài phạm vi ấp được giao'; } else if (ex.updatedAt > baseAt && ex.updatedById !== u.id) { kind = 'conflict'; why = `Hộ này đã được ${esc(ex.updatedBy || 'người khác')} sửa lúc ${dt(ex.updatedAt)}, sau khi cán bộ nhận dữ liệu. Chọn nếu muốn lấy bản của cán bộ.`; } }
-    return { h, ex, kind, ok, why };
-  });
-  const lab = { new: ['Thêm mới', 'info'], upd: ['Cập nhật', ''], conflict: ['Xung đột', 'warn'], same: ['Không đổi', ''] };
-  const nOk = rows.filter(r => r.ok).length;
-  const html = `<p>File của <b>${esc(u.name)}</b> (${esc(ROLE[u.role])}), tạo lúc ${dt(d.createdAt)} — chữ ký hợp lệ ✓. Gồm <b>${rows.length}</b> hộ, trong đó <b>${nOk}</b> hộ có thể nhận.</p>
-    <div class="rv-list">${rows.map((r, i) => `<label class="rv ${r.ok ? '' : 'off'}"><input type="checkbox" data-rv="${i}" ${r.ok && r.kind !== 'conflict' ? 'checked' : ''} ${r.ok ? '' : 'disabled'}>
-      <div><b>${esc(r.h.chuHo)}</b> <span class="tag ${r.ok ? lab[r.kind][1] : 'red'}">${r.ok ? lab[r.kind][0] : (r.kind === 'same' ? 'Không đổi' : 'Từ chối')}</span>
-      <div class="sub2">${esc(r.h.ap || 'Chưa rõ ấp')} · ${esc(r.h.maHo || 'chưa có mã')} · ${r.h.thanhVien.length} nhân khẩu${hasLoc(r.h) ? ' · đã định vị' : ''}</div>${r.why ? `<div class="sub2">${r.why}</div>` : ''}</div></label>`).join('')}</div>
-    <p class="muted small">Dữ liệu từ cán bộ chỉ thêm hoặc cập nhật, <b>không bao giờ xóa</b> hộ nào. Hộ mới chưa có mã sẽ được cấp mã chính thức.</p>`;
-  const pick = await dialog('Duyệt dữ liệu từ cán bộ', html, [{ label: 'Hủy', value: null }, { label: 'Nhận các hộ đã chọn', cls: 'btn-navy', value: b => $$('input[data-rv]:checked', b).map(x => +x.dataset.rv) }], { wide: true });
-  if (!pick) return;
-  let add = 0, upd = 0;
-  for (const i of pick) {
-    const r = rows[i]; if (!r || !r.ok) continue; const h = r.h;
-    h.updatedBy = u.name; h.updatedById = u.id; h.sample = false;
-    if (r.kind === 'new') {
-      h.createdBy = u.name; h.createdById = u.id;
-      if (!h.maHo || /^TAM-/i.test(h.maHo) || S.households.some(x => norm(x.maHo) === norm(h.maHo))) h.maHo = nextMaHo();
-      S.households.push(h); add++;
-    } else {
-      const ex = r.ex, keepMa = !h.maHo || /^TAM-/i.test(h.maHo) || S.households.some(x => x.id !== ex.id && norm(x.maHo) === norm(h.maHo));
-      Object.assign(ex, h, { id: ex.id, maHo: keepMa ? ex.maHo : h.maHo, createdAt: ex.createdAt, createdBy: ex.createdBy, createdById: ex.createdById }); upd++;
-    }
-    if (h.ap && !S.config.apList.includes(h.ap)) S.config.apList.push(h.ap);
-  }
-  for (const e of (p.log || [])) if (e && e.t) S.log.push({ t: e.t, by: e.by || u.name, a: e.a, c: e.c || '', mh: e.mh || '', m: e.m || '', src: u.name });
-  S.log.sort((a, b) => b.t - a.t); if (S.log.length > 3000) S.log.length = 3000;
-  u.lastRecvAt = Date.now(); logAct('nhanfile', null, `${u.name}: ${add} hộ mới, ${upd} hộ cập nhật`);
-  save(); renderAll();
-  await dialog('Đã nhận dữ liệu', `<p>Đã nhận từ <b>${esc(u.name)}</b>: <b>${add}</b> hộ mới, <b>${upd}</b> hộ cập nhật.</p><p>Nên <b>tạo gói mới</b> gửi lại cho ${esc(u.name)} để máy của cán bộ có mã hộ chính thức và số liệu mới nhất.</p>`, [{ label: 'Để sau', value: false }, { label: `Tạo gói cho ${u.name}`, cls: 'btn-navy', value: true }]).then(go => { if (go) makePackage(u); });
-}
-
-/* ----- Máy cán bộ: gửi dữ liệu, nạp gói ----- */
-async function sendChanges() {
-  if (isAdmin() || A.me.role !== 'editor') return;
-  const ids = Object.keys(S.sync.changed || {}).filter(id => byId(id));
-  if (!ids.length) { toast('Chưa có hộ nào được thêm hoặc sửa để gửi.', 'err'); return; }
-  const unsent = S.log.filter(e => !e.sent);
-  const payload = { households: ids.map(id => Object.assign({}, byId(id), { _baseAt: S.sync.base[id] || 0 })), log: unsent.map(e => ({ t: e.t, by: e.by, a: e.a, c: e.c, mh: e.mh, m: e.m })), sentAt: Date.now() };
-  const how = await dlJSON({ app: APPID, type: 'du-lieu-can-bo', v: 2, unitId: A.unitId, userId: A.me.id, name: A.me.name, count: ids.length, createdAt: new Date().toISOString(), box: seal(VK, payload) }, `DuLieuGuiQTV_${slug(A.me.name)}_${stamp()}.json`, `Dữ liệu ${ids.length} hộ đã thêm/sửa, đã mã hóa — gửi cho <b>${esc(A.me.issuedBy || 'quản trị viên')}</b>.`);
-  if (!how) return;
-  unsent.forEach(e => e.sent = true); S.sync.lastSentAt = Date.now(); logAct('guifile', null, `${ids.length} hộ`); S.log[0].sent = true; persist(); renderAll();
-  if (how === 'share') { toast('Đã mở mục chia sẻ. Nếu file thất lạc, chỉ cần tạo và gửi lại.', 'ok'); return; }
-  await dialog('Đã tạo file gửi quản trị viên', `<p>File gồm <b>${ids.length} hộ</b> đã thêm/sửa, đã được mã hóa — chỉ quản trị viên mở được.</p><p>Hãy gửi file vừa tải về (trong thư mục Tải xuống, tên bắt đầu bằng <code>DuLieuGuiQTV_</code>) cho <b>${esc(A.me.issuedBy || 'quản trị viên')}</b> qua Zalo, email hoặc USB.</p><p class="muted small">Các hộ này vẫn được đánh dấu “chưa gửi” cho đến khi bạn nạp gói cập nhật mới từ quản trị viên — nếu file bị thất lạc, chỉ cần tạo và gửi lại.</p>`, [{ label: 'Đã hiểu', cls: 'btn-navy' }]);
-}
-function applyPackage(p) {
-  const local = new Map(S.households.map(h => [h.id, h])), incoming = (p.households || []).map(sanitizeHH), inMap = new Map(incoming.map(h => [h.id, h]));
-  const changed = {}, keep = [];
-  for (const id of Object.keys(S.sync.changed || {})) { const l = local.get(id); if (!l) continue; const r = inMap.get(id); if (!r || r.updatedAt < l.updatedAt) { changed[id] = true; keep.push(l); } }
-  const base = Object.fromEntries(incoming.map(h => [h.id, h.updatedAt]));
-  for (const l of keep) { if (S.sync.base[l.id] != null) base[l.id] = S.sync.base[l.id]; else delete base[l.id]; }
-  S.households = [...incoming.filter(h => !changed[h.id]), ...keep];
-  S.sync.changed = changed; S.sync.base = base; S.sync.packageAt = p.issuedAt;
-  Object.assign(A.me, { name: p.account.name, chucVu: p.account.chucVu, role: p.account.role, perms: p.account.perms, aps: p.account.aps || [], issuedBy: p.issuedBy });
-  const prefs = { center: S.config.center, zoom: S.config.zoom, labels: S.config.labels, base: S.config.base };
-  S.config = Object.assign(defaultConfig(), p.config || {}, prefs);
-  logAct('napgoi', null, `${incoming.length} hộ từ ${p.issuedBy || 'quản trị viên'}`);
-  return { total: incoming.length, kept: keep.length };
-}
-async function memberRefresh(d) {
-  if (d.unitId !== A.unitId || d.userId !== A.me.id) throw new Error('Gói này được cấp cho tài khoản hoặc đơn vị khác.');
-  let p; try { p = unseal(VK, d.box); } catch (e) { throw new Error('Không mở được gói (file hỏng, bị sửa hoặc là gói cũ của tài khoản đã được tạo lại).'); }
-  const n = Object.keys(S.sync.changed || {}).length;
-  const ok = await confirmDlg('Nạp gói cập nhật', `<p>Gói do <b>${esc(p.issuedBy || 'quản trị viên')}</b> cấp lúc ${dt(p.issuedAt)}, gồm <b>${(p.households || []).length}</b> hộ.</p><p>Dữ liệu trên máy sẽ được cập nhật theo gói.${n ? ` <b>${n} hộ</b> bạn đã sửa mà quản trị viên chưa nhận sẽ được giữ lại.` : ''}</p>`, 'Nạp gói');
-  if (!ok) return;
-  const r = applyPackage(p); save(); applyRoleUI(); ui.selId = null; renderAll(); showView('list'); setTimeout(fitAll, 300);
-  toast(`Đã cập nhật: ${r.total} hộ${r.kept ? `, giữ ${r.kept} hộ chưa gửi` : ''}.`, 'ok');
+async function showCredentials(u, pw, isNew) {
+  const text = credText(u, pw);
+  const btns = [{ label: 'Đóng', value: null }, { label: 'Sao chép tin nhắn', value: 'copy' }];
+  if (navigator.share) btns.push({ label: 'Gửi qua Zalo…', cls: 'btn-navy', value: 'share' });
+  const r = await dialog(isNew ? 'Đã tạo tài khoản' : 'Đã cấp mật khẩu mới', `<p>Gửi cho <b>${esc(u.name)}</b> 3 thông tin sau:</p>
+    <div class="cred"><div><span>Link cài ứng dụng</span><b>${esc(APP_LINK())}</b></div><div><span>Tên đăng nhập</span><b>${esc(u.u)}</b></div><div><span>Mật khẩu</span><b>${esc(pw)}</b></div></div>
+    <p class="muted small">Bấm <b>${navigator.share ? 'Gửi qua Zalo' : 'Sao chép tin nhắn'}</b> để gửi nhanh. Cán bộ chỉ cần mở link, cài ứng dụng và đăng nhập. Nếu cán bộ quên mật khẩu: vào đây bấm <b>Cấp lại mật khẩu</b>.</p>`, btns, { modal: true });
+  if (r === 'copy') { try { await navigator.clipboard.writeText(text); toast('Đã sao chép. Dán vào Zalo để gửi cho cán bộ.', 'ok'); } catch (e) { await dialog('Tin nhắn gửi cán bộ', `<textarea rows="6" readonly onfocus="this.select()">${esc(text)}</textarea>`, [{ label: 'Đóng', cls: 'btn-navy' }]); } }
+  if (r === 'share') { try { await navigator.share({ text }); } catch (e) {} }
 }
 
 /* ----- Excel ----- */
@@ -2217,20 +2357,19 @@ async function applyImport(incoming, source) {
     <p><b>Gộp</b>: thêm hộ mới, cập nhật hộ trùng mã hộ, giữ nguyên các hộ khác.<br><b>Thay thế</b>: xóa toàn bộ ${S.households.length} hộ hiện có rồi nạp dữ liệu từ file.</p>`,
     [{ label: 'Hủy', value: null }, { label: 'Thay thế toàn bộ', value: 'replace' }, { label: 'Gộp dữ liệu', value: 'merge', cls: 'btn-navy' }]);
   if (!mode) return false;
-  if (mode === 'replace') { const ok = await confirmDlg('Xác nhận thay thế', `Toàn bộ <b>${S.households.length}</b> hộ hiện có sẽ bị thay bằng dữ liệu trong file. Bạn đã sao lưu chưa?`, 'Thay thế', true); if (!ok) return false; }
-  let add = 0, upd = 0; const now = Date.now();
-  const stampHH = h => { h.updatedAt = now; h.updatedBy = curName(); h.updatedById = 'admin'; if (!h.createdBy) { h.createdBy = curName(); h.createdById = 'admin'; } };
-  if (mode === 'replace') { S.households = incoming.map(h => { delete h._noTV; delete h._noHT; stampHH(h); return h; }); add = n; }
+  if (mode === 'replace') { const ok = await confirmDlg('Xác nhận thay thế', `Toàn bộ <b>${S.households.length}</b> hộ hiện có sẽ bị thay bằng dữ liệu trong file (các hộ cũ vẫn còn trong Google Trang tính với trạng thái “Đã xóa”).`, 'Thay thế', true); if (!ok) return false; }
+  const now = Date.now(), up = [];
+  const stampHH = h => { delete h._noTV; delete h._noHT; h.updatedAt = now; h.updatedBy = curName(); h.updatedById = curId(); if (!h.createdBy) { h.createdBy = curName(); h.createdById = curId(); h.createdAt = now; } return h; };
+  if (mode === 'replace') incoming.forEach(h => up.push(stampHH(Object.assign(h, { id: uid() }))));
   else for (const h of incoming) {
     const ex = h.maHo && S.households.find(x => norm(x.maHo) === norm(h.maHo));
-    if (ex) { const keepTV = h._noTV ? ex.thanhVien : h.thanhVien, keepHT = h._noHT ? ex.hoTro : h.hoTro; const lat = hasLoc(h) ? h.lat : ex.lat, lng = hasLoc(h) ? h.lng : ex.lng; Object.assign(ex, h, { id: ex.id, createdAt: ex.createdAt, createdBy: ex.createdBy, createdById: ex.createdById, thanhVien: keepTV, hoTro: keepHT, lat, lng, sample: false }); delete ex._noTV; delete ex._noHT; stampHH(ex); upd++; }
-    else { delete h._noTV; delete h._noHT; if (S.households.some(x => x.id === h.id)) h.id = uid(); stampHH(h); S.households.push(h); add++; }
+    if (ex) { const m = Object.assign(clone(ex), h, { id: ex.id, createdAt: ex.createdAt, createdBy: ex.createdBy, createdById: ex.createdById, thanhVien: h._noTV ? ex.thanhVien : h.thanhVien, hoTro: h._noHT ? ex.hoTro : h.hoTro, lat: hasLoc(h) ? h.lat : ex.lat, lng: hasLoc(h) ? h.lng : ex.lng, sample: false }); up.push(stampHH(m)); }
+    else { if (S.households.some(x => x.id === h.id)) h.id = uid(); up.push(stampHH(h)); }
   }
-  for (const h of S.households) if (!h.maHo) h.maHo = nextMaHo();
-  for (const h of incoming) if (h.ap && !h.sample && !S.config.apList.includes(h.ap)) S.config.apList.push(h.ap);
-  logAct('nhapexcel', null, `${source}: ${add} hộ mới, ${upd} cập nhật${mode === 'replace' ? ' (thay thế)' : ''}`);
-  save(); ui.selId = null; renderAll(); showView(ui.tab === 'data' ? 'data' : 'list');
-  toast(`Đã nhập: ${add} hộ mới${upd ? `, cập nhật ${upd} hộ` : ''}.`, 'ok');
+  const aps = [...new Set(incoming.map(h => h.ap).filter(a => a && !S.config.apList.includes(a)))];
+  const r = await sendBulk(up, mode === 'replace' ? S.households.map(h => h.id) : [], `${source}${mode === 'replace' ? ' (thay thế)' : ''}`, aps);
+  ui.selId = null; renderAll(); showView(ui.tab === 'data' ? 'data' : 'list');
+  toast(`Đã nhập: ${r.add} hộ mới${r.upd ? `, cập nhật ${r.upd} hộ` : ''}.`, 'ok');
   setTimeout(fitAll, 300);
   return true;
 }
@@ -2263,7 +2402,7 @@ function printHH(h) {
 function renderSettings() {
   const C = S.config, ad = isAdmin();
   $('#setForm').innerHTML = `
-    ${ad ? `<fieldset><legend>Đơn vị</legend>
+    ${ad ? `<fieldset><legend>Đơn vị (áp dụng cho mọi người)</legend>
       <label class="f"><span>Tên cơ quan (hiện trên tiêu đề, phiếu in)</span><input name="donVi" value="${esc(C.donVi)}"></label>
       <div class="grid2"><label class="f"><span>Tên xã</span><input name="tenXa" value="${esc(C.tenXa)}"></label><label class="f"><span>Tỉnh/thành phố</span><input name="tinh" value="${esc(C.tinh)}"></label></div>
       <label class="f"><span>Danh sách ấp (mỗi dòng một ấp, theo thứ tự hiển thị)</span><textarea name="apList" rows="8">${esc(C.apList.join('\n'))}</textarea></label>
@@ -2272,32 +2411,34 @@ function renderSettings() {
       ${Object.entries(CHUAN).map(([k, v]) => `<label class="chk" style="margin-bottom:6px;align-items:flex-start"><input type="radio" name="chuan" value="${k}" ${C.chuan === k ? 'checked' : ''} style="margin-top:3px">${esc(v.ten)}</label>`).join('<br>')}
       <div class="grid2 mt8"><label class="f"><span>Khu vực</span><select name="khuVuc"><option value="nongthon" ${C.khuVuc === 'nongthon' ? 'selected' : ''}>Nông thôn</option><option value="thanhthi" ${C.khuVuc === 'thanhthi' ? 'selected' : ''}>Thành thị</option></select></label></div>
       <p class="hint">Năm 2026 tiếp tục áp dụng chuẩn giai đoạn 2022–2025 (nông thôn: thu nhập ≤ 1.500.000 đ/người/tháng; 12 chỉ số). Từ 2027: nông thôn ≤ 2.200.000 đ, thành thị ≤ 2.800.000 đ; 13 chỉ số (bổ sung dịch vụ số cơ bản, xử lý rác thải). Hộ nghèo: thu nhập dưới chuẩn và thiếu hụt từ 3 chỉ số; hộ cận nghèo: dưới 3 chỉ số.</p>
-    </fieldset>` : `<p class="hint" style="margin-top:0">${I('shield', 14)} Thông tin đơn vị, danh sách ấp và chuẩn nghèo do quản trị viên thiết lập; máy này nhận theo gói tài khoản.</p>`}
-    <fieldset><legend>Bản đồ trên máy này</legend>
+    </fieldset>` : `<p class="hint" style="margin-top:0">${I('shield', 14)} Thông tin đơn vị, danh sách ấp và chuẩn nghèo do quản trị viên thiết lập.</p>`}
+    <fieldset><legend>Bản đồ</legend>
       <p class="hint" style="margin-top:0">Vị trí mở bản đồ mặc định: <b id="curCenter">${C.center.map(x => (+x).toFixed(5)).join(', ')}</b>, mức phóng ${C.zoom}.</p>
-      <button type="button" class="btn btn-sm" data-act="set-center">${I('map', 15)}Lấy khung bản đồ đang xem làm mặc định</button>
+      <button type="button" class="btn btn-sm" data-act="set-center">${I('map', 15)}${ad ? 'Lấy khung bản đồ đang xem làm mặc định cho cả xã' : 'Lấy khung bản đồ đang xem làm mặc định trên máy này'}</button>
       <label class="chk mt12"><input type="checkbox" name="labels" ${C.labels ? 'checked' : ''}> Hiện tên chủ hộ trên bản đồ khi phóng to</label>
     </fieldset>
     <fieldset><legend>Tài khoản</legend>
-      <p style="margin:0 0 8px"><b>${esc(curName())}</b> · ${ROLE[curRole()]}</p>
+      <p style="margin:0 0 8px"><b>${esc(curName())}</b> · ${ROLE[curRole()]} · tên đăng nhập <b>${esc(curId())}</b></p>
       <div class="row gap wrap"><button type="button" class="btn btn-sm" data-act="change-pw">Đổi mật khẩu</button><button type="button" class="btn btn-sm" data-act="logout">${I('lock', 14)}Đăng xuất</button></div>
-      <p class="hint">${remembered() ? 'Máy này đang <b>ghi nhớ đăng nhập</b> (mở là vào ngay). Bấm Đăng xuất để thôi ghi nhớ.' : 'Ứng dụng tự khóa sau 30 phút không thao tác.'}</p>
+      <p class="hint">${remembered() ? 'Máy này đang <b>ghi nhớ đăng nhập</b> (mở là vào ngay). Bấm Đăng xuất nếu giao máy cho người khác.' : 'Ứng dụng tự đăng xuất sau 30 phút không thao tác.'}</p>
     </fieldset>
     <fieldset><legend>Điện thoại</legend>
-      <p class="hint" style="margin-top:0">${isStandalone() ? 'Đang chạy dạng ứng dụng đã cài.' : 'Cài ứng dụng lên màn hình chính điện thoại để mở nhanh, định vị GPS tại nhà dân và gửi file qua Zalo.'}</p>
-      <button type="button" class="btn btn-sm" data-act="install">📱 ${isAdmin() ? 'Hướng dẫn cài / link gửi cán bộ' : 'Hướng dẫn cài lên điện thoại'}</button>
-      <p class="muted small" style="margin:10px 0 0">Phiên bản ${APPVER}</p>
+      <p class="hint" style="margin-top:0">${isStandalone() ? 'Đang chạy dạng ứng dụng đã cài.' : 'Cài ứng dụng lên màn hình chính để mở nhanh và định vị GPS tại nhà dân.'}</p>
+      <button type="button" class="btn btn-sm" data-act="install">📱 ${ad ? 'Hướng dẫn cài / link gửi cán bộ' : 'Hướng dẫn cài lên điện thoại'}</button>
+      <p class="muted small" style="margin:10px 0 0">Phiên bản ${APPVER} · Máy chủ dữ liệu: ${API ? (net.online ? 'đã kết nối' : 'mất kết nối') : 'chưa kết nối'}</p>
     </fieldset>`;
 }
-function saveSettings() {
+async function saveSettings() {
   const f = $('#setForm'), C = S.config;
+  C.labels = f.elements.labels.checked; persist();
   if (isAdmin()) {
-    C.donVi = f.elements.donVi.value.trim() || defaultConfig().donVi; C.tenXa = f.elements.tenXa.value.trim(); C.tinh = f.elements.tinh.value.trim();
-    C.apList = [...new Set(f.elements.apList.value.split('\n').map(x => x.trim()).filter(Boolean))];
-    C.chuan = (f.querySelector('input[name=chuan]:checked') || {}).value || '2027'; C.khuVuc = f.elements.khuVuc.value;
+    const cfg = { donVi: f.elements.donVi.value.trim() || defaultConfig().donVi, tenXa: f.elements.tenXa.value.trim(), tinh: f.elements.tinh.value.trim(),
+      apList: [...new Set(f.elements.apList.value.split('\n').map(x => x.trim()).filter(Boolean))],
+      chuan: (f.querySelector('input[name=chuan]:checked') || {}).value || '2027', khuVuc: f.elements.khuVuc.value };
+    const r = await withBusy('Đang lưu cài đặt…', () => api('config', { config: cfg }));
+    S.srv = r.config; S.config = mergeConfig(S.srv); S.rev = null; saveCache();
   }
-  C.labels = f.elements.labels.checked;
-  persist(); renderAll(); toast('Đã lưu cài đặt.', 'ok');
+  renderAll(); toast('Đã lưu cài đặt.', 'ok');
 }
 
 /* =========================================================
@@ -2319,10 +2460,10 @@ async function installGuide() {
   if (!WEB) {
     await dialog('Cài lên điện thoại', `<p>Bạn đang mở ứng dụng dạng <b>file trên máy tính</b>. Để cài lên điện thoại, ứng dụng cần được đặt tại một <b>địa chỉ web (https://…)</b> — quản trị viên làm một lần theo hướng dẫn đi kèm bộ cài.</p>
       <p>Sau đó, mỗi cán bộ chỉ cần mở đường link đó trên điện thoại và bấm <b>Cài đặt</b> / <b>Thêm vào màn hình chính</b>.</p>
-      <p class="muted small">Đường link chỉ chứa phần mềm, <b>không</b> chứa dữ liệu hộ nghèo — dữ liệu luôn nằm trên từng máy và được mã hóa.</p>`, [{ label: 'Đóng', cls: 'btn-navy' }]);
+      <p class="muted small">Đường link chỉ chứa phần mềm; dữ liệu hộ nằm trong Google Trang tính của quản trị viên, chỉ xem được khi đăng nhập.</p>`, [{ label: 'Đóng', cls: 'btn-navy' }]);
     return;
   }
-  const url = location.href.split('#')[0];
+  const url = APP_LINK();
   const btns = [{ label: 'Đóng', value: null }];
   if (installEvt) btns.push({ label: 'Cài đặt ngay', cls: 'btn-navy', value: () => { const ev = installEvt; ev.prompt(); ev.userChoice.then(c => { if (c.outcome === 'accepted') installEvt = null; }).catch(() => {}); return 'go'; } });
   await dialog('Cài ứng dụng lên điện thoại', `
@@ -2331,211 +2472,152 @@ async function installGuide() {
     <div class="osbox" ${!isIOS() ? 'style="border-color:var(--navy)"' : ''}><h4>Điện thoại Android (dùng Chrome)</h4><ol class="steps"><li>Mở đường link bên dưới bằng <b>Chrome</b>.</li><li>Bấm nút <b>⋮</b> ở góc trên bên phải.</li><li>Chọn <b>Cài đặt ứng dụng</b> hoặc <b>Thêm vào màn hình chính</b>.</li></ol></div>
     <p style="margin:12px 0 0">Đường link để gửi cho cán bộ:</p>
     <div class="urlbox"><input id="appUrl" value="${esc(url)}" readonly onfocus="this.select()"><button type="button" class="btn btn-sm" onclick="(function(b){var i=document.getElementById('appUrl');i.select();(navigator.clipboard?navigator.clipboard.writeText(i.value):Promise.reject()).then(function(){b.textContent='Đã chép'}).catch(function(){document.execCommand('copy');b.textContent='Đã chép'})})(this)">Sao chép</button></div>
-    <p class="muted small">Sau khi cài, mở ứng dụng từ biểu tượng <b>Hộ nghèo</b> trên màn hình chính. Phần dữ liệu hộ vẫn dùng được khi mất sóng; riêng ảnh nền bản đồ cần 3G/4G hoặc Wi-Fi.</p>`, btns, { wide: true });
+    <p class="muted small">Sau khi cài, mở ứng dụng từ biểu tượng <b>Hộ nghèo</b> trên màn hình chính. Khi mất sóng vẫn xem và nhập được (tự gửi khi có sóng); ảnh nền bản đồ cần 3G/4G hoặc Wi-Fi.</p>`, btns, { wide: true });
 }
 
 /* =========================================================
    CỔNG ĐĂNG NHẬP / THIẾT LẬP
    ========================================================= */
 const gateBrand = sub2 => `<div class="gate-brand"><div class="brand-mark" style="width:44px;height:44px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><path d="M9 10.5 12 8l3 2.5V13H9z" fill="#fff" stroke="none"/></svg></div><div><h2>Bản đồ số hộ nghèo, hộ cận nghèo</h2><div class="muted small">${sub2}</div></div></div>`;
-let loginFails = 0, loginBlockUntil = 0;
+/* Nút cài ứng dụng ngay trên màn hình đăng nhập */
+function installCTA() {
+  if (isStandalone() || !WEB) return '';
+  if (installEvt) return `<button class="btn btn-install" data-act="install-now">📱 Cài ứng dụng vào điện thoại</button>`;
+  if (isIOS()) return `<div class="ios-tip"><b>📱 Cài vào iPhone:</b> bấm nút <b>Chia sẻ</b> <span class="ios-ic">⬆</span> ở thanh dưới của Safari → chọn <b>Thêm vào MH chính</b> → <b>Thêm</b>.</div>`;
+  return `<button class="linkbtn" data-act="install">📱 Cách cài ứng dụng vào điện thoại</button>`;
+}
+function refreshInstallCTA() { const b = $('#instBox'); if (b) b.innerHTML = installCTA(); }
+const gateErr = m => { const e = $('#gateErr'); if (e) e.textContent = m || ''; };
+function gateBusy(on, label) { const b = $('#gate button[type=submit]'); if (!b) return; if (on) { b.dataset.t = b.innerHTML; b.innerHTML = `<span class="spin sm"></span>${esc(label || 'Đang xử lý…')}`; b.disabled = true; } else if (b.dataset.t) { b.innerHTML = b.dataset.t; b.disabled = false; } }
 function showGate(mode, msg) {
   document.body.classList.add('locked'); $('#dlg').hidden = true;
   const g = $('#gate'); ui.gateMode = mode;
-  if (mode === 'setup') {
-    const legacy = readLegacy();
-    g.innerHTML = `<div class="gate-card">${gateBrand('Thiết lập lần đầu trên máy này')}
-      ${legacy && legacy.households.length ? `<div class="banner info" style="margin:0 0 12px">Phát hiện <b>${legacy.households.length} hộ</b> từ phiên bản trước trên máy này. Khi thiết lập quản trị viên, dữ liệu sẽ được chuyển sang và mã hóa.</div>` : ''}
-      ${WEB ? `<button class="opt" data-act="gate-admin-code"><b>${I('key', 16)} Tôi là quản trị viên</b><span>Cần <strong>mã thiết lập quản trị</strong> do người lập ứng dụng cấp. Toàn quyền: xóa dữ liệu, tạo tài khoản và phân quyền cho cán bộ.</span></button>` : `<button class="opt" data-act="gate-admin"><b>${I('key', 16)} Tôi là quản trị viên</b><span>Thiết lập trên máy chính của đơn vị. Toàn quyền: xóa dữ liệu, tạo tài khoản và phân quyền cho cán bộ.</span></button>`}
-      <button class="opt" data-act="gate-member"${WEB ? ' style="border-color:var(--navy)"' : ''}><b>${I('users', 16)} Tôi là cán bộ được cấp quyền</b><span>Chọn file gói tài khoản do quản trị viên gửi (qua Zalo), rồi nhập mật khẩu được báo.</span></button>
-      <button class="opt" data-act="gate-restore"><b>${I('db', 16)} Khôi phục từ file sao lưu</b><span>Chỉ dành cho quản trị viên của đơn vị: cần file sao lưu hệ thống và mật khẩu hoặc mã khôi phục.</span></button>
-      ${WEB ? `<p class="muted small" style="margin:6px 0 0">${I('shield', 13)} Cán bộ không chọn mục quản trị viên. Nếu chưa có gói tài khoản, hãy liên hệ quản trị viên.</p>` : ''}
-      <p class="muted small" style="margin:6px 0 0">Dữ liệu được mã hóa và chỉ lưu trên máy này, không gửi lên mạng.</p>
-      ${isStandalone() ? '' : `<button class="linkbtn" data-act="install">📱 Cài ứng dụng lên điện thoại</button>`}</div>`;
-  } else if (mode === 'stray') {
-    g.innerHTML = `<div class="gate-card">${gateBrand('Thiết lập không hợp lệ trên máy này')}
-      <div class="banner warn" style="margin:0 0 12px"><div>Máy này đang có một <b>quản trị viên tự tạo</b> (${esc(A.admin && A.admin.name || '')}). Đây là một hệ thống riêng, <b>không thuộc dữ liệu của đơn vị</b>; mọi thứ nhập ở đây sẽ không đến được quản trị viên.</div></div>
-      <p style="font-size:13.5px;margin:0 0 12px">Ứng dụng mở qua đường link chỉ dành cho <b>cán bộ được cấp quyền</b>. Gỡ thiết lập này rồi nạp gói tài khoản do quản trị viên gửi.</p>
-      <button class="btn btn-primary" style="width:100%" data-act="gate-unstray">Gỡ thiết lập này</button></div>`;
-  } else if (mode === 'admin-form') {
-    const legacy = readLegacy();
-    g.innerHTML = `<div class="gate-card">${gateBrand('Thiết lập quản trị viên')}
+  const unit = esc(S.config.donVi || defaultConfig().donVi);
+  if (mode === 'loading') {
+    g.innerHTML = `<div class="gate-card">${gateBrand(unit)}<p style="display:flex;gap:10px;align-items:center;margin:8px 0"><span class="spin"></span>${esc(msg || 'Đang tải dữ liệu…')}</p></div>`;
+  } else if (mode === 'connect') {
+    g.innerHTML = `<div class="gate-card">${gateBrand(unit)}
+      <div class="banner info" style="margin:0 0 12px"><div>Ứng dụng <b>chưa được kết nối</b> với nơi lưu dữ liệu (Google Trang tính). Cán bộ vui lòng chờ quản trị viên hoàn tất, rồi mở lại.</div></div>
       <form id="gateForm" autocomplete="off">
-        <label class="f"><span>Họ và tên quản trị viên <em>*</em></span><input name="name" placeholder="Ví dụ: Nguyễn Văn A" required></label>
-        <label class="f"><span>Chức vụ</span><input name="chucVu" placeholder="Ví dụ: Chuyên viên Văn phòng UBMTTQ xã"></label>
-        <label class="f"><span>Mật khẩu <em>*</em> (ít nhất 8 ký tự)</span><input type="password" name="pw" autocomplete="new-password"></label>
-        <label class="f"><span>Nhập lại mật khẩu <em>*</em></span><input type="password" name="pw2" autocomplete="new-password"></label>
-        ${legacy && legacy.households.length ? `<p class="hint">${legacy.households.length} hộ từ phiên bản trước sẽ được chuyển vào.</p>` : `<p class="hint">Ứng dụng sẽ có sẵn 5 hộ mẫu để làm quen; xóa khi nhập dữ liệu thật.</p>`}
+        <label class="f"><span>Dành cho quản trị viên — địa chỉ máy chủ (URL ứng dụng web, kết thúc bằng /exec)</span><input name="api" placeholder="https://script.google.com/macros/s/…/exec" autocapitalize="none" spellcheck="false"></label>
         <p class="err" id="gateErr"></p>
-        <div class="row gap"><button type="button" class="btn" data-act="gate-back">Quay lại</button><button type="submit" class="btn btn-primary grow">Tạo tài khoản quản trị</button></div>
+        <button type="submit" class="btn btn-primary" style="width:100%">Kết nối</button>
+      </form><div id="instBox">${installCTA()}</div></div>`;
+    $('#gateForm').onsubmit = e => { e.preventDefault(); connectApi($('#gateForm [name=api]').value); };
+  } else if (mode === 'setup') {
+    const old = oldLocal(), leg = readLegacy();
+    g.innerHTML = `<div class="gate-card">${gateBrand('Thiết lập quản trị viên lần đầu')}
+      <form id="gateForm" autocomplete="off">
+        <label class="f"><span>Mã thiết lập quản trị <em>*</em></span><input name="code" placeholder="XXXX-XXXX-XXXX-XXXX" autocapitalize="characters" spellcheck="false"></label>
+        <label class="f"><span>Họ và tên quản trị viên <em>*</em></span><input name="name" placeholder="Ví dụ: Nguyễn Văn A"></label>
+        <label class="f"><span>Chức vụ</span><input name="chucVu" placeholder="Ví dụ: Chuyên viên Văn phòng UBMTTQ xã"></label>
+        <label class="f"><span>Tên đăng nhập <em>*</em> (không dấu, viết liền)</span><input name="username" autocapitalize="none" spellcheck="false" placeholder="Ví dụ: dan"></label>
+        <label class="f"><span>Mật khẩu <em>*</em> (ít nhất 8 ký tự)</span>${pwField('name="pw" autocomplete="new-password"')}</label>
+        <label class="f"><span>Nhập lại mật khẩu <em>*</em></span><input type="password" name="pw2" autocomplete="new-password"></label>
+        ${old || (leg && leg.households.length) ? `<p class="hint">Máy này còn dữ liệu phiên bản cũ — sau khi thiết lập, ứng dụng sẽ hướng dẫn chuyển lên Google Trang tính.</p>` : ''}
+        <p class="err" id="gateErr"></p>
+        <div class="row gap"><button type="button" class="btn" data-act="gate-back">Quay lại</button><button type="submit" class="btn btn-primary grow">Tạo quản trị viên</button></div>
       </form></div>`;
     $('#gateForm').onsubmit = e => { e.preventDefault(); setupAdmin(readForm($('#gateForm'))); };
-    setTimeout(() => $('#gateForm [name=name]').focus(), 30);
+    setTimeout(() => $('#gateForm [name=code]').focus(), 30);
   } else {
-    const ad = A.mode === 'admin', who = ad ? A.admin.name : A.me.name;
-    g.innerHTML = `<div class="gate-card">${gateBrand(esc(A.config.donVi || ''))}
-      <div class="who"><div class="av">${esc(initials(who))}</div><div><b>${esc(who)}</b><div class="muted small">${ROLE[ad ? 'admin' : A.me.role]}</div></div></div>
-      ${msg ? `<div class="banner info" style="margin:0 0 10px">${esc(msg)}</div>` : ''}
+    const last = lsGet(UKEY) || '';
+    g.innerHTML = `<div class="gate-card">${gateBrand(unit)}
+      ${msg ? `<div class="banner info" style="margin:0 0 10px"><div>${esc(msg)}</div></div>` : ''}
+      <div id="setupBox">${ui.needSetup ? setupBanner() : ''}</div>
       <form id="gateLogin" autocomplete="on">
-        <input type="text" name="username" value="${esc(who)}" autocomplete="username" hidden>
-        <label class="f"><span>Mật khẩu</span>${pwField('name="pw" autocomplete="current-password"', !ad)}</label>
-        <label class="chk small" style="margin:2px 0 6px"><input type="checkbox" id="remember" ${ad ? '' : 'checked'}> Ghi nhớ đăng nhập trên máy này${ad ? '' : ' (lần sau mở là vào ngay)'}</label>
+        <label class="f"><span>Tên đăng nhập</span><input name="username" value="${esc(last)}" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Do quản trị viên cấp"></label>
+        <label class="f"><span>Mật khẩu</span>${pwField('name="pw" autocomplete="current-password"')}</label>
+        <label class="chk small" style="margin:2px 0 8px"><input type="checkbox" id="remember" checked> Ghi nhớ đăng nhập (lần sau mở là vào ngay)</label>
         <p class="err" id="gateErr"></p>
-        <button type="submit" class="btn btn-primary" style="width:100%">${I('lock', 15)}Đăng nhập</button>
+        <button type="submit" class="btn btn-primary btn-lg" style="width:100%">${I('lock', 16)}Đăng nhập</button>
       </form>
-      <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:4px 12px;margin-top:8px"><button class="linkbtn" data-act="gate-forgot">Quên mật khẩu?</button>${isStandalone() ? '' : '<button class="linkbtn" data-act="install">📱 Cài lên điện thoại</button>'}${ad ? '' : `<button class="linkbtn" data-act="gate-member-new">Nạp gói tài khoản mới</button>`}</div></div>`;
-    $('#gateLogin').onsubmit = e => { e.preventDefault(); ui.remember = !!($('#remember') && $('#remember').checked); doLogin($('#gateLogin [name=pw]').value); };
-    setTimeout(() => $('#gateLogin [name=pw]').focus(), 30);
+      <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:4px 12px;margin-top:10px"><button class="linkbtn" data-act="gate-forgot">Quên mật khẩu?</button></div>
+      <div id="instBox">${installCTA()}</div></div>`;
+    $('#gateLogin').onsubmit = e => { e.preventDefault(); doLogin($('#gateLogin')); };
+    setTimeout(() => $(last ? '#gateLogin [name=pw]' : '#gateLogin [name=username]').focus(), 30);
+    if (ui.needSetup == null) api('ping', {}, { authOk: false }).then(r => { ui.needSetup = !!r.setup; const b = $('#setupBox'); if (b && ui.needSetup) b.innerHTML = setupBanner(); }).catch(() => {});
   }
 }
-const gateErr = m => { const e = $('#gateErr'); if (e) e.textContent = m || ''; };
+const setupBanner = () => `<div class="banner warn" style="margin:0 0 10px"><div>Hệ thống <b>chưa có quản trị viên</b>. Người phụ trách ứng dụng bấm nút bên cạnh để thiết lập (cần mã thiết lập quản trị).</div><button class="btn btn-sm" data-act="gate-setup">Thiết lập</button></div>`;
+async function connectApi(url) {
+  url = String(url || '').trim();
+  if (!/^https:\/\/script\.google(usercontent)?\.com\/.+/.test(url) && !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(url)) return gateErr('Địa chỉ phải bắt đầu bằng https://script.google.com/macros/s/… và kết thúc bằng /exec');
+  gateErr(''); gateBusy(true, 'Đang kiểm tra…');
+  const prev = API; API = url;
+  try { const r = await api('ping', {}, { authOk: false }); lsSet(AKEY, url); ui.needSetup = !!r.setup; toast('Đã kết nối máy chủ dữ liệu.', 'ok'); showGate(r.setup ? 'setup' : 'login'); }
+  catch (e) { API = prev; gateErr('Không kết nối được: ' + e.message + ' Kiểm tra bước Triển khai: “Người có quyền truy cập: Bất kỳ ai”.'); }
+  finally { gateBusy(false); }
+}
 async function setupAdmin(v) {
-  if (!v.name.trim()) return gateErr('Vui lòng nhập họ tên.');
-  if (String(v.pw).length < 8) return gateErr('Mật khẩu cần ít nhất 8 ký tự.');
+  if (!String(v.code || '').trim()) return gateErr('Nhập mã thiết lập quản trị.');
+  if (!String(v.name || '').trim()) return gateErr('Vui lòng nhập họ tên.');
+  if (normU(v.username).length < 3) return gateErr('Tên đăng nhập cần ít nhất 3 chữ cái hoặc số (không dấu).');
+  if (String(v.pw).replace(/\s+/g, '').length < 8) return gateErr('Mật khẩu cần ít nhất 8 ký tự.');
   if (v.pw !== v.pw2) return gateErr('Hai lần nhập mật khẩu không khớp.');
-  gateErr('Đang tạo khóa mã hóa…');
-  const legacy = readLegacy(), mk = rnd(32), code = genCode();
-  if (WEB && !ui.webAdminOk) return gateErr('Cần mã thiết lập quản trị.');
-  await busy(() => {
-    A = { v: 2, app: APPID, unitId: 'dv' + uid() + uid(), mode: 'admin', createdAt: Date.now(), webAuth: WEB ? true : undefined, config: legacy ? legacy.config : defaultConfig(),
-      admin: { name: v.name.trim(), chucVu: (v.chucVu || '').trim(), wrap: wrapKey(mk, v.pw), rec: wrapKey(mk, normCode(code)), check: keyCheck(mk) }, users: [] };
-  });
-  S = { config: A.config, households: legacy ? legacy.households : sampleData(), meta: { lastExport: null, changes: 0 }, log: [], sync: blankSync() };
-  VK = mk; logAct('thietlap', null, legacy ? `Chuyển ${legacy.households.length} hộ từ phiên bản trước` : 'Tạo mới');
-  persist();
-  if (!storageOk) { gateErr('Trình duyệt không cho lưu dữ liệu. Hãy mở bằng Chrome/Edge, không dùng chế độ ẩn danh.'); return; }
-  try { if (legacy) localStorage.removeItem(KEY); } catch (e) {}
-  await showRecovery(code, true);
-  unlock(mk, true);
+  const old = oldLocal(), leg = readLegacy(), oc = (old && old.config) || (leg && leg.config) || defaultConfig();
+  const config = { donVi: oc.donVi, tenXa: oc.tenXa, tinh: oc.tinh, apList: (oc.apList || []).filter(a => a !== 'Ấp mẫu'), center: oc.center, zoom: oc.zoom, chuan: oc.chuan, khuVuc: oc.khuVuc };
+  gateErr(''); gateBusy(true, 'Đang tạo…');
+  try {
+    const r = await api('setup', { code: v.code, username: v.username, name: v.name, chucVu: v.chucVu, password: v.pw, config }, { authOk: false });
+    ui.needSetup = false; afterLogin(r, true);
+    if (old || (leg && leg.households.length)) setTimeout(async () => { const go = await confirmDlg('Chuyển dữ liệu phiên bản cũ', 'Máy này còn dữ liệu nhập ở phiên bản cũ. Chuyển lên Google Trang tính ngay bây giờ?', 'Chuyển ngay'); if (go) { try { await (old ? migrateLocal() : migrateLegacy()); } catch (e) { toast(e.message, 'err'); } } }, 900);
+  } catch (e) { gateErr(e.message); } finally { gateBusy(false); }
 }
-async function showRecovery(code, first) {
-  await dialog(first ? 'Mã khôi phục của quản trị viên' : 'Mã khôi phục mới', `<p>Dùng mã này để đặt lại mật khẩu nếu quên. <b>Chỉ hiện một lần</b> — hãy chép ra giấy, cất cùng hồ sơ quan trọng.</p><div class="code">${code}</div><p class="muted small">Không có mã này và quên mật khẩu thì không mở được dữ liệu (kể cả file sao lưu).</p>`, [{ label: 'Tôi đã ghi lại mã', cls: 'btn-navy', value: true }], { modal: true });
+async function doLogin(f) {
+  const u = f.elements.username.value, pw = f.elements.pw.value, remember = !!($('#remember') && $('#remember').checked);
+  if (!normU(u) || !pw.trim()) return gateErr('Nhập tên đăng nhập và mật khẩu.');
+  gateErr(''); gateBusy(true, 'Đang đăng nhập…');
+  try { const r = await api('login', { username: u, password: pw, remember }, { authOk: false }); afterLogin(r, remember); }
+  catch (e) { gateErr(e.code === 'login' ? e.message + ' Bấm hình con mắt để xem lại mật khẩu đã gõ.' : e.message); }
+  finally { gateBusy(false); }
 }
-async function doLogin(pw) {
-  if (Date.now() < loginBlockUntil) return gateErr(`Nhập sai nhiều lần. Thử lại sau ${Math.ceil((loginBlockUntil - Date.now()) / 1000)} giây.`);
-  if (!pw) return gateErr('Nhập mật khẩu.');
-  gateErr('Đang kiểm tra…');
-  const w = isAdmin() ? A.admin : A.me;
-  const key = await busy(() => { for (const v of pwVariants(pw)) { const k = unwrapKey(w.wrap, v); if (keyCheck(k) === w.check) return k; } return unwrapKey(w.wrap, pw); });
-  if (keyCheck(key) !== w.check) { loginFails++; if (loginFails >= 5) { loginBlockUntil = Date.now() + 30000; loginFails = 0; } return gateErr('Mật khẩu không đúng.'); }
-  loginFails = 0;
-  try { unlock(key); } catch (e) { console.error(e); gateErr('Không giải mã được dữ liệu trên máy (dữ liệu hỏng). Hãy khôi phục từ file sao lưu.'); }
+function afterLogin(r, remember) {
+  lsSet(UKEY, r.me.u); setSession(r.token, remember);
+  ME = r.me;
+  const o = lsGet(OKEY); OUT = o && o.u === ME.u ? (o.items || []) : [];
+  if (!loadCache()) { S.households = OUT.map(x => x.h); S.rev = null; S.loadedAt = 0; }
+  S.srv = r.config || S.srv || {}; S.config = mergeConfig(S.srv); if (r.sheetUrl) sheetUrl = r.sheetUrl;
+  startApp();
+  sync({ quiet: false, force: true });
 }
-function unlock(key, fresh) {
-  if (!fresh) {
-    const v = unseal(key, A.vault);
-    S = { config: Object.assign(defaultConfig(), A.config), households: (v.households || []).map(sanitizeHH), meta: Object.assign({ lastExport: null, changes: 0 }, v.meta || {}), log: v.log || [], sync: Object.assign(blankSync(), v.sync || {}) };
-  }
-  VK = key; A.config = S.config;
-  try { sessionStorage.setItem(SKEY, JSON.stringify({ u: A.unitId, k: hex(key) })); } catch (e) {}
-  try { if (ui.remember) localStorage.setItem(RKEY, JSON.stringify({ u: A.unitId, k: hex(key) })); } catch (e) {}
-  ui.remember = false;
-  lastAct = Date.now(); startApp(); setTimeout(takeShared, 400);
-  if (ui.pendingShared) { const d = ui.pendingShared; ui.pendingShared = null; setTimeout(() => routeJson(d, 'file chia sẻ').catch(e => toast(e.message, 'err')), 600); }
+async function changePassword() {
+  const minLen = isAdmin() ? 8 : 6;
+  const r = await formDialog('Đổi mật khẩu', v => `<label class="f"><span>Mật khẩu hiện tại</span>${pwField(`name="old" value="${esc((v && v.old) || '')}" autocomplete="current-password"`)}</label><label class="f"><span>Mật khẩu mới (ít nhất ${minLen} ký tự)</span><input type="password" name="p1" value="${esc((v && v.p1) || '')}" autocomplete="new-password"></label><label class="f"><span>Nhập lại mật khẩu mới</span><input type="password" name="p2" value="${esc((v && v.p2) || '')}" autocomplete="new-password"></label>`, 'Đổi mật khẩu',
+    x => { if (!x.old) return 'Nhập mật khẩu hiện tại.'; if (x.p1.replace(/\s+/g, '').length < minLen) return `Mật khẩu mới cần ít nhất ${minLen} ký tự.`; if (x.p1 !== x.p2) return 'Hai lần nhập không khớp.'; return ''; });
+  if (!r) return;
+  const res = await withBusy('Đang đổi mật khẩu…', () => api('changePw', { old: r.old, password: r.p1 }, { authOk: false }));
+  setSession(res.token, remembered()); toast('Đã đổi mật khẩu.', 'ok');
 }
-function lock(msg) {
-  if (draft) leaveEdit();
-  VK = null; S.households = []; S.log = []; ui.selId = null;
-  try { sessionStorage.removeItem(SKEY); localStorage.removeItem(RKEY); } catch (e) {}
-  mLayer.clearLayers(); markers.clear(); map.closePopup();
-  showGate('login', msg);
+async function forgotPassword() {
+  const who = await dialog('Quên mật khẩu', `<p><b>Cán bộ:</b> liên hệ quản trị viên để được <b>cấp lại mật khẩu</b> (quản trị viên vào Tài khoản → Cấp lại mật khẩu, rồi gửi mật khẩu mới qua Zalo).</p><p><b>Quản trị viên:</b> dùng <b>mã thiết lập quản trị</b> để đặt mật khẩu mới.</p>`, [{ label: 'Đóng', value: null }, { label: 'Tôi là quản trị viên', cls: 'btn-navy', value: 'admin' }]);
+  if (who !== 'admin') return;
+  const r = await formDialog('Đặt lại mật khẩu quản trị viên', v => `<label class="f"><span>Mã thiết lập quản trị</span><input name="code" value="${esc((v && v.code) || '')}" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off"></label><label class="f"><span>Mật khẩu mới (ít nhất 8 ký tự)</span><input type="password" name="p1" value="${esc((v && v.p1) || '')}"></label><label class="f"><span>Nhập lại</span><input type="password" name="p2" value="${esc((v && v.p2) || '')}"></label>`, 'Đặt lại mật khẩu',
+    x => { if (!x.code.trim()) return 'Nhập mã thiết lập.'; if (x.p1.replace(/\s+/g, '').length < 8) return 'Mật khẩu cần ít nhất 8 ký tự.'; if (x.p1 !== x.p2) return 'Hai lần nhập không khớp.'; return ''; });
+  if (!r) return;
+  const res = await withBusy('Đang đặt lại…', () => api('resetAdmin', { code: r.code, password: r.p1 }, { authOk: false }));
+  lsSet(UKEY, res.username); showGate('login', `Đã đặt lại mật khẩu. Đăng nhập bằng tên “${res.username}” và mật khẩu mới.`);
 }
 let started = false;
 function applyRoleUI() {
   $('#tabAccounts').hidden = !isAdmin();
-  $('#userChip .av').textContent = initials(curName()); $('#userChip .nm').textContent = curName(); $('#userChip .role').textContent = ROLE[curRole()];
+  $('#userChip .av').textContent = initials(curName()); $('#userChip .nm').textContent = curName(); $('#userChip .role').textContent = ROLE[curRole()] || '';
 }
 function startApp() {
   document.body.classList.remove('locked'); $('#gate').innerHTML = '';
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {}
-  applyRoleUI();
+  applyRoleUI(); lastAct = Date.now();
   if (!started) { started = true; setBase(S.config.base); map.setView(S.config.center, S.config.zoom); }
   setTimeout(() => map.invalidateSize(), 60);
   ui.selId = null; ui.f.ap = ''; showView('list'); renderAll();
   if (S.households.some(hasLoc)) setTimeout(fitAll, 250);
-}
-async function askSecret(title, html, label = 'Mật khẩu') {
-  const r = await dialog(title, `${html}<label class="f"><span>${label}</span>${pwField('id="secIn" autocomplete="off"', label === 'Mật khẩu')}</label>`, [{ label: 'Hủy', value: null }, { label: 'Tiếp tục', cls: 'btn-navy', value: b => $('#secIn', b).value }]);
-  return r;
-}
-async function gateMemberPackage(d) {
-  if (d.type !== 'goi-tai-khoan') throw new Error('Đây không phải file gói tài khoản. File gói có tên bắt đầu bằng “GoiTaiKhoan_”.');
-  const pw0 = await askSecret('Mở gói tài khoản', `<p>Gói dành cho <b>${esc(d.name)}</b> — ${esc(d.unitName || '')}.</p><p>Nhập <b>mật khẩu</b> quản trị viên báo cho bạn (thường là 8 số; có dấu cách hay không đều được).</p>`);
-  if (!pw0) return;
-  let K = null, p = null, pw = pw0;
-  await busy(() => { for (const v of pwVariants(pw0)) { const k = unwrapKey(d.wrap, v); try { p = unseal(k, d.box); K = k; pw = v; return; } catch (e) {} } });
-  if (!K) throw new Error('Mật khẩu không đúng hoặc file gói bị hỏng. Bấm hình con mắt để xem lại số đã gõ.');
-  ui.remember = true;
-  const same = A && A.mode === 'member' && A.unitId === d.unitId && A.me.id === d.userId && A.me.check === keyCheck(K);
-  if (same) {  /* quên mật khẩu: mở lại kho cũ bằng khóa trong gói, giữ hộ chưa gửi */
-    let v; try { v = unseal(K, A.vault); } catch (e) { v = null; }
-    if (v) {
-      await busy(() => { A.me.wrap = wrapKey(K, pw); });
-      S = { config: Object.assign(defaultConfig(), A.config), households: (v.households || []).map(sanitizeHH), meta: Object.assign({ lastExport: null, changes: 0 }, v.meta || {}), log: v.log || [], sync: Object.assign(blankSync(), v.sync || {}) };
-      VK = K; const r = applyPackage(p); persist(); unlock(K, true);
-      toast(`Đã mở lại tài khoản và cập nhật ${r.total} hộ${r.kept ? `, giữ ${r.kept} hộ chưa gửi` : ''}. Nên đổi mật khẩu riêng.`, 'ok');
-      return;
-    }
-  }
-  if (A && A.mode === 'admin') throw new Error('Máy này là máy quản trị viên — không nạp gói cán bộ.');
-  if (A && A.mode === 'member') { const ok = await confirmDlg('Thay tài khoản trên máy này', `Máy đang dùng tài khoản <b>${esc(A.me.name)}</b>. Nạp gói này sẽ thay bằng tài khoản <b>${esc(d.name)}</b>; dữ liệu chưa gửi của tài khoản cũ sẽ mất.`, 'Thay tài khoản', true); if (!ok) return; }
-  const legacy = readLegacy();
-  if (legacy && legacy.households.length) { const ok = await confirmDlg('Dữ liệu cũ trên máy', `Máy này còn <b>${legacy.households.length} hộ</b> từ phiên bản trước (chưa mã hóa). Khi nhận tài khoản cán bộ, dữ liệu cũ đó sẽ được gỡ khỏi máy.`, 'Đồng ý', true); if (!ok) return; }
-  await busy(() => {
-    A = { v: 2, app: APPID, unitId: d.unitId, mode: 'member', createdAt: Date.now(), config: Object.assign(defaultConfig(), p.config || {}), me: { id: p.account.id, name: p.account.name, chucVu: p.account.chucVu, role: p.account.role, perms: p.account.perms, aps: p.account.aps || [], issuedBy: p.issuedBy, wrap: wrapKey(K, pw), check: keyCheck(K) } };
-  });
-  const hh = (p.households || []).map(sanitizeHH);
-  S = { config: A.config, households: hh, meta: { lastExport: null, changes: 0 }, log: [], sync: { changed: {}, base: Object.fromEntries(hh.map(h => [h.id, h.updatedAt])), lastSentAt: null, packageAt: p.issuedAt } };
-  VK = K; logAct('napgoi', null, `Nhận tài khoản, ${hh.length} hộ`); persist();
-  try { localStorage.removeItem(KEY); } catch (e) {}
-  unlock(K, true);
-  await dialog(`Chào ${A.me.name}`, `<p>Máy này đã nhận tài khoản <b>${ROLE[A.me.role]}</b>.</p><p>Quyền: ${esc(permText(A.me))}<br>Phạm vi: <b>${esc(scopeText(A.me.aps))}</b><br>Số hộ nhận được: <b>${hh.length}</b></p>${A.me.role === 'editor' ? '<p>Sau khi thêm/sửa, vào <b>Dữ liệu → Tạo file gửi quản trị viên</b> để gửi dữ liệu về.</p>' : ''}<p class="muted small">Nên đổi sang mật khẩu riêng tại Cài đặt → Đổi mật khẩu.</p>`, [{ label: 'Bắt đầu', cls: 'btn-navy' }]);
-}
-async function gateRestore(d) {
-  if (d.type !== 'sao-luu-he-thong') throw new Error('Đây không phải file sao lưu hệ thống (tên bắt đầu bằng “SaoLuu_HeThong_”).');
-  const r = await dialog('Khôi phục từ file sao lưu', `<p>File của <b>${esc(d.unitName || '')}</b>, tạo lúc ${dt(d.createdAt)}, gồm ${d.count ?? '?'} hộ.</p>
-    <label class="f"><span>Mật khẩu quản trị viên <i>hoặc</i> mã khôi phục</span>${pwField('id="secIn" autocomplete="off"')}</label>`, [{ label: 'Hủy', value: null }, { label: 'Khôi phục', cls: 'btn-navy', value: b => $('#secIn', b).value }]);
-  if (!r) return;
-  const ad = d.auth && d.auth.admin; if (!ad) throw new Error('File sao lưu thiếu thông tin quản trị viên.');
-  let mk = await busy(() => unwrapKey(ad.wrap, r)), viaCode = false;
-  if (keyCheck(mk) !== ad.check) { mk = await busy(() => unwrapKey(ad.rec, normCode(r))); viaCode = true; }
-  if (keyCheck(mk) !== ad.check) throw new Error('Mật khẩu hoặc mã khôi phục không đúng.');
-  const v = unseal(mk, d.vault);
-  A = { v: 2, app: APPID, unitId: d.unitId, mode: 'admin', createdAt: Date.now(), config: Object.assign(defaultConfig(), d.config || {}), admin: ad, users: d.auth.users || [], restored: true };
-  S = { config: A.config, households: (v.households || []).map(sanitizeHH), meta: Object.assign({ lastExport: null, changes: 0 }, v.meta || {}), log: v.log || [], sync: blankSync() };
-  VK = mk;
-  if (viaCode) { const np = await newPasswordDlg('Đặt mật khẩu mới'); if (!np) return; await busy(() => { A.admin.wrap = wrapKey(mk, np); }); }
-  logAct('khoiphuc', null, `Từ bản sao lưu ${dt(d.createdAt)}`); persist(); unlock(mk, true);
-  toast(`Đã khôi phục ${S.households.length} hộ và ${A.users.length} tài khoản.`, 'ok');
-}
-async function newPasswordDlg(title, minLen = 8) {
-  const r = await formDialog(title, v => `<label class="f"><span>Mật khẩu mới (ít nhất ${minLen} ký tự)</span><input type="password" name="p1" value="${esc((v && v.p1) || '')}" autocomplete="new-password"></label><label class="f"><span>Nhập lại</span><input type="password" name="p2" value="${esc((v && v.p2) || '')}" autocomplete="new-password"></label>`, 'Lưu', x => x.p1.length < minLen ? `Mật khẩu cần ít nhất ${minLen} ký tự.` : x.p1 !== x.p2 ? 'Hai lần nhập không khớp.' : '');
-  return r ? r.p1 : null;
-}
-async function changePassword() {
-  const minLen = isAdmin() ? 8 : 6, w = isAdmin() ? A.admin : A.me;
-  const r = await formDialog('Đổi mật khẩu', v => `<label class="f"><span>Mật khẩu hiện tại</span><input type="password" name="old" value="${esc((v && v.old) || '')}" autocomplete="current-password"></label><label class="f"><span>Mật khẩu mới (ít nhất ${minLen} ký tự)</span><input type="password" name="p1" value="${esc((v && v.p1) || '')}" autocomplete="new-password"></label><label class="f"><span>Nhập lại mật khẩu mới</span><input type="password" name="p2" value="${esc((v && v.p2) || '')}" autocomplete="new-password"></label>`, 'Đổi mật khẩu',
-    x => { if (keyCheck(unwrapKey(w.wrap, x.old)) !== w.check) return 'Mật khẩu hiện tại không đúng.'; if (x.p1.length < minLen) return `Mật khẩu mới cần ít nhất ${minLen} ký tự.`; if (x.p1 !== x.p2) return 'Hai lần nhập không khớp.'; return ''; });
-  if (!r) return;
-  await busy(() => { w.wrap = wrapKey(VK, r.p1); }); logAct('doimk', null, curName()); persist(); toast('Đã đổi mật khẩu.', 'ok');
-}
-async function forgotPassword() {
-  if (A.mode === 'admin') {
-    const r = await formDialog('Quên mật khẩu quản trị viên', v => `<p>Nhập <b>mã khôi phục</b> (đã ghi lại khi thiết lập) và mật khẩu mới.</p><label class="f"><span>Mã khôi phục</span><input name="code" value="${esc((v && v.code) || '')}" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off"></label><label class="f"><span>Mật khẩu mới (ít nhất 8 ký tự)</span><input type="password" name="p1" value="${esc((v && v.p1) || '')}"></label><label class="f"><span>Nhập lại</span><input type="password" name="p2" value="${esc((v && v.p2) || '')}"></label>`, 'Đặt lại mật khẩu',
-      x => { if (x.p1.length < 8) return 'Mật khẩu cần ít nhất 8 ký tự.'; if (x.p1 !== x.p2) return 'Hai lần nhập không khớp.'; if (keyCheck(unwrapKey(A.admin.rec, normCode(x.code))) !== A.admin.check) return 'Mã khôi phục không đúng.'; return ''; });
-    if (!r) return;
-    const mk = unwrapKey(A.admin.rec, normCode(r.code)); A.admin.wrap = wrapKey(mk, r.p1);
-    unlock(mk); logAct('doimk', null, 'Đặt lại bằng mã khôi phục'); persist(); toast('Đã đặt lại mật khẩu.', 'ok');
-  } else {
-    await dialog('Quên mật khẩu', `<p>Hãy liên hệ quản trị viên (<b>${esc(A.me.issuedBy || 'quản trị viên')}</b>) để được <b>đặt lại mật khẩu</b> và gửi <b>gói tài khoản mới</b>.</p><p>Khi có gói mới, bấm “Nạp gói tài khoản mới” ở màn hình đăng nhập và nhập mật khẩu mới. Các hộ đã sửa chưa gửi trên máy này vẫn được giữ.</p>`, [{ label: 'Đã hiểu', cls: 'btn-navy' }]);
-  }
 }
 
 /* =========================================================
    SỰ KIỆN
    ========================================================= */
 function renderAll() {
-  if (!VK) return;
+  if (!ME) return;
   $('#hdrUnit').textContent = S.config.donVi + (S.config.tinh ? ', ' + S.config.tinh : '');
   renderList();
   if (ui.view === 'detail') renderDetail();
@@ -2544,34 +2626,17 @@ function renderAll() {
   if (ui.view === 'settings') renderSettings();
   if (ui.view === 'accounts' && isAdmin()) renderAccounts();
 }
-const userById = id => (A.users || []).find(u => u.id === id);
+const userByU = u => (USERS || []).find(x => x.u === u);
 async function onAct(act, el, e) {
   const id = el.dataset.id;
   try {
   switch (act) {
     /* cổng */
-    case 'gate-admin': if (!WEB || ui.webAdminOk) showGate('admin-form'); break;
-    case 'gate-admin-code': {
-      const code = await askSecret('Mã thiết lập quản trị', '<p>Nhập <b>mã thiết lập quản trị</b> (dạng XXXX-XXXX-XXXX-XXXX). Mã này chỉ người phụ trách ứng dụng của đơn vị giữ.</p>', 'Mã thiết lập');
-      if (!code) break;
-      const okCode = await busy(() => hex(CRY.pbkdf2(enc.encode(normCode(code)), unhex(WEB_ADMIN.s), WEB_ADMIN.i)) === WEB_ADMIN.h);
-      if (!okCode) { toast('Mã thiết lập không đúng.', 'err'); break; }
-      ui.webAdminOk = true; showGate('admin-form'); break; }
-    case 'gate-unstray': await removeStray(); break;
-    case 'gate-back': showGate('setup'); break;
-    case 'gate-member': case 'gate-member-new': {
-      ui.gateIntent = 'member';
-      const iosWarn = isIOS() && !isStandalone() ? `<div class="banner warn" style="margin:0 0 10px">Trên iPhone, hãy <b>cài ứng dụng ra màn hình chính trước</b> (Safari → Chia sẻ → Thêm vào MH chính) rồi mở từ biểu tượng <b>Hộ nghèo</b> để nạp gói. Nạp trong Safari sẽ không sang được ứng dụng.</div>` : '';
-      await dialog('Nạp gói tài khoản', `${iosWarn}<ol class="steps">
-        <li>Mở <b>Zalo</b>, bấm vào <b>file gói</b> quản trị viên gửi (tên bắt đầu bằng <code>GoiTaiKhoan_</code>) để <b>tải về máy</b>.</li>
-        <li>Quay lại đây, bấm <b>Chọn file gói</b> → chọn mục <b>Gần đây</b> (hoặc thư mục <b>Download</b> → <b>Zalo</b>) → chạm vào file.</li>
-        <li>Nhập <b>mật khẩu</b> quản trị viên báo (8 số).</li></ol>
-        <p class="muted small" style="margin:8px 0 0">Android: cũng có thể bấm giữ file trong Zalo → <b>Chia sẻ</b> → chọn ứng dụng <b>Hộ nghèo</b>.</p>`,
-        [{ label: 'Hủy', value: null }, { label: 'Chọn file gói', cls: 'btn-navy', value: () => { $('#fileJson').click(); return 1; } }]);
-      break; }
-    case 'gate-restore': ui.gateIntent = 'restore'; $('#fileJson').click(); break;
-    case 'gate-forgot': forgotPassword(); break;
+    case 'gate-setup': showGate('setup'); break;
+    case 'gate-back': showGate('login'); break;
+    case 'gate-forgot': await forgotPassword(); break;
     case 'install': await installGuide(); break;
+    case 'install-now': { if (!installEvt) { await installGuide(); break; } const ev = installEvt; ev.prompt(); ev.userChoice.then(c => { if (c.outcome === 'accepted') { installEvt = null; refreshInstallCTA(); } }).catch(() => {}); break; }
     /* hộ */
     case 'open': map.closePopup(); openDetail(id, { fly: true }); break;
     case 'back': ui.selId = null; highlight(null); showView('list'); renderList(); break;
@@ -2580,10 +2645,18 @@ async function onAct(act, el, e) {
     case 'edit': enterEdit(byId(id)); break;
     case 'edit-gps': enterEdit(byId(id), { gps: true }); break;
     case 'fly': { const h = byId(id); if (h && hasLoc(h)) { map.flyTo([h.lat, h.lng], 18, { duration: .6 }); setTimeout(() => markers.get(id)?.openPopup(), 650); } break; }
-    case 'delete': { if (!can('delete')) { toast('Chỉ quản trị viên được xóa hộ.', 'err'); break; } const h = byId(id); if (!h) break; const ok = await confirmDlg('Xóa hộ này?', `Xóa hộ <b>${esc(h.chuHo)}</b> (${esc(h.maHo)}) cùng ${h.thanhVien.length} thành viên. Không thể hoàn tác.`, 'Xóa hộ', true); if (!ok) break; S.households = S.households.filter(x => x.id !== id); logAct('xoa', h); save(); ui.selId = null; showView('list'); renderList(); toast('Đã xóa hộ.'); break; }
+    case 'delete': {
+      if (!can('delete')) { toast('Chỉ quản trị viên được xóa hộ.', 'err'); break; }
+      const h = byId(id); if (!h) break;
+      const ok = await confirmDlg('Xóa hộ này?', `Xóa hộ <b>${esc(h.chuHo)}</b> (${esc(h.maHo || 'chưa có mã')}) cùng ${h.thanhVien.length} thành viên khỏi danh sách. Hộ vẫn còn trong Google Trang tính với trạng thái “Đã xóa”.`, 'Xóa hộ', true); if (!ok) break;
+      const po = OUT.find(o => o.h.id === id);
+      if (!po || po.base) await withBusy('Đang xóa…', () => api('delete', { id }));   /* hộ mới chưa gửi lên thì chỉ bỏ trên máy */
+      if (po) { OUT = OUT.filter(o => o.h.id !== id); saveOut(); }
+      S.households = S.households.filter(x => x.id !== id); saveCache(); ui.selId = null; showView('list'); renderList(); toast('Đã xóa hộ.');
+      break; }
     case 'print': printHH(byId(id)); break;
     case 'copy': try { await navigator.clipboard.writeText(el.dataset.text); toast('Đã sao chép tọa độ.', 'ok'); } catch (err) { await dialog('Tọa độ', `<input value="${esc(el.dataset.text)}" readonly onfocus="this.select()">`, [{ label: 'Đóng', cls: 'btn-navy' }]); } break;
-    case 'edit-save': saveEdit(); break;
+    case 'edit-save': await saveEdit(); break;
     case 'edit-cancel': cancelEdit(); break;
     case 'pick': startPick(); break;
     case 'pick-stop': stopPick(); break;
@@ -2606,34 +2679,51 @@ async function onAct(act, el, e) {
     case 'toggle-labels': S.config.labels = !S.config.labels; persist(); updateLabels(); toast(S.config.labels ? 'Hiện tên chủ hộ khi phóng to (mức 16 trở lên).' : 'Đã ẩn tên chủ hộ.'); break;
     case 'toggle-big': document.body.classList.toggle('map-big'); setTimeout(() => map.invalidateSize(), 230); break;
     /* dữ liệu */
-    case 'export-backup': exportBackup(); break;
+    case 'sync-now': await sync({ quiet: false, force: true }); if (net.online) toast(OUT.length ? `Còn ${OUT.length} hộ chưa gửi được.` : 'Dữ liệu đã được cập nhật.', OUT.length ? 'err' : 'ok'); if (ui.view === 'data') renderData(); break;
     case 'export-xlsx': exportXLSX(S.households); break;
     case 'export-xlsx-filter': exportXLSX(filtered()); break;
     case 'template': if (isAdmin()) await exportTemplate(); break;
-    case 'pick-json': ui.gateIntent = null; $('#fileJson').click(); break;
+    case 'pick-json': $('#fileJson').click(); break;
     case 'import-xlsx': if (isAdmin()) $('#fileXlsx').click(); break;
-    case 'send-changes': await sendChanges(); break;
-    case 'del-sample': { if (!isAdmin()) break; const n = S.households.filter(h => h.sample).length; if (!n) break; const ok = await confirmDlg('Xóa dữ liệu mẫu', `Xóa ${n} hộ dữ liệu mẫu?`, 'Xóa', true); if (!ok) break; S.households = S.households.filter(h => !h.sample); if (!S.households.some(h => h.ap === 'Ấp mẫu')) S.config.apList = S.config.apList.filter(a => a !== 'Ấp mẫu'); if (!byId(ui.selId)) ui.selId = null; logAct('xoamau', null, `${n} hộ`); persist(); renderAll(); if (ui.view === 'detail') showView('list'); toast('Đã xóa dữ liệu mẫu.'); break; }
-    case 'wipe': { if (!isAdmin()) break; const ok = await dialog('Xóa toàn bộ danh sách hộ', `<p>Toàn bộ <b>${S.households.length}</b> hộ sẽ bị xóa khỏi máy này (tài khoản cán bộ vẫn giữ). Nên tải file sao lưu trước.</p><p>Gõ chữ <b>XOA</b> để xác nhận:</p><input id="wipeIn" autocomplete="off">`, [{ label: 'Hủy', value: false }, { label: 'Xóa toàn bộ', cls: 'btn-primary', value: b => $('#wipeIn', b).value.trim().toUpperCase() === 'XOA' }]); if (!ok) break; logAct('xoatoanbo', null, `${S.households.length} hộ`); S.households = []; save(); ui.selId = null; renderAll(); toast('Đã xóa toàn bộ danh sách hộ.'); break; }
-    case 'remove-device': { const n = Object.keys(S.sync.changed || {}).length; const ok = await dialog('Gỡ tài khoản khỏi máy này', `<p>${n ? `<b style="color:var(--err)">Còn ${n} hộ đã sửa chưa gửi quản trị viên — sẽ mất nếu gỡ.</b> ` : ''}Dữ liệu và tài khoản trên máy này sẽ bị gỡ. Gõ chữ <b>GO</b> để xác nhận:</p><input id="rmIn" autocomplete="off">`, [{ label: 'Hủy', value: false }, { label: 'Gỡ khỏi máy', cls: 'btn-primary', value: b => $('#rmIn', b).value.trim().toUpperCase() === 'GO' }]); if (!ok) break; try { localStorage.removeItem(KEY2); localStorage.removeItem(RKEY); sessionStorage.removeItem(SKEY); } catch (err) {} A = null; VK = null; S.households = []; mLayer.clearLayers(); showGate('setup'); break; }
+    case 'migrate-local': if (isAdmin()) await migrateLocal(); break;
+    case 'migrate-legacy': if (isAdmin()) await migrateLegacy(); break;
+    case 'wipe': {
+      if (!isAdmin()) break;
+      const ok = await dialog('Xóa toàn bộ danh sách hộ', `<p>Toàn bộ <b>${S.households.length}</b> hộ sẽ bị xóa khỏi danh sách của mọi người (tài khoản cán bộ vẫn giữ; Google Trang tính vẫn lưu với trạng thái “Đã xóa”).</p><p>Gõ chữ <b>XOA</b> để xác nhận:</p><input id="wipeIn" autocomplete="off">`, [{ label: 'Hủy', value: false }, { label: 'Xóa toàn bộ', cls: 'btn-primary', value: b => $('#wipeIn', b).value.trim().toUpperCase() === 'XOA' }]);
+      if (!ok) break;
+      const r = await sendBulk([], S.households.map(h => h.id), 'Xóa toàn bộ danh sách hộ');
+      ui.selId = null; renderAll(); toast(`Đã xóa ${r.del} hộ.`); break; }
     /* tài khoản */
     case 'acc-new': if (isAdmin()) await addUser(); break;
-    case 'acc-edit': if (isAdmin()) await editUser(userById(el.dataset.uid)); break;
-    case 'acc-reset': if (isAdmin()) await resetUserPw(userById(el.dataset.uid)); break;
-    case 'acc-pkg': if (isAdmin()) makePackage(userById(el.dataset.uid)); break;
-    case 'acc-lock': { if (!isAdmin()) break; const u = userById(el.dataset.uid); u.locked = !u.locked; logAct('khoatk', null, `${u.locked ? 'Khóa' : 'Mở khóa'} ${u.name}`); persist(); renderAccounts(); toast(u.locked ? `Đã khóa ${u.name}: không nhận dữ liệu, không cấp gói cho tài khoản này.` : `Đã mở khóa ${u.name}.`); break; }
-    case 'acc-del': { if (!isAdmin()) break; const u = userById(el.dataset.uid); const ok = await confirmDlg('Xóa tài khoản', `Xóa tài khoản <b>${esc(u.name)}</b>? Sau khi xóa, file dữ liệu từ tài khoản này sẽ không được nhận nữa. Dữ liệu hộ đã nhận trước đó vẫn giữ nguyên.`, 'Xóa tài khoản', true); if (!ok) break; A.users = A.users.filter(x => x !== u); logAct('xoatk', null, u.name); persist(); renderAccounts(); break; }
+    case 'acc-reload': USERS = null; renderAccounts(); break;
+    case 'acc-edit': if (isAdmin()) await editUser(userByU(el.dataset.uid)); break;
+    case 'acc-reset': if (isAdmin()) await resetUserPw(userByU(el.dataset.uid)); break;
+    case 'acc-lock': {
+      if (!isAdmin()) break; const u = userByU(el.dataset.uid); if (!u) break;
+      if (!u.locked) { const ok = await confirmDlg('Khóa tài khoản', `Khóa tài khoản <b>${esc(u.name)}</b>? Cán bộ sẽ bị đăng xuất và không xem, nhập được dữ liệu cho đến khi mở khóa.`, 'Khóa', true); if (!ok) break; }
+      await withBusy('Đang lưu…', () => api('userSave', { user: Object.assign({}, u, { locked: !u.locked }) }));
+      USERS = null; renderAccounts(); toast(u.locked ? `Đã mở khóa ${u.name}.` : `Đã khóa ${u.name}.`); break; }
+    case 'acc-del': {
+      if (!isAdmin()) break; const u = userByU(el.dataset.uid); if (!u) break;
+      const ok = await confirmDlg('Xóa tài khoản', `Xóa tài khoản <b>${esc(u.name)}</b> (${esc(u.u)})? Cán bộ sẽ không đăng nhập được nữa. Dữ liệu hộ đã nhập vẫn giữ nguyên.`, 'Xóa tài khoản', true); if (!ok) break;
+      await withBusy('Đang xóa…', () => api('userDel', { u: u.u })); USERS = null; renderAccounts(); break; }
     case 'change-pw': await changePassword(); break;
-    case 'new-recovery': { if (!isAdmin()) break; const ok = await confirmDlg('Tạo mã khôi phục mới', 'Mã khôi phục cũ sẽ hết hiệu lực (kể cả với các file sao lưu tạo từ bây giờ). Các file sao lưu cũ vẫn dùng mã cũ hoặc mật khẩu lúc tạo sao lưu.', 'Tạo mã mới'); if (!ok) break; const code = genCode(); await busy(() => { A.admin.rec = wrapKey(VK, normCode(code)); }); persist(); await showRecovery(code, false); break; }
-    case 'logout': lock('Đã đăng xuất.'); break;
+    case 'logout': {
+      const ok = OUT.length ? await confirmDlg('Đăng xuất', `Còn <b>${OUT.length} hộ</b> chưa gửi lên máy chủ. Các hộ này vẫn được giữ trên máy và sẽ gửi khi bạn đăng nhập lại.`, 'Vẫn đăng xuất') : true;
+      if (!ok) break; lsSet(CKEY, null); endSession('Đã đăng xuất.'); break; }
     case 'user-menu': {
-      const r = await dialog(curName(), `<p style="margin-top:0">${ROLE[curRole()]}${!isAdmin() ? ` · ${esc(permText(A.me))} · Phạm vi: ${esc(scopeText(A.me.aps))}` : ' · Toàn quyền'}</p><p class="muted small">${esc(S.config.donVi)}</p>`, [{ label: 'Đóng', value: null }, { label: 'Đổi mật khẩu', value: 'pw' }, { label: 'Đăng xuất', cls: 'btn-navy', value: 'out' }]);
-      if (r === 'pw') await changePassword(); else if (r === 'out') lock('Đã đăng xuất.');
+      const r = await dialog(curName(), `<p style="margin-top:0">${ROLE[curRole()]} · tên đăng nhập <b>${esc(curId())}</b>${!isAdmin() ? `<br>${esc(permText(ME))} · Phạm vi: ${esc(scopeText(ME.aps))}` : ''}</p><p class="muted small">${esc(S.config.donVi)} · Dữ liệu cập nhật ${S.loadedAt ? dt(S.loadedAt) : 'chưa tải'}${OUT.length ? ` · ${OUT.length} hộ chờ gửi` : ''}</p>`, [{ label: 'Đóng', value: null }, { label: 'Đổi mật khẩu', value: 'pw' }, { label: 'Đồng bộ ngay', value: 'sync' }, { label: 'Đăng xuất', cls: 'btn-navy', value: 'out' }]);
+      if (r === 'pw') await changePassword(); else if (r === 'sync') await onAct('sync-now', el); else if (r === 'out') await onAct('logout', el);
       break; }
-    case 'settings-save': saveSettings(); break;
-    case 'set-center': S.config.center = [round6(map.getCenter().lat), round6(map.getCenter().lng)]; S.config.zoom = map.getZoom(); persist(); $('#curCenter').textContent = S.config.center.map(x => x.toFixed(5)).join(', '); toast('Đã đặt vị trí mặc định của bản đồ.', 'ok'); break;
+    case 'settings-save': await saveSettings(); break;
+    case 'set-center': {
+      const c = [round6(map.getCenter().lat), round6(map.getCenter().lng)], z = map.getZoom();
+      if (isAdmin()) { const r = await withBusy('Đang lưu…', () => api('config', { config: { center: c, zoom: z } })); S.srv = r.config; delete PREFS.center; savePrefs(); }
+      else { PREFS.center = c; PREFS.zoom = z; savePrefs(); }
+      S.config.center = c; S.config.zoom = z; saveCache();
+      $('#curCenter').textContent = c.map(x => x.toFixed(5)).join(', '); toast(isAdmin() ? 'Đã đặt vị trí mặc định của bản đồ cho cả xã.' : 'Đã đặt vị trí mặc định trên máy này.', 'ok'); break; }
   }
-  } catch (err) { console.error(err); toast(err.message || String(err), 'err'); }
+  } catch (err) { console.error(err); if (err.code !== 'auth') toast(err.message || String(err), 'err'); }
 }
 document.addEventListener('click', e => {
   const tab = e.target.closest('.tab');
@@ -2641,7 +2731,7 @@ document.addEventListener('click', e => {
     const t = tab.dataset.tab; if (ui.view === 'edit') { toast('Hãy Lưu hoặc Hủy việc đang sửa trước.', 'err'); return; }
     if (t === 'accounts' && !isAdmin()) return;
     if (t === 'list') { showView(ui.selId && byId(ui.selId) ? 'detail' : 'list'); if (ui.view === 'list') renderList(); }
-    else { showView(t); if (t === 'stats') renderStats(); if (t === 'data') renderData(); if (t === 'settings') renderSettings(); if (t === 'accounts') renderAccounts(); }
+    else { showView(t); if (t === 'stats') renderStats(); if (t === 'data') renderData(); if (t === 'settings') renderSettings(); if (t === 'accounts') { USERS = null; renderAccounts(); } }
     return;
   }
   const el = e.target.closest('[data-act]'); if (!el || el.closest('#dlg')) return;
@@ -2673,67 +2763,60 @@ document.addEventListener('click', e => { const b = e.target.closest('.pw-eye');
 $('#fileJson').addEventListener('change', async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
   let d; try { d = JSON.parse(await f.text()); } catch (err) { toast('File không đúng định dạng.', 'err'); return; }
-  try { await routeJson(d, f.name); } catch (err) { console.error(err); toast(err.message || String(err), 'err'); }
+  try {
+    if (!isAdmin()) throw new Error('Chỉ quản trị viên được nhập dữ liệu.');
+    if (d && d.app === APPID && d.type === 'sao-luu-he-thong') return await importOldBackup(d);
+    const arr = Array.isArray(d) ? d : d && d.households;
+    if (Array.isArray(arr)) return await uploadOld(arr.map(sanitizeHH), d.config, `File ${f.name}`);
+    throw new Error('Đây không phải file sao lưu của ứng dụng (tên bắt đầu bằng “SaoLuu_HeThong_”).');
+  } catch (err) { console.error(err); toast(err.message || String(err), 'err'); }
 });
-async function routeJson(d, fname) {
-  const t = d && d.app === APPID ? d.type : null;
-  if (!VK) {
-    if (ui.gateIntent === 'member') return gateMemberPackage(d);
-    if (ui.gateIntent === 'restore') return gateRestore(d);
-    return;
-  }
-  if (t === 'du-lieu-can-bo') { if (!isAdmin()) throw new Error('Chỉ quản trị viên mới nhận file dữ liệu của cán bộ.'); return receiveChanges(d); }
-  if (t === 'goi-tai-khoan') { if (isAdmin()) throw new Error('Đây là gói tài khoản dành cho máy của cán bộ, không nạp vào máy quản trị.'); return memberRefresh(d); }
-  if (t === 'sao-luu-he-thong') { if (!isAdmin()) throw new Error('Chỉ quản trị viên được khôi phục từ file sao lưu.'); return restoreLoggedIn(d); }
-  const arr = Array.isArray(d) ? d : d && d.households;
-  if (Array.isArray(arr)) { if (!isAdmin()) throw new Error('Chỉ quản trị viên được nhập dữ liệu.'); return applyImport(arr.map(sanitizeHH), `“${fname}” (bản sao lưu phiên bản cũ)`); }
-  throw new Error('File không đúng định dạng của ứng dụng.');
-}
 $('#fileXlsx').addEventListener('change', async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
   if (!isAdmin()) return;
   if (!window.ExcelJS) { toast('Không tải được thư viện Excel.', 'err'); return; }
   try { toast('Đang đọc file Excel…'); const list = await readExcel(f); await applyImport(list, `“${f.name}”`); }
-  catch (err) { console.error(err); toast('Lỗi đọc Excel: ' + err.message, 'err'); }
+  catch (err) { console.error(err); toast('Lỗi nhập Excel: ' + err.message, 'err'); }
 });
-window.addEventListener('beforeunload', e => { if (ui.view === 'edit' && draft && draftChanged()) { e.preventDefault(); e.returnValue = ''; } });
+window.addEventListener('beforeunload', e => { if ((ui.view === 'edit' && draft && draftChanged()) || net.flushing) { e.preventDefault(); e.returnValue = ''; } });
 let lastAct = Date.now();
 ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(ev => addEventListener(ev, () => { lastAct = Date.now(); }, { passive: true, capture: true }));
-const remembered = () => { try { return !!localStorage.getItem(RKEY); } catch (e) { return false; } };
-setInterval(() => { if (VK && !remembered() && ui.view !== 'edit' && Date.now() - lastAct > IDLE_MS) lock('Đã tự khóa sau 30 phút không thao tác.'); }, 20000);
+setInterval(() => { if (ME && !remembered() && ui.view !== 'edit' && Date.now() - lastAct > IDLE_MS) { lsSet(CKEY, null); endSession('Đã tự đăng xuất sau 30 phút không thao tác.'); } }, 20000);
+/* Tự đồng bộ: khi có mạng trở lại, khi mở lại ứng dụng, và định kỳ 2 phút */
+addEventListener('online', () => { if (ME) sync({ quiet: true }); });
+addEventListener('offline', () => { net.online = false; syncUI(); renderBanners(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ME && Date.now() - net.lastTry > 20000) sync({ quiet: true }); });
+setInterval(() => { if (ME && document.visibilityState === 'visible' && ui.view !== 'edit') sync({ quiet: true }); }, 120000);
+addEventListener('beforeinstallprompt', () => setTimeout(refreshInstallCTA, 0));
 
 /* =========================================================
    KHỞI ĐỘNG
    ========================================================= */
 $$('i[data-ic]').forEach(i => { i.outerHTML = I(i.dataset.ic); });
-async function takeShared() {
-  if (!WEB || !('caches' in window)) return;
-  let txt = null;
-  try { const c = await caches.open('share-inbox'); const r = await c.match('shared-file'); if (!r) return; txt = await r.text(); await c.delete('shared-file'); } catch (e) { return; }
-  try { if (location.search) history.replaceState(null, '', location.pathname); } catch (e) {}
-  let d; try { d = JSON.parse(txt); } catch (e) { toast('File vừa chia sẻ không phải file của ứng dụng.', 'err'); return; }
-  if (!A || (!VK && d && d.type === 'goi-tai-khoan')) { ui.gateIntent = 'member'; try { await gateMemberPackage(d); } catch (e) { toast(e.message, 'err'); } return; }
-  if (!VK) { ui.pendingShared = d; toast('Đăng nhập để nạp file vừa chia sẻ.'); return; }
-  try { await routeJson(d, 'file chia sẻ'); } catch (e) { toast(e.message, 'err'); }
-}
-async function removeStray() {
-  const ok = await dialog('Gỡ thiết lập', '<p>Toàn bộ dữ liệu của hệ thống tự tạo trên máy này sẽ bị xóa. Dữ liệu của đơn vị trên máy quản trị viên <b>không</b> bị ảnh hưởng.</p><p>Gõ chữ <b>GO</b> để xác nhận:</p><input id="rmIn" autocomplete="off">', [{ label: 'Hủy', value: false }, { label: 'Gỡ thiết lập', cls: 'btn-primary', value: b => $('#rmIn', b).value.trim().toUpperCase() === 'GO' }]);
-  if (!ok) return;
-  try { localStorage.removeItem(KEY2); localStorage.removeItem(RKEY); sessionStorage.removeItem(SKEY); } catch (e) {}
-  A = null; VK = null; showGate('setup');
-}
-(function boot() {
-  A = readA();
-  if (!A) { showGate('setup'); setTimeout(takeShared, 400); return; }
-  if (WEB && A.mode === 'admin' && !A.restored && !A.webAuth) { showGate('stray'); return; }
-  S.config = Object.assign(defaultConfig(), A.config);
-  for (const store of [sessionStorage, localStorage]) {
-    try { const ss = JSON.parse(store.getItem(store === localStorage ? RKEY : SKEY) || 'null'); if (ss && ss.u === A.unitId) { unlock(unhex(ss.k)); return; } } catch (e) {}
+(async function boot() {
+  if (!API) { showGate('connect'); return; }
+  TOKEN = lsGet(TKEY) || lsGet(TKEY, sessionStorage);
+  const c = lsGet(CKEY);
+  if (TOKEN && c && c.me && c.api === API) {
+    ME = c.me; loadCache(c);
+    const o = lsGet(OKEY); OUT = o && o.u === ME.u ? (o.items || []) : [];
+    S.households = (() => { const pend = new Map(OUT.map(x => [x.h.id, x.h])), ids = new Set(S.households.map(h => h.id)); return S.households.map(h => pend.get(h.id) || h).concat([...pend.values()].filter(h => !ids.has(h.id))); })();
+    startApp(); sync({ quiet: true });
+    return;
+  }
+  if (TOKEN) {
+    showGate('loading', 'Đang tải dữ liệu…');
+    try {
+      const r = await api('load', {}, { authOk: false });
+      ME = r.me; if (r.token) setSession(r.token, remembered());
+      const o = lsGet(OKEY); OUT = o && o.u === ME.u ? (o.items || []) : [];
+      applyServer(r); S.loadedAt = Date.now(); saveCache(); startApp(); sync({ quiet: true });
+      return;
+    } catch (e) { if (e.code === 'auth') { TOKEN = null; lsSet(TKEY, null); lsSet(TKEY, null, sessionStorage); } showGate('login', e.code === 'auth' ? e.message : (e.net ? 'Chưa kết nối được máy chủ. Kiểm tra mạng rồi đăng nhập lại.' : e.message)); return; }
   }
   showGate('login');
-  setTimeout(takeShared, 400);
 })();
-window.__app = { get S() { return S; }, get A() { return A; }, parseCoords, CRY };
+window.__app = { get S() { return S; }, get ME() { return ME; }, get OUT() { return OUT; }, net, parseCoords, CRY };
 })();
 </script>
 </body>
