@@ -916,6 +916,7 @@ code{background:var(--soft);padding:1px 5px;border-radius:5px;font-size:12.5px;w
   .seg button{padding:6px 8px;font-size:12px}
   .pick-banner{top:auto;bottom:10px;left:10px;right:10px;transform:none;max-width:none}
   .pick-banner span{flex:1}
+  body[data-view=schema] #mapWrap{display:none}
 }
 @media (max-width:520px){
   .topbar .brand>div:last-child{display:none}
@@ -963,6 +964,46 @@ code{background:var(--soft);padding:1px 5px;border-radius:5px;font-size:12.5px;w
 .cred b{font-size:15.5px;word-break:break-all}
 #listFoot{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .sync-btn{font-size:12px;white-space:nowrap}
+/* ===== v4: cấu trúc tùy chỉnh ===== */
+.btn-primary:hover{background:var(--red);filter:brightness(.88)}
+.btn-navy:hover{background:var(--navy);filter:brightness(.8)}
+.view-foot{align-items:center}
+#fExt{display:flex;flex-wrap:wrap;gap:6px}
+#fExt select{width:auto;flex:1 1 140px;font-size:13px;padding:5px 8px}
+#fExt select.on{border-color:var(--navy);box-shadow:inset 0 0 0 1px var(--navy)}
+.f-bool{margin:4px 0 10px;align-items:flex-start}
+.f-bool input{margin-top:2px}
+.kv dd a,.apcard a,.dlg a[href^="tel:"]{color:#1d4ea8;font-weight:600;text-decoration:none;white-space:nowrap}
+.apcard{border:1px solid #c9d8f5;background:#f5f8ff;border-radius:10px;margin:0 0 8px;font-size:13px}
+.apcard summary{cursor:pointer;padding:8px 11px;font-weight:600;color:#1b3f86;list-style:none;display:flex;gap:6px;align-items:center}
+.apcard summary::-webkit-details-marker{display:none}
+.apcard summary::after{content:'▾';margin-left:auto;color:var(--muted)}
+.apcard[open] summary::after{content:'▴'}
+.apcard .kv{padding:0 11px 8px;margin:0}
+.ap-group{display:flex;align-items:center;gap:6px}
+.ap-call{border:0;background:#e8f0fe;color:#1d4ea8;border-radius:6px;font-size:11px;font-weight:600;padding:1px 7px;cursor:pointer;text-transform:none;letter-spacing:0}
+.se-card{border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;margin-bottom:10px;background:#fff}
+.se-card.off{background:#f7f7f8;border-style:dashed}
+.se-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.se-head>b{font-size:14px}
+.se-btns{display:flex;gap:2px;margin-left:auto;flex-wrap:wrap}
+.se-btns .icon-btn{font-size:12px;padding:4px 6px;border:1px solid var(--line);background:#fff}
+.se-btns .icon-btn.del{color:var(--err)}
+.se-fields{margin-top:8px;display:flex;flex-direction:column;gap:4px}
+.se-f{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:13px;background:var(--soft);flex-wrap:wrap}
+.se-f.off{opacity:.55}
+.se-f .nm{font-weight:600;flex:1 1 150px;min-width:150px;overflow-wrap:break-word}
+.se-head>b{flex:1 1 150px;min-width:120px}
+.se-f .tag{margin-left:0}
+.se-row{display:flex;gap:8px;align-items:center}
+.se-row input[type=color]{width:42px;height:34px;padding:2px;border:1px solid #cfd5dd;border-radius:8px;background:#fff;flex:none}
+.se-add{width:100%;border-style:dashed;margin-top:4px}
+.se-note{font-size:12.5px;color:var(--muted);margin:4px 0 0}
+input[type=color]{cursor:pointer}
+.f input[type=color]{width:100%;height:36px;padding:2px;border:1px solid #cfd5dd;border-radius:8px;background:#fff}
+#seTabs{flex-wrap:wrap}
+#seTabs .chip{font-weight:600}
+.nguoi{gap:0 8px}
 </style>
 </head>
 <body class="locked">
@@ -979,6 +1020,7 @@ code{background:var(--soft);padding:1px 5px;border-radius:5px;font-size:12.5px;w
     <button class="tab" data-tab="stats"><i data-ic="chart"></i><span class="lbl">Thống kê</span></button>
     <button class="tab" data-tab="data"><i data-ic="db"></i><span class="lbl">Dữ liệu</span></button>
     <button class="tab" data-tab="accounts" id="tabAccounts" hidden><i data-ic="users"></i><span class="lbl">Tài khoản</span></button>
+    <button class="tab" data-tab="schema" id="tabSchema" hidden><i data-ic="layers"></i><span class="lbl">Cấu trúc</span></button>
     <button class="tab" data-tab="settings"><i data-ic="gear"></i><span class="lbl">Cài đặt</span></button>
   </nav>
   <button class="userchip" id="userChip" data-act="user-menu" title="Tài khoản đang đăng nhập"><span class="av"></span><span class="txt"><span class="nm"></span><span class="role"></span></span></button>
@@ -994,6 +1036,7 @@ code{background:var(--soft);padding:1px 5px;border-radius:5px;font-size:12.5px;w
           <label class="chk small"><input type="checkbox" id="fNoLoc"> Chưa định vị</label>
         </div>
         <div class="chips mt8" id="fLoai"></div>
+        <div class="mt8" id="fExt" hidden></div>
         <div class="row gap mt12" id="addBtns">
           <button class="btn btn-primary grow" data-act="new"><i data-ic="plus"></i>Thêm hộ</button>
           <button class="btn grow" data-act="new-gps" title="Đứng tại nhà dân, bấm để lấy tọa độ GPS rồi nhập thông tin"><i data-ic="gps"></i>Thêm tại vị trí của tôi</button>
@@ -1023,6 +1066,11 @@ code{background:var(--soft);padding:1px 5px;border-radius:5px;font-size:12.5px;w
     <section class="view" id="v-accounts">
       <div class="view-head row gap"><h2 class="grow">Tài khoản và phân quyền</h2><button class="btn btn-sm btn-primary" data-act="acc-new"><i data-ic="plus"></i>Thêm tài khoản</button></div>
       <div class="view-body" id="accounts"></div>
+    </section>
+    <section class="view" id="v-schema">
+      <div class="view-head"><h2>Cấu trúc ứng dụng</h2><div class="chips mt8" id="seTabs"></div></div>
+      <div class="view-body" id="schemaBody"></div>
+      <div class="view-foot"><span class="muted small grow" id="seState"></span><button class="btn" id="seUndo" data-act="se-undo">Hủy thay đổi</button><button class="btn btn-primary" id="seSave" data-act="se-save"><i data-ic="check"></i>Lưu cấu trúc</button></div>
     </section>
     <section class="view" id="v-settings">
       <div class="view-head"><h2>Cài đặt</h2></div>
@@ -1191,7 +1239,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.06';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.12';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -1237,12 +1285,15 @@ const genPw = () => Array.from(rnd(8), b => String(b % 10)).join('').replace(/^(
 const pwVariants = p => [...new Set([String(p || ''), String(p || '').replace(/\s+/g, '')])].filter(Boolean);
 const pwField = (attrs, num) => `<div class="pwbox"><input type="password" ${attrs}><button type="button" class="pw-eye" tabindex="-1" aria-label="Hiện/ẩn mật khẩu">${I('eye', 18)}</button></div>`;
 
-const LOAI = {
-  ngheo:      { ten: 'Hộ nghèo',            mau: '#c62828' },
-  canngheo:   { ten: 'Hộ cận nghèo',        mau: '#e67e22' },
+/* Phân loại hộ gốc. Danh sách đang dùng (LOAI) được dựng lại từ cấu trúc do quản trị viên chỉnh. */
+const LOAI_GOC = {
+  ngheo:      { ten: 'Hộ nghèo',            mau: '#c62828', dt: true },
+  canngheo:   { ten: 'Hộ cận nghèo',        mau: '#e67e22', dt: true },
   thoatngheo: { ten: 'Hộ mới thoát nghèo',  mau: '#2e7d32' },
   khokhan:    { ten: 'Hộ khó khăn khác',    mau: '#6a1b9a' }
 };
+const LOAI = {};
+const loaiOf = k => LOAI[k] || { ten: k ? `Phân loại “${k}”` : 'Chưa phân loại', mau: '#607d8b', an: true };
 const DIM = { vl: 'Việc làm', yt: 'Y tế', gd: 'Giáo dục', no: 'Nhà ở', nc: { '2026': 'Nước sinh hoạt và vệ sinh', '2027': 'Nước sinh hoạt, vệ sinh và môi trường' }, tt: 'Thông tin' };
 const CHI_SO = [
   { id: 'vieclam', d: 'vl', ten: 'Việc làm' }, { id: 'phuthuoc', d: 'vl', ten: 'Người phụ thuộc trong hộ gia đình' },
@@ -1275,6 +1326,7 @@ const ICONS = {
   label:'<path d="M5 7V5h14v2M9 19h6M12 5v14"/>', download:'<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>', upload:'<path d="M12 17V5M7 10l5-5 5 5M4 21h16"/>',
   check:'<path d="m5 12 5 5 9-10"/>', eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>', x:'<path d="M6 6l12 12M18 6 6 18"/>', map:'<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/>',
   file:'<path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/>', users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a5.5 5.5 0 0 1 3.5 6"/>',
+  layers:'<path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="m3 13 9 5 9-5"/>', up:'<path d="m6 15 6-6 6 6"/>', down:'<path d="m6 9 6 6 6-6"/>', phone:'<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/>',
   lock:'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>', send:'<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/>', shield:'<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>', key:'<circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.3-9.3M17 6l3 3M14 9l2 2"/>'
 };
 const I = (n, s = 17) => `<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ''}</svg>`;
@@ -1282,8 +1334,8 @@ const I = (n, s = 17) => `<svg class="ic" width="${s}" height="${s}" viewBox="0 
 /* =========================================================
    CHUẨN HÓA DỮ LIỆU
    ========================================================= */
-const blankHH = () => ({ id: uid(), maHo: '', chuHo: '', ap: '', diaChi: '', dienThoai: '', loai: 'ngheo', namCongNhan: YEAR, lat: null, lng: null, thuNhap: null, thieuHut: [], nguyenNhan: [], nhuCau: [], phuTrach: '', thanhVien: [], hoTro: [], ghiChu: '', sample: false, createdAt: Date.now(), updatedAt: Date.now(), createdBy: '', createdById: '', updatedBy: '', updatedById: '' });
-const blankTV = () => ({ hoTen: '', namSinh: null, gioiTinh: '', quanHe: '', danToc: '', cccd: '', ngheNghiep: '', khuyetTat: false, bhyt: true, ghiChu: '' });
+const blankHH = () => ({ id: uid(), maHo: '', chuHo: '', ap: '', diaChi: '', dienThoai: '', loai: 'ngheo', namCongNhan: YEAR, lat: null, lng: null, thuNhap: null, thieuHut: [], nguyenNhan: [], nhuCau: [], phuTrach: '', thanhVien: [], hoTro: [], ghiChu: '', ext: {}, sample: false, createdAt: Date.now(), updatedAt: Date.now(), createdBy: '', createdById: '', updatedBy: '', updatedById: '' });
+const blankTV = () => ({ hoTen: '', namSinh: null, gioiTinh: '', quanHe: '', danToc: '', cccd: '', ngheNghiep: '', khuyetTat: false, bhyt: true, ghiChu: '', ext: {} });
 const blankHT = () => ({ ngay: new Date().toISOString().slice(0, 10), noiDung: '', donVi: '', giaTri: null });
 const blankSync = () => ({ changed: {}, base: {}, lastSentAt: null, packageAt: null });
 function toNum(v) { if (v == null || v === '') return null; if (typeof v === 'number') return Number.isFinite(v) ? v : null; const n = Number(String(v).trim().replace(/\s/g, '').replace(',', '.')); return Number.isFinite(n) ? n : null; }
@@ -1291,7 +1343,20 @@ function toMoney(v) { if (v == null || v === '') return null; if (typeof v === '
 function toYear(v) { if (v == null || v === '') return null; if (v instanceof Date) return v.getFullYear(); if (typeof v === 'number') return v > 1800 && v < 2200 ? Math.round(v) : null; const m = String(v).match(/(\d{4})/); return m ? +m[1] : null; }
 const toBool = (v, dflt) => { if (v == null || v === '') return dflt; if (typeof v === 'boolean') return v; const n = norm(v); if (['x','co','yes','1','true','dung','v'].includes(n)) return true; if (['khong','no','0','false','k'].includes(n)) return false; return dflt; };
 const arrStr = v => Array.isArray(v) ? v.map(x => String(x).trim()).filter(Boolean) : (v ? String(v).split(/[;\n]+/).map(x => x.trim()).filter(Boolean) : []);
-function parseLoai(v) { if (LOAI[v]) return v; const n = norm(v); if (n.includes('can ngheo')) return 'canngheo'; if (n.includes('thoat')) return 'thoatngheo'; if (n.includes('kho khan')) return 'khokhan'; return 'ngheo'; }
+function parseLoai(v) {
+  if (v && LOAI[v]) return v;
+  if (typeof v === 'string' && /^[a-z0-9_]{2,24}$/.test(v) && !LOAI[v]) return v;   /* mã phân loại chưa có trong cấu trúc: giữ nguyên, không đổi dữ liệu */
+  const n = norm(v); if (!n) return 'ngheo';
+  const ex = Object.keys(LOAI).find(k => norm(LOAI[k].ten) === n || norm(LOAI[k].ten).replace(/^ho /, '') === n.replace(/^ho /, ''));
+  if (ex) return ex;
+  if (n.includes('can ngheo')) return 'canngheo'; if (n.includes('thoat')) return 'thoatngheo'; if (n.includes('kho khan')) return 'khokhan'; return 'ngheo';
+}
+function toDateStr(d) {
+  if (d == null || d === '') return '';
+  if (d instanceof Date) return isNaN(d) ? '' : d.toISOString().slice(0, 10);
+  const s = String(d).trim(), m = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
+  return m ? `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}` : s.slice(0, 10);
+}
 function parseThieuHut(v) {
   if (Array.isArray(v)) return v.filter(id => CHI_SO.some(c => c.id === id));
   return arrStr(String(v ?? '').replace(/,/g, ';')).map(t => { const n = norm(t); const c = CHI_SO.find(c => norm(c.ten) === n) || CHI_SO.find(c => n && norm(c.ten).includes(n)) || CHI_SO.find(c => c.id === n); return c && c.id; }).filter(Boolean);
@@ -1305,13 +1370,12 @@ function sanitizeTV(o) {
   m.cccd = c;
   const g = norm(m.gioiTinh); m.gioiTinh = g.startsWith('nu') ? 'Nữ' : g.startsWith('nam') ? 'Nam' : m.gioiTinh;
   m.khuyetTat = toBool(o.khuyetTat, false); m.bhyt = toBool(o.bhyt, true);
+  m.ext = cleanExt(SCHEMA().tv, o.ext);
   return m;
 }
 function sanitizeHT(o) {
-  o = o || {}; const x = blankHT(); let d = o.ngay;
-  if (d instanceof Date) d = d.toISOString().slice(0, 10);
-  else if (d) { const s = String(d).trim(); const m = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/); d = m ? `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}` : s.slice(0, 10); }
-  x.ngay = d || ''; x.noiDung = String(o.noiDung ?? '').trim(); x.donVi = String(o.donVi ?? '').trim(); x.giaTri = toMoney(o.giaTri);
+  o = o || {}; const x = blankHT();
+  x.ngay = toDateStr(o.ngay); x.noiDung = String(o.noiDung ?? '').trim(); x.donVi = String(o.donVi ?? '').trim(); x.giaTri = toMoney(o.giaTri);
   return x;
 }
 function sanitizeHH(o) {
@@ -1325,10 +1389,11 @@ function sanitizeHH(o) {
   h.nguyenNhan = arrStr(o.nguyenNhan); h.nhuCau = arrStr(o.nhuCau);
   h.thanhVien = Array.isArray(o.thanhVien) ? o.thanhVien.map(sanitizeTV).filter(m => m.hoTen) : [];
   h.hoTro = Array.isArray(o.hoTro) ? o.hoTro.map(sanitizeHT).filter(x => x.noiDung || x.giaTri) : [];
+  h.ext = cleanExt(SCHEMA().f, o.ext);
   h.sample = !!o.sample; h.createdAt = toNum(o.createdAt) || Date.now(); h.updatedAt = toNum(o.updatedAt) || Date.now();
   return h;
 }
-function defaultConfig() { return { donVi: 'Ủy ban MTTQ Việt Nam xã Trường Khánh', tenXa: 'Trường Khánh', tinh: 'thành phố Cần Thơ', apList: ['Ấp Phố'], center: [9.69, 106.03], zoom: 13, chuan: '2027', khuVuc: 'nongthon', labels: true, base: 'sat' }; }
+function defaultConfig() { return { donVi: 'Ủy ban MTTQ Việt Nam xã Trường Khánh', tenXa: 'Trường Khánh', tinh: 'thành phố Cần Thơ', apList: ['Ấp Phố'], center: [9.69, 106.03], zoom: 13, chuan: '2027', khuVuc: 'nongthon', labels: true, base: 'sat', schema: normSchema(null) }; }
 function sampleData() {
   const c = [9.69, 106.03];
   const mk = (o, dy, dx) => sanitizeHH(Object.assign({}, o, { sample: true, lat: round6(c[0] + dy), lng: round6(c[1] + dx) }));
@@ -1346,6 +1411,204 @@ function sampleData() {
     mk({ maHo: 'MAU-05', chuHo: 'Võ Thị E', ap: 'Ấp mẫu', loai: 'khokhan', ghiChu: 'Dữ liệu mẫu — hộ chưa có vị trí trên bản đồ.',
       thanhVien: [ { hoTen: 'Võ Thị E', namSinh: 1958, gioiTinh: 'Nữ', quanHe: 'Chủ hộ', danToc: 'Kinh', ngheNghiep: 'Hết tuổi lao động' } ] }, 0, 0)
   ].map((h, i) => { if (i === 4) { h.lat = null; h.lng = null; } return h; });
+}
+
+/* =========================================================
+   CẤU TRÚC ỨNG DỤNG — quản trị viên tự thêm, bớt, đổi tên
+   Lưu trên máy chủ trong cấu hình: config.schema
+   Giá trị trường bổ sung: của hộ ở h.ext, của thành viên ở m.ext
+   ========================================================= */
+const KIEU = { text: 'Chữ (một dòng)', textarea: 'Đoạn văn (nhiều dòng)', number: 'Số', money: 'Số tiền (đồng)', year: 'Năm', date: 'Ngày tháng', tel: 'Số điện thoại', nguoi: 'Người (họ tên + số điện thoại)', select: 'Chọn một trong danh sách', multi: 'Chọn nhiều trong danh sách', bool: 'Có / Không (ô đánh dấu)' };
+const KIEU_HO = Object.keys(KIEU), KIEU_TV = ['text', 'textarea', 'number', 'money', 'year', 'date', 'tel', 'select', 'multi', 'bool'], KIEU_AP = ['nguoi', 'text', 'tel', 'number', 'textarea'];
+const SEC_GOC = [['chung', 'Thông tin chung'], ['vitri', 'Vị trí trên bản đồ'], ['thanhvien', 'Thành viên trong hộ'], ['thunhap', 'Thu nhập và mức độ thiếu hụt'], ['nguyennhan', 'Nguyên nhân nghèo'], ['nhucau', 'Nhu cầu hỗ trợ'], ['hotro', 'Hỗ trợ đã nhận'], ['apinfo', 'Ban công tác Mặt trận, chi hội trưởng ấp'], ['ghichu', 'Ghi chú']];
+const SEC_KHOA = ['chung', 'vitri'];                     /* nhóm luôn hiện */
+const SEC_NOFIELD = ['vitri', 'thanhvien', 'apinfo'];    /* nhóm không gắn trường bổ sung */
+/* [nhãn gốc, nhóm, 1 = trường cốt lõi (không ẩn được), gợi ý nhập] */
+const BF_GOC = { chuHo: ['Họ tên chủ hộ', 'chung', 1], maHo: ['Mã hộ', 'chung', 1, 'Để trống: tự cấp mã'], ap: ['Ấp', 'chung', 1], loai: ['Phân loại', 'chung', 1], namCongNhan: ['Năm công nhận', 'chung'], diaChi: ['Địa chỉ', 'chung', 0, 'Tổ, số nhà, mô tả đường vào'], dienThoai: ['Điện thoại', 'chung'], phuTrach: ['Đoàn thể / cán bộ phụ trách giúp đỡ', 'chung'], thuNhap: ['Thu nhập bình quân (nghìn đồng/người/tháng)', 'thunhap', 0, 'Ví dụ: 1500 = 1.500.000 đ'], thieuHut: ['Chỉ số thiếu hụt dịch vụ xã hội cơ bản', 'thunhap'] };
+const TVBF_GOC = { hoTen: ['Họ và tên', 1], namSinh: ['Năm sinh'], gioiTinh: ['Giới tính'], quanHe: ['Quan hệ với chủ hộ'], danToc: ['Dân tộc'], cccd: ['Số CCCD / định danh'], ngheNghiep: ['Nghề nghiệp / tình trạng'], bhyt: ['Có thẻ BHYT'], khuyetTat: ['Người khuyết tật'] };
+const dlVals = id => { const d = document.getElementById(id); return d ? Array.from(d.querySelectorAll('option'), o => o.value || o.textContent) : []; };
+const DS_GOC = { nguyenNhan: [...NGUYEN_NHAN], nhuCau: [...NHU_CAU], phuTrach: dlVals('dlPhuTrach'), hoTro: dlVals('dlHoTro'), quanHe: dlVals('dlQuanHe'), danToc: dlVals('dlDanToc'), nghe: dlVals('dlNghe') };
+const DS_TEN = { nguyenNhan: ['Nguyên nhân nghèo', 'ô đánh dấu khi thêm/sửa hộ'], nhuCau: ['Nhu cầu hỗ trợ', 'ô đánh dấu khi thêm/sửa hộ'], phuTrach: ['Đoàn thể / cán bộ phụ trách', 'gợi ý khi gõ'], hoTro: ['Nội dung hỗ trợ', 'gợi ý khi gõ'], quanHe: ['Quan hệ với chủ hộ', 'gợi ý khi gõ'], danToc: ['Dân tộc', 'gợi ý khi gõ'], nghe: ['Nghề nghiệp / tình trạng', 'gợi ý khi gõ'] };
+const DS_DL = { phuTrach: 'dlPhuTrach', hoTro: 'dlHoTro', quanHe: 'dlQuanHe', danToc: 'dlDanToc', nghe: 'dlNghe' };
+const META_GOC = [['maHo', 'Mã hộ'], ['nk', 'Số nhân khẩu'], ['ap', 'Ấp'], ['diaChi', 'Địa chỉ'], ['dienThoai', 'Điện thoại'], ['phuTrach', 'Đoàn thể phụ trách'], ['namCongNhan', 'Năm công nhận'], ['thuNhap', 'Thu nhập bình quân']];
+function defaultSchema() {
+  return {
+    v: 1,
+    ui: { title: 'Bản đồ số hộ nghèo, hộ cận nghèo', short: 'Bản đồ hộ nghèo', navy: '#14213d', red: '#a3191c', pin: 'nk', list: ['maHo', 'nk', 'diaChi'], pop: ['maHo', 'ap', 'nk'], loc: [], goiY: true, legend: true, gia: 60, tre: 16 },
+    loai: [...Object.entries(LOAI_GOC).map(([k, v]) => ({ k, ten: v.ten, mau: v.mau, dt: !!v.dt, an: false })), { k: 'thoatngheont', ten: 'Hộ thoát nghèo năm trước', mau: '#00838f', dt: false, an: false }],
+    sec: SEC_GOC.map(([k, ten]) => ({ k, ten, an: false })),
+    bf: {}, f: [], tvbf: {}, tv: [],
+    apF: [{ k: 'btct', ten: 'Trưởng Ban công tác Mặt trận', kieu: 'nguoi' }, { k: 'chnd', ten: 'Chi hội trưởng Hội Nông dân', kieu: 'nguoi' }, { k: 'chpn', ten: 'Chi hội trưởng Hội Phụ nữ', kieu: 'nguoi' }, { k: 'chccb', ten: 'Chi hội trưởng Hội Cựu chiến binh', kieu: 'nguoi' }, { k: 'btcd', ten: 'Bí thư Chi đoàn', kieu: 'nguoi' }],
+    apInfo: {},
+    ds: clone(DS_GOC)
+  };
+}
+const isObj = o => !!o && typeof o === 'object' && !Array.isArray(o) && !(o instanceof Date);
+const okColor = (c, d) => /^#[0-9a-f]{6}$/i.test(String(c || '')) ? String(c).toLowerCase() : d;
+const okKey = k => typeof k === 'string' && /^[A-Za-z0-9_]{1,40}$/.test(k);
+function normField(x, kinds) {
+  if (!isObj(x) || !okKey(x.k) || !String(x.ten || '').trim()) return null;
+  const f = { k: x.k, ten: String(x.ten).trim().slice(0, 150), kieu: kinds.includes(x.kieu) ? x.kieu : kinds[0] };
+  f.opts = arrStr(x.opts).slice(0, 300); f.goiY = String(x.goiY || '').slice(0, 200);
+  if (x.sec != null) f.sec = String(x.sec);
+  for (const b of ['bb', 'qt', 'tk', 'an', 'ds']) f[b] = !!x[b];
+  f.inP = x.inP !== false; f.xl = x.xl !== false;
+  f.loai = Array.isArray(x.loai) ? x.loai.filter(okKey) : [];
+  return f;
+}
+const normFields = (arr, kinds) => { const seen = new Set(); return (Array.isArray(arr) ? arr : []).map(x => normField(x, kinds)).filter(f => f && !seen.has(f.k) && seen.add(f.k)); };
+function normSchema(raw) {
+  const d = defaultSchema();
+  let s = d;
+  if (isObj(raw)) { try { s = clone(raw); } catch (e) { s = d; } }
+  const o = { v: 1 };
+  const u = Object.assign({}, d.ui, isObj(s.ui) ? s.ui : {});
+  u.title = String(u.title || d.ui.title).slice(0, 120); u.short = String(u.short || d.ui.short).slice(0, 40);
+  u.navy = okColor(u.navy, d.ui.navy); u.red = okColor(u.red, d.ui.red);
+  for (const k of ['list', 'pop', 'loc']) u[k] = Array.isArray(u[k]) ? u[k].filter(x => typeof x === 'string') : d.ui[k];
+  u.pin = typeof u.pin === 'string' && u.pin ? u.pin : 'nk'; u.goiY = u.goiY !== false; u.legend = u.legend !== false;
+  u.gia = toNum(u.gia) || 60; u.tre = toNum(u.tre) || 16;
+  o.ui = u;
+  const seen = new Set();
+  o.loai = (Array.isArray(s.loai) ? s.loai : d.loai).filter(x => isObj(x) && okKey(x.k) && !seen.has(x.k) && seen.add(x.k))
+    .map(x => ({ k: x.k, ten: String(x.ten || (LOAI_GOC[x.k] || {}).ten || x.k).trim().slice(0, 80) || x.k, mau: okColor(x.mau, (LOAI_GOC[x.k] || {}).mau || '#607d8b'), dt: !!x.dt, an: !!x.an }));
+  for (const [k, v] of Object.entries(LOAI_GOC)) if (!seen.has(k)) o.loai.push({ k, ten: v.ten, mau: v.mau, dt: !!v.dt, an: true });
+  const ss = new Set();
+  o.sec = (Array.isArray(s.sec) ? s.sec : d.sec).filter(x => isObj(x) && okKey(x.k) && !ss.has(x.k) && ss.add(x.k))
+    .map(x => ({ k: x.k, ten: String(x.ten || '').trim().slice(0, 100) || (SEC_GOC.find(g => g[0] === x.k) || [0, x.k])[1], an: SEC_KHOA.includes(x.k) ? false : !!x.an }));
+  for (const [k, ten] of SEC_GOC) if (!ss.has(k)) o.sec.push({ k, ten, an: false });
+  const bfo = (src, GOC, lockIdx) => { const r = {}; if (isObj(src)) for (const k of Object.keys(GOC)) if (isObj(src[k])) { const t = String(src[k].ten || '').trim().slice(0, 150), e = {}; if (t) e.ten = t; if (src[k].an && !GOC[k][lockIdx]) e.an = true; if (Object.keys(e).length) r[k] = e; } return r; };
+  o.bf = bfo(s.bf, BF_GOC, 2); o.tvbf = bfo(s.tvbf, TVBF_GOC, 1);
+  o.f = normFields(s.f, KIEU_HO).map(f => { if (!o.sec.some(x => x.k === f.sec) || SEC_NOFIELD.includes(f.sec)) f.sec = 'chung'; return f; });
+  o.tv = normFields(s.tv, KIEU_TV);
+  o.apF = normFields(Array.isArray(s.apF) ? s.apF : d.apF, KIEU_AP);
+  o.apInfo = {}; if (isObj(s.apInfo)) for (const [ap, v] of Object.entries(s.apInfo)) { const c = cleanExt(o.apF, v); if (Object.keys(c).length) o.apInfo[ap] = c; }
+  o.ds = {}; for (const k of Object.keys(DS_GOC)) o.ds[k] = isObj(s.ds) && Array.isArray(s.ds[k]) ? arrStr(s.ds[k]) : [...DS_GOC[k]];
+  return o;
+}
+/* ----- Giá trị trường bổ sung ----- */
+function cleanVal(f, v) {
+  if (f.kieu !== 'nguoi' && isObj(v)) v = [v.t, v.p].filter(Boolean).join(' - ');
+  switch (f.kieu) {
+    case 'number': return toNum(v);
+    case 'money': return toMoney(v);
+    case 'year': return toYear(v);
+    case 'bool': return toBool(v, false) ? true : null;
+    case 'date': return toDateStr(v) || null;
+    case 'multi': return arrStr(v);
+    case 'nguoi': {
+      if (isObj(v)) return { t: String(v.t ?? '').trim(), p: String(v.p ?? '').trim() };
+      const s = String(v ?? '').trim(); if (!s) return null;
+      const m = s.match(/(\+?\d[\d .]{7,}\d)\s*\)?\s*$/);
+      return m ? { t: s.slice(0, m.index).replace(/[\s,;:(|–—-]+$/, '').trim(), p: m[1].trim() } : { t: s, p: '' };
+    }
+    case 'tel': { if (typeof v === 'number') { const t = String(Math.round(v)); return /^\d{9}$/.test(t) ? '0' + t : t; } return String(v ?? '').trim(); }
+    default: return v == null ? '' : v instanceof Date ? toDateStr(v) : String(v).trim();
+  }
+}
+const isEmptyVal = v => v == null || v === '' || v === false || (Array.isArray(v) && !v.length) || (isObj(v) && !Object.values(v).some(x => x !== '' && x != null));
+function cleanExt(fields, ext) {
+  const o = {};
+  if (!isObj(ext)) return o;
+  const byK = new Map((fields || []).map(f => [f.k, f]));
+  for (const [k, v] of Object.entries(ext)) {
+    if (!okKey(k)) continue;
+    const f = byK.get(k), c = f ? cleanVal(f, v) : v;     /* trường đã bỏ khỏi cấu trúc: vẫn giữ giá trị, không mất dữ liệu */
+    if (!isEmptyVal(c)) o[k] = c;
+    else if (f && f.kieu !== 'bool' && !isEmptyVal(v) && typeof v !== 'boolean' && !(Array.isArray(v) && f.kieu === 'multi')) o[k] = v;   /* giá trị không hợp kiểu (do đổi kiểu dữ liệu): giữ nguyên */
+  }
+  return o;
+}
+const SCH0 = normSchema(null);
+const SCHEMA = () => { try { return (S && S.config && S.config.schema) || SCH0; } catch (e) { return SCH0; } };
+const BL = k => ((SCHEMA().bf[k] || {}).ten) || BF_GOC[k][0];
+const BH = k => !!(SCHEMA().bf[k] || {}).an && !BF_GOC[k][2];
+const TL = k => ((SCHEMA().tvbf[k] || {}).ten) || TVBF_GOC[k][0];
+const TH = k => !!(SCHEMA().tvbf[k] || {}).an && !TVBF_GOC[k][1];
+const secOf = k => SCHEMA().sec.find(x => x.k === k);
+const SECT = k => (secOf(k) || {}).ten || (SEC_GOC.find(g => g[0] === k) || [0, k])[1];
+const SECH = k => !!(secOf(k) || {}).an;
+const fieldsIn = (sec, loai) => SCHEMA().f.filter(f => !f.an && f.sec === sec && (!f.loai.length || loai == null || f.loai.includes(loai)));
+const fByK = k => SCHEMA().f.find(f => f.k === k);
+const apL = () => BL('ap'), apl = () => BL('ap').toLowerCase();
+const loaiTen = k => loaiOf(k).ten, loaiNgan = k => { const t = loaiTen(k).replace(/^hộ\s+/i, ''); return t.charAt(0).toUpperCase() + t.slice(1); };
+const telA = p => { const n = String(p || '').replace(/[^\d+]/g, ''); return n.length >= 3 ? `<a href="tel:${esc(n)}">${esc(p)}</a>` : esc(p); };
+function fText(f, v) {
+  if (isEmptyVal(v)) return '';
+  switch (f.kieu) {
+    case 'number': return typeof v === 'number' ? fmt(v) : String(v);
+    case 'money': return typeof v === 'number' ? fmt(v) + ' đ' : String(v);
+    case 'year': return String(v);
+    case 'date': return dateVN(v);
+    case 'bool': return 'Có';
+    case 'multi': return (Array.isArray(v) ? v : [v]).join('; ');
+    case 'nguoi': return isObj(v) ? [v.t, v.p].filter(Boolean).join(' – ') : String(v);
+    default: return isObj(v) || Array.isArray(v) ? JSON.stringify(v) : String(v);
+  }
+}
+function fShow(f, v) {
+  if (isEmptyVal(v)) return '';
+  switch (f.kieu) {
+    case 'tel': return telA(v);
+    case 'nguoi': return isObj(v) ? `${esc(v.t)}${v.t && v.p ? ' · ' : ''}${v.p ? telA(v.p) : ''}` : esc(v);
+    case 'multi': return (Array.isArray(v) ? v : [v]).map(x => `<span class="pill">${esc(x)}</span>`).join('');
+    case 'textarea': return `<span style="white-space:pre-wrap">${esc(v)}</span>`;
+    case 'bool': return '<b>Có</b>';
+    default: return esc(fText(f, v));
+  }
+}
+const fCell = (f, v) => isEmptyVal(v) ? '' : (['number', 'money', 'year'].includes(f.kieu) && typeof v === 'number') ? v : fText(f, v);
+const extKV = (fields, ext) => fields.map(f => { const s = fShow(f, (ext || {})[f.k]); return s ? `<dt>${esc(f.ten)}</dt><dd>${s}</dd>` : ''; }).join('');
+/* Ô nhập cho một trường bổ sung. at = tên thuộc tính đánh dấu (data-x: hộ, data-tx: thành viên, data-ax: ấp) */
+function fInput(f, v, at, ro) {
+  const dis = ro ? ' disabled' : '', ph = f.goiY ? ` placeholder="${esc(f.goiY)}"` : '', A = `${at}="${esc(f.k)}"${dis}`;
+  const lab = `<span>${esc(f.ten)}${f.bb ? ' <em>*</em>' : ''}${ro ? ' <span class="tag" title="Chỉ quản trị viên được sửa">QTV</span>' : ''}</span>`;
+  const wide = ['textarea', 'multi', 'nguoi'].includes(f.kieu) || f.ten.length > 30;
+  let inner;
+  switch (f.kieu) {
+    case 'textarea': inner = `<textarea ${A} rows="3"${ph}>${esc(v ?? '')}</textarea>`; break;
+    case 'number': inner = `<input type="number" step="any" inputmode="decimal" ${A} value="${esc(v ?? '')}"${ph}>`; break;
+    case 'money': inner = `<input type="number" min="0" step="1000" inputmode="numeric" ${A} value="${esc(v ?? '')}"${ph || ' placeholder="đồng"'}>`; break;
+    case 'year': inner = `<input type="number" min="1900" max="2100" inputmode="numeric" ${A} value="${esc(v ?? '')}"${ph}>`; break;
+    case 'date': inner = `<input type="date" ${A} value="${esc(v ?? '')}">`; break;
+    case 'tel': inner = `<input type="tel" ${A} value="${esc(v ?? '')}"${ph}>`; break;
+    case 'select': { const opts = [...f.opts]; if (v && !opts.includes(v)) opts.push(v); inner = `<select ${A}><option value=""></option>${opts.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`; break; }
+    case 'multi': {
+      const sel = Array.isArray(v) ? v : [], opts = [...f.opts, ...sel.filter(x => !f.opts.includes(x))];
+      return `<div class="f span2">${lab}<div class="ck-grid">${opts.map(o => `<label class="chk"><input type="checkbox" ${at}m="${esc(f.k)}" value="${esc(o)}" ${sel.includes(o) ? 'checked' : ''}${dis}>${esc(o)}</label>`).join('') || '<span class="muted small">Chưa có lựa chọn — quản trị viên bổ sung trong mục Cấu trúc.</span>'}</div></div>`;
+    }
+    case 'bool': return `<label class="chk f-bool${wide ? ' span2' : ''}"><input type="checkbox" ${A} ${v ? 'checked' : ''}> ${esc(f.ten)}${f.bb ? ' <em>*</em>' : ''}${ro ? ' <span class="tag">QTV</span>' : ''}</label>`;
+    case 'nguoi': { const o = isObj(v) ? v : {}; return `<div class="f span2">${lab}<div class="grid2 nguoi"><input ${at}="${esc(f.k)}" data-part="t" value="${esc(o.t || '')}" placeholder="Họ và tên"${dis}><input type="tel" ${at}="${esc(f.k)}" data-part="p" value="${esc(o.p || '')}" placeholder="Số điện thoại"${dis}></div></div>`; }
+    default: inner = `<input ${A} value="${esc(v ?? '')}"${f.opts.length ? ` list="dl_${esc(f.k)}"` : ''}${ph}>${f.opts.length ? `<datalist id="dl_${esc(f.k)}">${f.opts.map(o => `<option>${esc(o)}</option>`).join('')}</datalist>` : ''}`;
+  }
+  return `<label class="f${wide ? ' span2' : ''}">${lab}${inner}</label>`;
+}
+/* Đọc giá trị các trường bổ sung trong vùng root; trường không có ô nhập (ẩn, không áp dụng, chỉ đọc) giữ giá trị cũ */
+function readExt(root, at, fields, base) {
+  const o = Object.assign({}, base || {}), q = (a, k) => Array.from(root.querySelectorAll(`[${a}="${CSS.escape(k)}"]`));
+  for (const f of fields) {
+    if (f.kieu === 'multi') { const els = q(at + 'm', f.k); if (!els.length || els[0].disabled) continue; o[f.k] = els.filter(e => e.checked).map(e => e.value); }
+    else if (f.kieu === 'nguoi') { const els = q(at, f.k); if (!els.length || els[0].disabled) continue; const g = p => ((els.find(e => e.dataset.part === p) || {}).value || '').trim(); o[f.k] = { t: g('t'), p: g('p') }; }
+    else { const el = q(at, f.k)[0]; if (!el || el.disabled) continue; o[f.k] = el.type === 'checkbox' ? (el.checked || null) : el.value.trim(); }
+  }
+  return cleanExt(fields, o);
+}
+function applyTheme(u, tenXa) {
+  const r = document.documentElement.style; r.setProperty('--navy', u.navy); r.setProperty('--red', u.red);
+  const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = u.navy;
+  const a = document.querySelector('.t-long'), b = document.querySelector('.t-short'); if (a) a.textContent = u.title; if (b) b.textContent = u.short;
+  document.title = u.title + (tenXa ? ` – xã ${tenXa}` : '');
+}
+/* Áp cấu trúc vào ứng dụng: phân loại, danh mục, gợi ý nhập, màu sắc */
+function applySchema(c) {
+  const s = c.schema;
+  for (const k of Object.keys(LOAI)) delete LOAI[k];
+  for (const x of s.loai) LOAI[x.k] = { ten: x.ten, mau: x.mau, dt: x.dt, an: x.an };
+  NGUYEN_NHAN.splice(0, NGUYEN_NHAN.length, ...s.ds.nguyenNhan);
+  NHU_CAU.splice(0, NHU_CAU.length, ...s.ds.nhuCau);
+  for (const [k, id] of Object.entries(DS_DL)) { const d = document.getElementById(id); if (d) d.innerHTML = s.ds[k].map(x => `<option>${esc(x)}</option>`).join(''); }
+  applyTheme(s.ui, c.tenXa);
+  const lg = document.getElementById('legend'); if (lg) lg.hidden = !s.ui.legend;
 }
 
 /* =========================================================
@@ -1368,6 +1631,12 @@ function mergeConfig(srv) {
   if (!Array.isArray(c.apList)) c.apList = [];
   if (PREFS.center && !isAdmin()) { c.center = PREFS.center; c.zoom = PREFS.zoom || c.zoom; }
   c.labels = PREFS.labels == null ? true : !!PREFS.labels; c.base = PREFS.base || 'sat';
+  /* Máy chủ chưa lưu cấu trúc nào (mã máy chủ cũ, hoặc quản trị viên chưa bấm Lưu cấu trúc lần đầu):
+     chạy như phiên bản trước — ẩn các phân loại mới để cán bộ không chọn nhầm */
+  const has = isObj(srv && srv.schema);
+  c.schema = normSchema(c.schema);
+  if (!has) c.schema.loai.forEach(x => { if (!LOAI_GOC[x.k]) x.an = true; });
+  applySchema(c);
   return c;
 }
 function saveCache() {
@@ -1480,11 +1749,22 @@ async function flushOut() {
         continue;
       }
       OUT.shift(); saveOut(); net.online = true; sent++;
+      checkServerKeeps(o.h, r.h);
       replaceLocal(sanitizeHH(r.h)); S.rev = null;
       if (r.note) toast(`${r.h.chuHo}: ${r.note} ${r.h.maHo}.`);
     }
   } finally { net.flushing = false; saveCache(); }
   return sent;
+}
+/* Máy chủ cũ (chưa cập nhật mã) có thể bỏ mất trường bổ sung hoặc phân loại mới — phát hiện để báo quản trị viên */
+let srvWarned = false;
+function checkServerKeeps(sent, got) {
+  if (srvWarned || !got) return;
+  const nx = o => o && isObj(o.ext) ? Object.keys(o.ext).length : 0;
+  const lostExt = nx(sent) && !nx(got), lostTv = (sent.thanhVien || []).some(m => nx(m)) && !(got.thanhVien || []).some(m => nx(m)), lostLoai = got.loai && sent.loai !== got.loai;
+  if (!lostExt && !lostTv && !lostLoai) return;
+  srvWarned = true;
+  setTimeout(() => dialog('Máy chủ chưa lưu đủ thông tin', `<p>Hộ <b>${esc(sent.chuHo)}</b> đã lưu, nhưng máy chủ dữ liệu ${lostLoai ? `đổi phân loại thành “${esc(loaiTen(got.loai))}”` : 'bỏ mất các trường thông tin bổ sung'}.</p><p>Nguyên nhân: mã máy chủ (Google Apps Script) <b>chưa được cập nhật</b> lên phiên bản hỗ trợ “Cấu trúc ứng dụng”.</p><p class="muted small">${isAdmin() ? 'Quản trị viên: dán mã máy chủ mới vào Apps Script và Triển khai lại (giữ nguyên địa chỉ /exec), rồi sửa lại hộ này.' : 'Vui lòng báo quản trị viên.'}</p>`, [{ label: 'Đã hiểu', cls: 'btn-navy' }]), 400);
 }
 let syncWaiters = [];
 async function sync(opt) {
@@ -1537,11 +1817,11 @@ const thieuHutCur = h => { const ids = new Set(chiSoCur().map(c => c.id)); retur
 const chiSoTen = id => (CHI_SO.find(c => c.id === id) || {}).ten || id;
 const isDTTS = m => m.danToc && !['kinh',''].includes(norm(m.danToc));
 function memberTags(m) {
-  const a = age(m), t = [];
-  if (a != null && a >= 60) t.push(['Người cao tuổi', 'info']);
-  if (a != null && a < 16) t.push(['Trẻ em', 'info']);
-  if (m.khuyetTat) t.push(['Khuyết tật', 'warn']);
-  if (!m.bhyt) t.push(['Chưa có BHYT', 'red']);
+  const a = age(m), t = [], u = SCHEMA().ui;
+  if (a != null && a >= u.gia) t.push(['Người cao tuổi', 'info']);
+  if (a != null && a < u.tre) t.push(['Trẻ em', 'info']);
+  if (m.khuyetTat && !TH('khuyetTat')) t.push(['Khuyết tật', 'warn']);
+  if (!m.bhyt && !TH('bhyt')) t.push(['Chưa có BHYT', 'red']);
   return t;
 }
 function goiY(h) {
@@ -1636,14 +1916,37 @@ function setBase(k) {
 }
 const mLayer = L.layerGroup().addTo(map);
 const markers = new Map();
+function pinText(h) {
+  const p = SCHEMA().ui.pin;
+  if (p === 'none') return '';
+  if (p === 'nk') return h.thanhVien.length || '';
+  const f = fByK(p), v = f && h.ext[p];
+  return v == null || v === '' ? '' : esc(String(typeof v === 'number' ? v : fText(f, v)).slice(0, 3));
+}
+function metaParts(h, keys) {
+  return keys.map(k => {
+    switch (k) {
+      case 'maHo': return h.maHo || 'chờ cấp mã';
+      case 'nk': return `${h.thanhVien.length} nhân khẩu`;
+      case 'ap': return h.ap || `Chưa rõ ${apl()}`;
+      case 'diaChi': return BH('diaChi') ? '' : h.diaChi;
+      case 'dienThoai': return BH('dienThoai') ? '' : h.dienThoai;
+      case 'phuTrach': return BH('phuTrach') ? '' : h.phuTrach;
+      case 'namCongNhan': return !BH('namCongNhan') && h.namCongNhan ? `${BL('namCongNhan')} ${h.namCongNhan}` : '';
+      case 'thuNhap': return !BH('thuNhap') && h.thuNhap != null ? `TN ${fmt(h.thuNhap * 1000)} đ` : '';
+      default: { const f = fByK(k); if (!f || f.an) return ''; const t = fText(f, h.ext[k]); return t ? (f.kieu === 'bool' ? f.ten : `${f.ten}: ${t}`) : ''; }
+    }
+  }).filter(Boolean);
+}
 function pinIcon(h, sel) {
-  const c = (LOAI[h.loai] || LOAI.ngheo).mau, n = h.thanhVien.length || '';
+  const c = loaiOf(h.loai).mau, n = pinText(h);
   return L.divIcon({ className: 'pin-wrap' + (sel ? ' sel' : ''), iconSize: [28, 38], iconAnchor: [14, 37], popupAnchor: [0, -34], tooltipAnchor: [0, -40],
     html: `<svg viewBox="0 0 28 38" width="28" height="38"><path d="M14 1.2C7 1.2 1.6 6.6 1.6 13.3 1.6 22.6 14 36.8 14 36.8S26.4 22.6 26.4 13.3C26.4 6.6 21 1.2 14 1.2z" fill="${c}" stroke="#fff" stroke-width="2"/><circle cx="14" cy="13.2" r="7.6" fill="#fff"/><text x="14" y="17" text-anchor="middle" font-family="Arial,sans-serif" font-size="10.5" font-weight="700" fill="${c}">${n}</text></svg>` });
 }
 function popupHTML(h) {
-  return `<b>${esc(h.chuHo)}</b><div class="sub2">${esc(h.maHo || 'chờ cấp mã')} · ${esc(h.ap || 'Chưa rõ ấp')}</div>
-    <div style="margin-top:4px"><span class="badge" style="--c:${LOAI[h.loai].mau}">${LOAI[h.loai].ten}</span> <span class="sub2">${h.thanhVien.length} nhân khẩu</span></div>
+  const L0 = loaiOf(h.loai), mp = metaParts(h, SCHEMA().ui.pop);
+  return `<b>${esc(h.chuHo)}</b>${mp.length ? `<div class="sub2">${esc(mp.join(' · '))}</div>` : ''}
+    <div style="margin-top:4px"><span class="badge" style="--c:${L0.mau}">${esc(L0.ten)}</span></div>
     <div class="pop-actions"><button class="btn btn-sm btn-navy" data-act="open" data-id="${h.id}">Chi tiết</button><a class="btn btn-sm" href="${dirLink(h)}" target="_blank" rel="noopener">${I('route', 14)}Chỉ đường</a></div>`;
 }
 function refreshMarkers(list) {
@@ -1688,14 +1991,14 @@ map.on('click', e => { if (ui.pick) { setEditLoc(e.latlng.lat, e.latlng.lng); st
 /* =========================================================
    TRẠNG THÁI GIAO DIỆN
    ========================================================= */
-const ui = { view: 'list', tab: 'list', selId: null, pick: false, gateIntent: null, f: { q: '', ap: '', loai: new Set(), noLoc: false } };
+const ui = { view: 'list', tab: 'list', selId: null, pick: false, gateIntent: null, f: { q: '', ap: '', loai: new Set(), noLoc: false, x: {} } };
 let draft = null, draftSnap = '', editMarker = null;
 function showView(v) {
-  ui.view = v;
+  ui.view = v; document.body.dataset.view = v;
   $$('.view').forEach(s => s.classList.toggle('active', s.id === 'v-' + v));
   const tab = ['list', 'detail', 'edit'].includes(v) ? 'list' : v; ui.tab = tab;
   $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-  $('#panel').classList.toggle('wide', ['edit', 'stats', 'accounts'].includes(v));
+  $('#panel').classList.toggle('wide', ['edit', 'stats', 'accounts', 'schema'].includes(v));
   setTimeout(() => map.invalidateSize(), 220);
 }
 function filtered() {
@@ -1704,9 +2007,36 @@ function filtered() {
     if (ui.f.ap === '__none') { if (h.ap) return false; } else if (ui.f.ap && h.ap !== ui.f.ap) return false;
     if (ui.f.loai.size && !ui.f.loai.has(h.loai)) return false;
     if (ui.f.noLoc && hasLoc(h)) return false;
-    if (q) { const hay = norm([h.chuHo, h.maHo, h.diaChi, h.ap, h.dienThoai, h.phuTrach, ...h.thanhVien.map(m => m.hoTen + ' ' + (m.cccd || ''))].join(' | ')); if (!hay.includes(q)) return false; }
+    for (const [k, val] of Object.entries(ui.f.x)) if (val !== '' && !matchLoc(h, k, val)) return false;
+    if (q) { const xs = SCHEMA().f.map(f => fText(f, h.ext[f.k])); const hay = norm([h.chuHo, h.maHo, h.diaChi, h.ap, h.dienThoai, h.phuTrach, ...xs, ...h.thanhVien.map(m => m.hoTen + ' ' + (m.cccd || ''))].join(' | ')); if (!hay.includes(q)) return false; }
     return true;
   });
+}
+/* Bộ lọc thêm (do quản trị viên chọn trong Cấu trúc → Giao diện) */
+const LOC_GOC = { namCongNhan: () => BL('namCongNhan'), phuTrach: () => BL('phuTrach') };
+const locFields = () => SCHEMA().ui.loc.map(k => LOC_GOC[k] ? (BH(k) ? null : { k, ten: LOC_GOC[k](), goc: true }) : (f => f && !f.an ? f : null)(fByK(k))).filter(Boolean);
+function locVal(h, k) { if (k === 'namCongNhan') return h.namCongNhan; if (k === 'phuTrach') return h.phuTrach; return h.ext[k]; }
+function matchLoc(h, k, val) {
+  const v = locVal(h, k);
+  if (val === '__none') return isEmptyVal(v);
+  if (val === '__yes') return !isEmptyVal(v);
+  if (Array.isArray(v)) return v.includes(val);
+  if (isObj(v)) return norm(fText({ kieu: 'nguoi' }, v)) === norm(val) || norm(v.t) === norm(val);
+  return String(v ?? '') === val;
+}
+function locOptions(f) {
+  if (f.kieu === 'bool') return [['__yes', 'Có'], ['__none', 'Không / chưa đánh dấu']];
+  let vals = (f.kieu === 'select' || f.kieu === 'multi') ? [...f.opts] : [];
+  const seen = new Set(vals);
+  for (const h of S.households) { const v = locVal(h, f.k); for (const x of (Array.isArray(v) ? v : [v])) { const s = isObj(x) ? x.t : x; if (s != null && s !== '' && !seen.has(String(s))) { seen.add(String(s)); vals.push(String(s)); } } }
+  if (!(f.kieu === 'select' || f.kieu === 'multi')) vals.sort((a, b) => String(b).localeCompare(String(a), 'vi', { numeric: true }));
+  return [...vals.slice(0, 80).map(x => [x, x]), ['__none', '(Chưa nhập)']];
+}
+function renderExtFilters() {
+  const box = $('#fExt'), fs = locFields();
+  for (const k of Object.keys(ui.f.x)) if (!fs.some(f => f.k === k)) delete ui.f.x[k];
+  box.hidden = !fs.length; if (!fs.length) { box.innerHTML = ''; return; }
+  box.innerHTML = fs.map(f => { const cur = ui.f.x[f.k] || ''; const opts = locOptions(f); return `<select data-loc="${esc(f.k)}" class="${cur ? 'on' : ''}" aria-label="Lọc theo ${esc(f.ten)}"><option value="">${esc(f.ten)}: tất cả</option>${opts.map(([v, t]) => `<option value="${esc(v)}" ${String(v) === cur ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>`; }).join('');
 }
 function apOrder() { const list = [...S.config.apList]; for (const h of S.households) if (h.ap && !list.includes(h.ap)) list.push(h.ap); return list; }
 const sortHH = arr => { const ord = apOrder(); return arr.slice().sort((a, b) => { const ia = a.ap ? ord.indexOf(a.ap) : 1e9, ib = b.ap ? ord.indexOf(b.ap) : 1e9; return ia - ib || a.chuHo.localeCompare(b.chuHo, 'vi'); }); };
@@ -1714,29 +2044,41 @@ const sortHH = arr => { const ord = apOrder(); return arr.slice().sort((a, b) =>
 /* ---------- Danh sách ---------- */
 function renderFilters() {
   const ap = $('#fAp'), cur = ui.f.ap;
-  ap.innerHTML = `<option value="">Tất cả ấp (${S.households.length} hộ)</option>` + apOrder().filter(a => isAdmin() || inScope(a) || S.households.some(h => h.ap === a)).map(a => `<option value="${esc(a)}">${esc(a)} (${S.households.filter(h => h.ap === a).length})</option>`).join('') + (S.households.some(h => !h.ap) ? `<option value="__none">Chưa rõ ấp</option>` : '');
+  ap.innerHTML = `<option value="">Tất cả ${esc(apl())} (${S.households.length} hộ)</option>` + apOrder().filter(a => isAdmin() || inScope(a) || S.households.some(h => h.ap === a)).map(a => `<option value="${esc(a)}">${esc(a)} (${S.households.filter(h => h.ap === a).length})</option>`).join('') + (S.households.some(h => !h.ap) ? `<option value="__none">Chưa rõ ${esc(apl())}</option>` : '');
   ap.value = cur; if (ap.value !== cur) { ui.f.ap = ''; ap.value = ''; }
-  $('#fLoai').innerHTML = Object.entries(LOAI).map(([k, v]) => `<button class="chip ${ui.f.loai.has(k) ? 'on' : ''}" data-act="f-loai" data-k="${k}" style="--c:${v.mau}" aria-pressed="${ui.f.loai.has(k)}"><span class="dot"></span>${v.ten} <b>${S.households.filter(h => h.loai === k).length}</b></button>`).join('');
+  { const ks = loaiShown(); for (const k of [...ui.f.loai]) if (!ks.includes(k)) ui.f.loai.delete(k); }
+  $('#fLoai').innerHTML = loaiShown().map(k => { const v = loaiOf(k); return `<button class="chip ${ui.f.loai.has(k) ? 'on' : ''}" data-act="f-loai" data-k="${esc(k)}" style="--c:${v.mau}" aria-pressed="${ui.f.loai.has(k)}"><span class="dot"></span>${esc(v.ten)} <b>${S.households.filter(h => h.loai === k).length}</b></button>`; }).join('');
+  renderExtFilters();
   $('#addBtns').style.display = can('add') ? '' : 'none';
+}
+/* Phân loại hiện trên bộ lọc, chú giải: phân loại không ẩn + phân loại đang có hộ */
+const loaiShown = () => { const ks = Object.keys(LOAI).filter(k => !LOAI[k].an || S.households.some(h => h.loai === k)); for (const h of S.households) if (!ks.includes(h.loai)) ks.push(h.loai); return ks; };
+function apInfoKV(ap) { const s = SCHEMA(), v = s.apInfo[ap]; return v ? extKV(s.apF, v) : ''; }
+function apInfoDlg(ap) {
+  const kv = apInfoKV(ap);
+  return dialog(`${ap}`, kv ? `<p class="muted small" style="margin-top:0">${esc(SECT('apinfo'))}</p><dl class="kv">${kv}</dl>` : `<p>Chưa có thông tin ${esc(SECT('apinfo').toLowerCase())} của ${esc(ap)}.</p>${isAdmin() ? '<p class="muted small">Quản trị viên nhập tại mục Cấu trúc → Thông tin ấp.</p>' : ''}`, [{ label: 'Đóng', cls: 'btn-navy' }]);
 }
 function renderList() {
   renderFilters();
   const list = sortHH(filtered()), pend = pendIds();
   let html = '', lastAp = null;
+  const lm = SCHEMA().ui.list.filter(k => k !== 'ap'), hasInfo = a => !!apInfoKV(a);
+  if (ui.f.ap && ui.f.ap !== '__none' && hasInfo(ui.f.ap)) html += `<details class="apcard"><summary>${I('phone', 15)} ${esc(SECT('apinfo'))} — ${esc(ui.f.ap)}</summary><dl class="kv">${apInfoKV(ui.f.ap)}</dl></details>`;
   for (const h of list) {
-    const ap = h.ap || 'Chưa rõ ấp';
-    if (ap !== lastAp) { html += `<div class="ap-group">${esc(ap)}</div>`; lastAp = ap; }
-    html += `<button class="hh ${h.id === ui.selId ? 'sel' : ''}" data-act="open" data-id="${h.id}" style="--c:${LOAI[h.loai].mau}">
+    const ap = h.ap || `Chưa rõ ${apl()}`;
+    if (ap !== lastAp) { html += `<div class="ap-group"><span>${esc(ap)}</span>${h.ap && !ui.f.ap && hasInfo(h.ap) ? `<button class="ap-call" data-act="ap-info" data-ap="${esc(h.ap)}" title="${esc(SECT('apinfo'))}">${I('phone', 11)} Liên hệ</button>` : ''}</div>`; lastAp = ap; }
+    const L0 = loaiOf(h.loai), mp = metaParts(h, lm);
+    html += `<button class="hh ${h.id === ui.selId ? 'sel' : ''}" data-act="open" data-id="${h.id}" style="--c:${L0.mau}">
       <div class="hh-main"><div class="hh-name">${esc(h.chuHo)}${h.sample ? '<span class="tag">mẫu</span>' : ''}${pend.has(h.id) ? '<span class="tag info">chưa gửi</span>' : ''}</div>
-      <div class="hh-meta">${esc(h.maHo || 'chờ cấp mã')} · ${h.thanhVien.length} nhân khẩu${h.diaChi ? ' · ' + esc(h.diaChi) : ''}</div></div>
-      <div class="hh-side"><span class="badge" style="--c:${LOAI[h.loai].mau}">${LOAI[h.loai].ten}</span>${hasLoc(h) ? '' : '<span class="tag warn">Chưa định vị</span>'}</div></button>`;
+      ${mp.length ? `<div class="hh-meta">${esc(mp.join(' · '))}</div>` : ''}</div>
+      <div class="hh-side"><span class="badge" style="--c:${L0.mau}">${esc(L0.ten)}</span>${hasLoc(h) ? '' : '<span class="tag warn">Chưa định vị</span>'}</div></button>`;
   }
   $('#list').innerHTML = html || `<div class="empty">${S.households.length ? 'Không có hộ nào khớp bộ lọc.' : isAdmin() ? 'Chưa có hộ nào. Bấm <b>Thêm hộ</b>, hoặc vào mục <b>Dữ liệu</b> để nhập từ Excel / chuyển dữ liệu phiên bản cũ.' : can('add') ? 'Chưa có hộ nào trong phạm vi được giao. Bấm <b>Thêm hộ</b> để nhập.' : 'Chưa có hộ nào trong phạm vi được giao.'}</div>`;
   const nk = list.reduce((s, h) => s + h.thanhVien.length, 0), noLoc = list.filter(h => !hasLoc(h)).length;
   $('#listFoot').innerHTML = `<span>Hiển thị ${list.length}/${S.households.length} hộ · ${fmt(nk)} nhân khẩu · ${noLoc} hộ chưa định vị</span><button class="linkbtn sync-btn" data-act="sync-now" title="Tải số liệu mới nhất">⟳ <span id="syncInfo"></span></button>`; syncUI();
   refreshMarkers(list); renderLegend(list); renderBanners();
 }
-function renderLegend(list) { $('#legend').innerHTML = Object.entries(LOAI).map(([k, v]) => `<div style="--c:${v.mau}"><i></i>${v.ten}<b class="lg-n">${list.filter(h => h.loai === k && hasLoc(h)).length}</b></div>`).join(''); }
+function renderLegend(list) { $('#legend').innerHTML = loaiShown().map(k => { const v = loaiOf(k); return `<div style="--c:${v.mau}"><i></i>${esc(v.ten)}<b class="lg-n">${list.filter(h => h.loai === k && hasLoc(h)).length}</b></div>`; }).join(''); }
 function renderBanners() {
   if (!ME) return;
   let h = '';
@@ -1757,38 +2099,66 @@ function openDetail(id, { fly = true } = {}) {
 }
 function renderDetail() {
   const h = byId(ui.selId); if (!h) { showView('list'); return; }
-  const L0 = LOAI[h.loai], ch = chiSoCur(), th = thieuHutCur(h), gy = goiY(h), ce = can('edit', h);
-  const mis = (gy.loai === 'ngheo' || gy.loai === 'canngheo') && (h.loai === 'ngheo' || h.loai === 'canngheo') && gy.loai !== h.loai;
-  const tongHT = h.hoTro.reduce((s, x) => s + (x.giaTri || 0), 0);
-  const tv = h.thanhVien.map(m => { const a = age(m); const s2 = [m.gioiTinh, m.danToc, m.ngheNghiep, m.cccd ? 'CCCD ' + maskCCCD(m.cccd) : ''].filter(Boolean).map(esc).join(' · '); return `<tr><td><b>${esc(m.hoTen)}</b>${s2 ? `<div class="sub2">${s2}</div>` : ''}<div>${memberTags(m).map(([t, c]) => `<span class="tag ${c}" style="margin:3px 3px 0 0">${t}</span>`).join('')}</div></td><td class="num">${m.namSinh || ''}${a != null ? `<div class="sub2">${a} tuổi</div>` : ''}</td><td>${esc(m.quanHe)}</td></tr>`; }).join('');
+  const L0 = loaiOf(h.loai), ce = can('edit', h);
+  const body = SCHEMA().sec.filter(s => !s.an).map(s => {
+    const fx = fieldsIn(s.k, h.loai), kv = extKV(fx, h.ext), inner = SEC_DETAIL[s.k] ? SEC_DETAIL[s.k](h, kv) : null;
+    if (inner != null) return inner;
+    return kv ? `<div class="sec">${esc(s.ten)}</div><dl class="kv">${kv}</dl>` : '';
+  }).join('');
   $('#detail').innerHTML = `
-    <div class="d-head" style="--c:${L0.mau}"><span class="badge" style="--c:${L0.mau}">${L0.ten}</span>${h.sample ? '<span class="tag">Dữ liệu mẫu</span>' : ''}${pendIds().has(h.id) ? '<span class="tag info">Chưa gửi lên máy chủ</span>' : ''}
-      <h2>${esc(h.chuHo)}</h2><div class="muted">Mã hộ <b>${esc(h.maHo || 'chờ cấp')}</b> · ${esc(h.ap || 'Chưa rõ ấp')}${h.namCongNhan ? ' · Công nhận năm ' + h.namCongNhan : ''}</div></div>
+    <div class="d-head" style="--c:${L0.mau}"><span class="badge" style="--c:${L0.mau}">${esc(L0.ten)}</span>${h.sample ? '<span class="tag">Dữ liệu mẫu</span>' : ''}${pendIds().has(h.id) ? '<span class="tag info">Chưa gửi lên máy chủ</span>' : ''}
+      <h2>${esc(h.chuHo)}</h2><div class="muted">${esc(BL('maHo'))} <b>${esc(h.maHo || 'chờ cấp')}</b> · ${esc(h.ap || 'Chưa rõ ' + apl())}${h.namCongNhan && !BH('namCongNhan') ? ` · ${esc(BL('namCongNhan'))} ${h.namCongNhan}` : ''}</div></div>
     <div class="d-actions">
       ${ce ? `<button class="btn btn-sm btn-navy" data-act="edit" data-id="${h.id}">${I('edit', 15)}Sửa</button>` : ''}
       ${hasLoc(h) ? `<button class="btn btn-sm" data-act="fly" data-id="${h.id}">${I('map', 15)}Xem trên bản đồ</button><a class="btn btn-sm" href="${dirLink(h)}" target="_blank" rel="noopener">${I('route', 15)}Chỉ đường</a>` : ce ? `<button class="btn btn-sm" data-act="edit-gps" data-id="${h.id}">${I('gps', 15)}Định vị ngay</button>` : ''}
       <button class="btn btn-sm" data-act="print" data-id="${h.id}">${I('print', 15)}In phiếu</button>
       ${can('delete') ? `<button class="btn btn-sm btn-danger" data-act="delete" data-id="${h.id}">${I('trash', 15)}Xóa</button>` : ''}
     </div>
-    <dl class="kv">
-      <dt>Địa chỉ</dt><dd>${esc(h.diaChi) || '<span class="muted">—</span>'}</dd>
-      <dt>Điện thoại</dt><dd>${h.dienThoai ? esc(h.dienThoai) : '<span class="muted">—</span>'}</dd>
-      <dt>Phụ trách giúp đỡ</dt><dd>${esc(h.phuTrach) || '<span class="muted">Chưa phân công</span>'}</dd>
-      <dt>Vị trí</dt><dd>${hasLoc(h) ? `${h.lat.toFixed(6)}, ${h.lng.toFixed(6)} <button class="icon-btn" title="Sao chép tọa độ" data-act="copy" data-text="${h.lat.toFixed(6)}, ${h.lng.toFixed(6)}">${I('file', 14)}</button>` : '<span class="tag warn" style="margin:0">Chưa định vị</span>'}</dd>
-      <dt>Thu nhập BQ</dt><dd>${h.thuNhap != null ? fmt(h.thuNhap * 1000) + ' đ/người/tháng' : '<span class="muted">—</span>'}</dd>
-    </dl>
-    <div class="sec">Thành viên trong hộ (${h.thanhVien.length} người)</div>
-    ${h.thanhVien.length ? `<table class="tbl"><thead><tr><th>Họ và tên</th><th class="num">Năm sinh</th><th>Quan hệ</th></tr></thead><tbody>${tv}</tbody></table>` : '<p class="muted">Chưa có thông tin thành viên.</p>'}
-    <div class="sec">Thiếu hụt dịch vụ xã hội cơ bản (${th.length}/${ch.length})</div>
-    <div>${th.length ? th.map(id => `<span class="pill th">${esc(chiSoTen(id))}</span>`).join('') : '<span class="muted">Chưa ghi nhận chỉ số thiếu hụt.</span>'}</div>
-    <div class="suggest ${mis ? 'mis' : ''}">${gy.text}${mis ? '<br><b>Lưu ý:</b> khác với phân loại đang ghi — cần rà soát lại.' : ''}<div class="sub2" style="margin-top:3px">Theo ${esc(CHUAN[S.config.chuan].ngan)}, khu vực ${S.config.khuVuc === 'nongthon' ? 'nông thôn' : 'thành thị'}. Chỉ để tham khảo; phân loại chính thức theo kết quả rà soát, công nhận.</div></div>
-    <div class="sec">Nguyên nhân</div><div>${h.nguyenNhan.length ? h.nguyenNhan.map(x => `<span class="pill">${esc(x)}</span>`).join('') : '<span class="muted">—</span>'}</div>
-    <div class="sec">Nhu cầu hỗ trợ</div><div>${h.nhuCau.length ? h.nhuCau.map(x => `<span class="pill">${esc(x)}</span>`).join('') : '<span class="muted">—</span>'}</div>
-    <div class="sec">Hỗ trợ đã nhận</div>
-    ${h.hoTro.length ? `<table class="tbl"><thead><tr><th>Ngày</th><th>Nội dung</th><th class="num">Giá trị (đ)</th></tr></thead><tbody>${h.hoTro.slice().sort((a, b) => String(b.ngay).localeCompare(String(a.ngay))).map(x => `<tr><td>${dateVN(x.ngay)}</td><td>${esc(x.noiDung)}${x.donVi ? `<div class="sub2">${esc(x.donVi)}</div>` : ''}</td><td class="num">${fmt(x.giaTri)}</td></tr>`).join('')}</tbody><tfoot><tr><td colspan="2">Tổng cộng</td><td class="num">${fmt(tongHT)}</td></tr></tfoot></table>` : '<p class="muted">Chưa ghi nhận.</p>'}
-    ${h.ghiChu ? `<div class="sec">Ghi chú</div><p style="white-space:pre-wrap;margin:0">${esc(h.ghiChu)}</p>` : ''}
+    ${body}
     <p class="muted small" style="margin-top:16px">${h.createdBy ? `Người tạo: ${esc(h.createdBy)} (${dd(h.createdAt)}) · ` : ''}Cập nhật lần cuối: ${h.updatedBy ? esc(h.updatedBy) + ', ' : ''}${dt(h.updatedAt)}</p>`;
 }
+
+/* Nội dung từng nhóm thông tin ở màn hình chi tiết hộ (kv = các trường bổ sung của nhóm, đã dựng sẵn) */
+const dash = t => `<span class="muted">${t || '—'}</span>`;
+const SEC_DETAIL = {
+  chung: (h, kv) => {
+    const r = [];
+    if (!BH('diaChi')) r.push(`<dt>${esc(BL('diaChi'))}</dt><dd>${esc(h.diaChi) || dash()}</dd>`);
+    if (!BH('dienThoai')) r.push(`<dt>${esc(BL('dienThoai'))}</dt><dd>${h.dienThoai ? telA(h.dienThoai) : dash()}</dd>`);
+    if (!BH('phuTrach')) r.push(`<dt>${esc(BL('phuTrach'))}</dt><dd>${esc(h.phuTrach) || dash('Chưa phân công')}</dd>`);
+    return r.length || kv ? `<dl class="kv">${r.join('')}${kv}</dl>` : '';
+  },
+  vitri: (h, kv) => `<dl class="kv"><dt>Vị trí</dt><dd>${hasLoc(h) ? `${h.lat.toFixed(6)}, ${h.lng.toFixed(6)} <button class="icon-btn" title="Sao chép tọa độ" data-act="copy" data-text="${h.lat.toFixed(6)}, ${h.lng.toFixed(6)}">${I('file', 14)}</button>` : '<span class="tag warn" style="margin:0">Chưa định vị</span>'}</dd>${kv}</dl>`,
+  thanhvien: h => {
+    const tvf = SCHEMA().tv.filter(f => !f.an && f.ds);
+    const tv = h.thanhVien.map(m => {
+      const a = age(m);
+      const s2 = [TH('gioiTinh') ? '' : m.gioiTinh, TH('danToc') ? '' : m.danToc, TH('ngheNghiep') ? '' : m.ngheNghiep, !TH('cccd') && m.cccd ? 'CCCD ' + maskCCCD(m.cccd) : '', ...tvf.map(f => { const t = fText(f, m.ext[f.k]); return t ? (f.kieu === 'bool' ? f.ten : `${f.ten}: ${t}`) : ''; })].filter(Boolean).map(esc).join(' · ');
+      return `<tr><td><b>${esc(m.hoTen)}</b>${s2 ? `<div class="sub2">${s2}</div>` : ''}<div>${memberTags(m).map(([t, c]) => `<span class="tag ${c}" style="margin:3px 3px 0 0">${t}</span>`).join('')}</div></td>${TH('namSinh') ? '' : `<td class="num">${m.namSinh || ''}${a != null ? `<div class="sub2">${a} tuổi</div>` : ''}</td>`}${TH('quanHe') ? '' : `<td>${esc(m.quanHe)}</td>`}</tr>`;
+    }).join('');
+    return `<div class="sec">${esc(SECT('thanhvien'))} (${h.thanhVien.length} người)</div>
+      ${h.thanhVien.length ? `<table class="tbl"><thead><tr><th>${esc(TL('hoTen'))}</th>${TH('namSinh') ? '' : `<th class="num">${esc(TL('namSinh'))}</th>`}${TH('quanHe') ? '' : '<th>Quan hệ</th>'}</tr></thead><tbody>${tv}</tbody></table>` : '<p class="muted">Chưa có thông tin thành viên.</p>'}`;
+  },
+  thunhap: (h, kv) => {
+    const showTN = !BH('thuNhap'), showTH = !BH('thieuHut');
+    if (!showTN && !showTH && !kv) return '';
+    const ch = chiSoCur(), th = thieuHutCur(h), gy = goiY(h);
+    const mis = (gy.loai === 'ngheo' || gy.loai === 'canngheo') && (h.loai === 'ngheo' || h.loai === 'canngheo') && gy.loai !== h.loai;
+    return `<div class="sec">${esc(SECT('thunhap'))}</div>
+      ${showTN || kv ? `<dl class="kv">${showTN ? `<dt>Thu nhập BQ</dt><dd>${h.thuNhap != null ? fmt(h.thuNhap * 1000) + ' đ/người/tháng' : dash()}</dd>` : ''}${kv}</dl>` : ''}
+      ${showTH ? `<div class="sub2" style="margin:6px 0 4px">${esc(BL('thieuHut'))}: ${th.length}/${ch.length}</div><div>${th.length ? th.map(id => `<span class="pill th">${esc(chiSoTen(id))}</span>`).join('') : '<span class="muted">Chưa ghi nhận chỉ số thiếu hụt.</span>'}</div>` : ''}
+      ${showTN && showTH && SCHEMA().ui.goiY ? `<div class="suggest ${mis ? 'mis' : ''}">${gy.text}${mis ? '<br><b>Lưu ý:</b> khác với phân loại đang ghi — cần rà soát lại.' : ''}<div class="sub2" style="margin-top:3px">Theo ${esc(CHUAN[S.config.chuan].ngan)}, khu vực ${S.config.khuVuc === 'nongthon' ? 'nông thôn' : 'thành thị'}. Chỉ để tham khảo; phân loại chính thức theo kết quả rà soát, công nhận.</div></div>` : ''}`;
+  },
+  nguyennhan: (h, kv) => `<div class="sec">${esc(SECT('nguyennhan'))}</div><div>${h.nguyenNhan.length ? h.nguyenNhan.map(x => `<span class="pill">${esc(x)}</span>`).join('') : dash()}</div>${kv ? `<dl class="kv mt8">${kv}</dl>` : ''}`,
+  nhucau: (h, kv) => `<div class="sec">${esc(SECT('nhucau'))}</div><div>${h.nhuCau.length ? h.nhuCau.map(x => `<span class="pill">${esc(x)}</span>`).join('') : dash()}</div>${kv ? `<dl class="kv mt8">${kv}</dl>` : ''}`,
+  hotro: (h, kv) => {
+    const tong = h.hoTro.reduce((s, x) => s + (x.giaTri || 0), 0);
+    return `<div class="sec">${esc(SECT('hotro'))}</div>
+      ${h.hoTro.length ? `<table class="tbl"><thead><tr><th>Ngày</th><th>Nội dung</th><th class="num">Giá trị (đ)</th></tr></thead><tbody>${h.hoTro.slice().sort((a, b) => String(b.ngay).localeCompare(String(a.ngay))).map(x => `<tr><td>${dateVN(x.ngay)}</td><td>${esc(x.noiDung)}${x.donVi ? `<div class="sub2">${esc(x.donVi)}</div>` : ''}</td><td class="num">${fmt(x.giaTri)}</td></tr>`).join('')}</tbody><tfoot><tr><td colspan="2">Tổng cộng</td><td class="num">${fmt(tong)}</td></tr></tfoot></table>` : '<p class="muted">Chưa ghi nhận.</p>'}${kv ? `<dl class="kv mt8">${kv}</dl>` : ''}`;
+  },
+  apinfo: h => { const kv = h.ap ? apInfoKV(h.ap) : ''; return kv ? `<div class="sec">${esc(SECT('apinfo'))} — ${esc(h.ap)}</div><dl class="kv">${kv}</dl>` : ''; },
+  ghichu: (h, kv) => h.ghiChu || kv ? `<div class="sec">${esc(SECT('ghichu'))}</div>${h.ghiChu ? `<p style="white-space:pre-wrap;margin:0">${esc(h.ghiChu)}</p>` : ''}${kv ? `<dl class="kv mt8">${kv}</dl>` : ''}` : ''
+};
 
 /* ---------- Thêm / sửa hộ ---------- */
 function enterEdit(h, { gps = false } = {}) {
@@ -1807,17 +2177,19 @@ function enterEdit(h, { gps = false } = {}) {
 }
 function ckGrid(items, name, sel) { return items.map(x => `<label class="chk"><input type="checkbox" data-${name} value="${esc(x)}" ${sel.includes(x) ? 'checked' : ''}>${esc(x)}</label>`).join(''); }
 function tvRow(m, i) {
+  const sh = k => !TH(k), lb = k => esc(TL(k)), tvf = SCHEMA().tv.filter(f => !f.an);
   return `<div class="tv"><div class="tv-head"><span>Thành viên ${i + 1}</span><button type="button" class="icon-btn" data-act="tv-del" data-i="${i}" title="Bớt thành viên này">${I('x', 15)}</button></div>
     <div class="grid2">
-      <label class="f span2"><span>Họ và tên</span><input data-tv="hoTen" value="${esc(m.hoTen)}"></label>
-      <label class="f"><span>Năm sinh</span><input data-tv="namSinh" type="number" min="1900" max="${YEAR}" value="${m.namSinh ?? ''}"></label>
-      <label class="f"><span>Giới tính</span><select data-tv="gioiTinh"><option value=""></option><option ${m.gioiTinh === 'Nam' ? 'selected' : ''}>Nam</option><option ${m.gioiTinh === 'Nữ' ? 'selected' : ''}>Nữ</option></select></label>
-      <label class="f"><span>Quan hệ với chủ hộ</span><input data-tv="quanHe" list="dlQuanHe" value="${esc(m.quanHe)}"></label>
-      <label class="f"><span>Dân tộc</span><input data-tv="danToc" list="dlDanToc" value="${esc(m.danToc)}"></label>
-      <label class="f"><span>Số CCCD / định danh</span><input data-tv="cccd" inputmode="numeric" maxlength="12" value="${esc(m.cccd)}"></label>
-      <label class="f"><span>Nghề nghiệp / tình trạng</span><input data-tv="ngheNghiep" list="dlNghe" value="${esc(m.ngheNghiep)}"></label>
+      <label class="f span2"><span>${lb('hoTen')}</span><input data-tv="hoTen" value="${esc(m.hoTen)}"></label>
+      ${sh('namSinh') ? `<label class="f"><span>${lb('namSinh')}</span><input data-tv="namSinh" type="number" min="1900" max="${YEAR}" value="${m.namSinh ?? ''}"></label>` : ''}
+      ${sh('gioiTinh') ? `<label class="f"><span>${lb('gioiTinh')}</span><select data-tv="gioiTinh"><option value=""></option><option ${m.gioiTinh === 'Nam' ? 'selected' : ''}>Nam</option><option ${m.gioiTinh === 'Nữ' ? 'selected' : ''}>Nữ</option></select></label>` : ''}
+      ${sh('quanHe') ? `<label class="f"><span>${lb('quanHe')}</span><input data-tv="quanHe" list="dlQuanHe" value="${esc(m.quanHe)}"></label>` : ''}
+      ${sh('danToc') ? `<label class="f"><span>${lb('danToc')}</span><input data-tv="danToc" list="dlDanToc" value="${esc(m.danToc)}"></label>` : ''}
+      ${sh('cccd') ? `<label class="f"><span>${lb('cccd')}</span><input data-tv="cccd" inputmode="numeric" maxlength="12" value="${esc(m.cccd)}"></label>` : ''}
+      ${sh('ngheNghiep') ? `<label class="f"><span>${lb('ngheNghiep')}</span><input data-tv="ngheNghiep" list="dlNghe" value="${esc(m.ngheNghiep)}"></label>` : ''}
+      ${tvf.map(f => fInput(f, (m.ext || {})[f.k], 'data-tx')).join('')}
     </div>
-    <div class="row gap wrap" style="margin-bottom:4px"><label class="chk small"><input type="checkbox" data-tv="bhyt" ${m.bhyt ? 'checked' : ''}> Có thẻ BHYT</label><label class="chk small"><input type="checkbox" data-tv="khuyetTat" ${m.khuyetTat ? 'checked' : ''}> Người khuyết tật</label></div></div>`;
+    <div class="row gap wrap" style="margin-bottom:4px">${sh('bhyt') ? `<label class="chk small"><input type="checkbox" data-tv="bhyt" ${m.bhyt ? 'checked' : ''}> ${lb('bhyt')}</label>` : ''}${sh('khuyetTat') ? `<label class="chk small"><input type="checkbox" data-tv="khuyetTat" ${m.khuyetTat ? 'checked' : ''}> ${lb('khuyetTat')}</label>` : ''}</div></div>`;
 }
 function htRow(x, i) {
   return `<div class="ht"><div class="tv-head"><span>Lượt hỗ trợ ${i + 1}</span><button type="button" class="icon-btn" data-act="ht-del" data-i="${i}" title="Bớt">${I('x', 15)}</button></div>
@@ -1829,23 +2201,33 @@ function htRow(x, i) {
     </div></div>`;
 }
 function renderEdit() {
-  const d = draft, aps = apOrder().filter(inScope); if (d.ap && !aps.includes(d.ap)) aps.push(d.ap);
-  const dims = [...new Set(chiSoCur().map(c => c.d))];
-  $('#editForm').innerHTML = `
-  ${!isAdmin() && myAps().length ? `<p class="hint" style="margin:0 0 10px">${I('shield', 14)} Bạn được giao nhập liệu tại: <b>${esc(scopeText(myAps()))}</b>.</p>` : ''}
-  <fieldset><legend>Thông tin chung</legend>
-    <div class="grid2">
-      <label class="f span2"><span>Họ tên chủ hộ <em>*</em></span><input name="chuHo" value="${esc(d.chuHo)}" required></label>
-      <label class="f"><span>Mã hộ</span><input name="maHo" value="${esc(d.maHo)}" placeholder="Để trống: tự cấp mã"></label>
-      <label class="f"><span>Ấp</span><select name="ap"><option value="">— Chọn ấp —</option>${aps.map(a => `<option ${a === d.ap ? 'selected' : ''}>${esc(a)}</option>`).join('')}</select></label>
-      <label class="f"><span>Phân loại</span><select name="loai">${Object.entries(LOAI).map(([k, v]) => `<option value="${k}" ${k === d.loai ? 'selected' : ''}>${v.ten}</option>`).join('')}</select></label>
-      <label class="f"><span>Năm công nhận</span><input name="namCongNhan" type="number" min="2000" max="2100" value="${d.namCongNhan ?? ''}"></label>
-      <label class="f span2"><span>Địa chỉ (tổ, số nhà, mô tả đường vào)</span><input name="diaChi" value="${esc(d.diaChi)}"></label>
-      <label class="f"><span>Điện thoại</span><input name="dienThoai" type="tel" value="${esc(d.dienThoai)}"></label>
-      <label class="f"><span>Đoàn thể / cán bộ phụ trách giúp đỡ</span><input name="phuTrach" list="dlPhuTrach" value="${esc(d.phuTrach)}"></label>
-    </div>
-  </fieldset>
-  <fieldset><legend>Vị trí trên bản đồ</legend>
+  const d = draft;
+  $('#editForm').innerHTML = (!isAdmin() && myAps().length ? `<p class="hint" style="margin:0 0 10px">${I('shield', 14)} Bạn được giao nhập liệu tại: <b>${esc(scopeText(myAps()))}</b>.</p>` : '')
+    + SCHEMA().sec.filter(s => !s.an && s.k !== 'apinfo').map(s => {
+      const fx = fieldsIn(s.k, d.loai), inner = SEC_EDIT[s.k] ? SEC_EDIT[s.k](d) : '';
+      const ext = fx.length ? `<div class="grid2">${fx.map(f => fInput(f, d.ext[f.k], 'data-x', f.qt && !isAdmin())).join('')}</div>` : '';
+      return inner || ext ? `<fieldset data-sec="${esc(s.k)}"><legend>${esc(s.ten)}${s.k === 'thanhvien' ? ` (${d.thanhVien.length})` : s.k === 'hotro' ? ` (${d.hoTro.length})` : ''}</legend>${inner}${ext}</fieldset>` : '';
+    }).join('');
+  updateSuggest();
+}
+const loaiOptions = cur => { const ks = Object.keys(LOAI).filter(k => !LOAI[k].an || k === cur); if (cur && !ks.includes(cur)) ks.push(cur); return ks.map(k => `<option value="${esc(k)}" ${k === cur ? 'selected' : ''}>${esc(loaiTen(k))}</option>`).join(''); };
+/* Ô nhập của các nhóm thông tin có sẵn */
+const SEC_EDIT = {
+  chung: d => {
+    const aps = apOrder().filter(inScope); if (d.ap && !aps.includes(d.ap)) aps.push(d.ap);
+    const sh = k => !BH(k), lb = k => esc(BL(k)), ph = k => BF_GOC[k][3] ? ` placeholder="${esc(BF_GOC[k][3])}"` : '';
+    return `<div class="grid2">
+      <label class="f span2"><span>${lb('chuHo')} <em>*</em></span><input name="chuHo" value="${esc(d.chuHo)}" required></label>
+      <label class="f"><span>${lb('maHo')}</span><input name="maHo" value="${esc(d.maHo)}"${ph('maHo')}></label>
+      <label class="f"><span>${lb('ap')}</span><select name="ap"><option value="">— Chọn ${esc(apl())} —</option>${aps.map(a => `<option ${a === d.ap ? 'selected' : ''}>${esc(a)}</option>`).join('')}</select></label>
+      <label class="f"><span>${lb('loai')}</span><select name="loai">${loaiOptions(d.loai)}</select></label>
+      ${sh('namCongNhan') ? `<label class="f"><span>${lb('namCongNhan')}</span><input name="namCongNhan" type="number" min="2000" max="2100" value="${d.namCongNhan ?? ''}"></label>` : ''}
+      ${sh('diaChi') ? `<label class="f span2"><span>${lb('diaChi')}</span><input name="diaChi" value="${esc(d.diaChi)}"${ph('diaChi')}></label>` : ''}
+      ${sh('dienThoai') ? `<label class="f"><span>${lb('dienThoai')}</span><input name="dienThoai" type="tel" value="${esc(d.dienThoai)}"></label>` : ''}
+      ${sh('phuTrach') ? `<label class="f"><span>${lb('phuTrach')}</span><input name="phuTrach" list="dlPhuTrach" value="${esc(d.phuTrach)}"></label>` : ''}
+    </div>`;
+  },
+  vitri: d => `
     <div class="grid2">
       <label class="f"><span>Vĩ độ</span><input name="lat" id="eLat" inputmode="decimal" value="${d.lat ?? ''}" placeholder="9.69xxxx"></label>
       <label class="f"><span>Kinh độ</span><input name="lng" id="eLng" inputmode="decimal" value="${d.lng ?? ''}" placeholder="106.0xxxx"></label>
@@ -1856,43 +2238,51 @@ function renderEdit() {
       <button type="button" class="btn btn-sm" data-act="paste-coords">Dán tọa độ / link Google Maps</button>
       ${hasLoc(d) ? `<button type="button" class="btn btn-sm btn-ghost" data-act="clear-loc">Bỏ vị trí</button>` : ''}
     </div>
-    <p class="hint" id="gpsInfo">${hasLoc(d) ? 'Kéo ghim viền vàng trên bản đồ để chỉnh vị trí cho khớp mái nhà.' : 'Mẹo: đứng tại nhà dân và bấm “Vị trí của tôi”, hoặc chạm vào mái nhà trên ảnh vệ tinh.'}</p>
-  </fieldset>
-  <fieldset><legend>Thành viên trong hộ (${d.thanhVien.length})</legend>
+    <p class="hint" id="gpsInfo">${hasLoc(d) ? 'Kéo ghim viền vàng trên bản đồ để chỉnh vị trí cho khớp mái nhà.' : 'Mẹo: đứng tại nhà dân và bấm “Vị trí của tôi”, hoặc chạm vào mái nhà trên ảnh vệ tinh.'}</p>`,
+  thanhvien: d => `
     <div id="tvList">${d.thanhVien.map(tvRow).join('')}</div>
-    <button type="button" class="btn btn-sm" data-act="tv-add">${I('plus', 15)}Thêm thành viên</button>
-  </fieldset>
-  <fieldset><legend>Thu nhập và mức độ thiếu hụt</legend>
-    <label class="f"><span>Thu nhập bình quân (nghìn đồng/người/tháng)</span><input name="thuNhap" type="number" min="0" step="50" value="${d.thuNhap ?? ''}" placeholder="Ví dụ: 1500 = 1.500.000 đ"></label>
-    <div class="ck-grid">${dims.map(dm => `<div class="ck-dim">${esc(dimTen(dm))}</div>` + chiSoCur().filter(c => c.d === dm).map(c => `<label class="chk"><input type="checkbox" data-th="${c.id}" ${d.thieuHut.includes(c.id) ? 'checked' : ''}>${esc(c.ten)}</label>`).join('')).join('')}</div>
-    <div class="suggest" id="suggest"></div>
-  </fieldset>
-  <fieldset><legend>Nguyên nhân nghèo</legend><div class="ck-grid">${ckGrid(NGUYEN_NHAN, 'nn', d.nguyenNhan)}</div>
-    ${d.nguyenNhan.filter(x => !NGUYEN_NHAN.includes(x)).length ? `<p class="hint">Khác: ${esc(d.nguyenNhan.filter(x => !NGUYEN_NHAN.includes(x)).join('; '))}</p>` : ''}</fieldset>
-  <fieldset><legend>Nhu cầu hỗ trợ</legend><div class="ck-grid">${ckGrid(NHU_CAU, 'nc', d.nhuCau)}</div></fieldset>
-  <fieldset><legend>Hỗ trợ đã nhận (${d.hoTro.length})</legend>
+    <button type="button" class="btn btn-sm" data-act="tv-add">${I('plus', 15)}Thêm thành viên</button>`,
+  thunhap: d => {
+    const dims = [...new Set(chiSoCur().map(c => c.d))], showTN = !BH('thuNhap'), showTH = !BH('thieuHut');
+    return `${showTN ? `<label class="f"><span>${esc(BL('thuNhap'))}</span><input name="thuNhap" type="number" min="0" step="50" value="${d.thuNhap ?? ''}" placeholder="${esc(BF_GOC.thuNhap[3])}"></label>` : ''}
+      ${showTH ? `<div class="ck-grid">${dims.map(dm => `<div class="ck-dim">${esc(dimTen(dm))}</div>` + chiSoCur().filter(c => c.d === dm).map(c => `<label class="chk"><input type="checkbox" data-th="${c.id}" ${d.thieuHut.includes(c.id) ? 'checked' : ''}>${esc(c.ten)}</label>`).join('')).join('')}</div>` : ''}
+      ${showTN && showTH && SCHEMA().ui.goiY ? '<div class="suggest" id="suggest"></div>' : ''}`;
+  },
+  nguyennhan: d => `<div class="ck-grid">${ckGrid(NGUYEN_NHAN, 'nn', d.nguyenNhan)}</div>
+    ${d.nguyenNhan.filter(x => !NGUYEN_NHAN.includes(x)).length ? `<p class="hint">Khác: ${esc(d.nguyenNhan.filter(x => !NGUYEN_NHAN.includes(x)).join('; '))}</p>` : ''}`,
+  nhucau: d => `<div class="ck-grid">${ckGrid(NHU_CAU, 'nc', d.nhuCau)}</div>
+    ${d.nhuCau.filter(x => !NHU_CAU.includes(x)).length ? `<p class="hint">Khác: ${esc(d.nhuCau.filter(x => !NHU_CAU.includes(x)).join('; '))}</p>` : ''}`,
+  hotro: d => `
     <div id="htList">${d.hoTro.map(htRow).join('')}</div>
-    <button type="button" class="btn btn-sm" data-act="ht-add">${I('plus', 15)}Thêm lượt hỗ trợ</button>
-  </fieldset>
-  <fieldset><legend>Ghi chú</legend><textarea name="ghiChu" rows="3">${esc(d.ghiChu)}</textarea></fieldset>`;
-  updateSuggest();
-}
+    <button type="button" class="btn btn-sm" data-act="ht-add">${I('plus', 15)}Thêm lượt hỗ trợ</button>`,
+  ghichu: d => `<textarea name="ghiChu" rows="3">${esc(d.ghiChu)}</textarea>`
+};
 function collectForm(dry) {
   const f = $('#editForm'), d = dry ? clone(draft) : draft;
-  const g = n => (f.elements[n] ? String(f.elements[n].value).trim() : '');
-  d.chuHo = g('chuHo'); d.maHo = g('maHo'); d.ap = g('ap'); d.loai = g('loai') || 'ngheo';
-  d.namCongNhan = toYear(g('namCongNhan')); d.diaChi = g('diaChi'); d.dienThoai = g('dienThoai'); d.phuTrach = g('phuTrach');
-  d.ghiChu = f.elements.ghiChu ? f.elements.ghiChu.value.trim() : '';
-  d.lat = toNum(g('lat')); d.lng = toNum(g('lng'));
-  d.thuNhap = toMoney(g('thuNhap'));
+  const has = n => !!f.elements[n], g = n => (f.elements[n] ? String(f.elements[n].value).trim() : '');
+  /* chỉ đọc những ô đang hiện — trường bị ẩn giữ nguyên giá trị cũ */
+  d.chuHo = g('chuHo'); d.maHo = g('maHo'); d.ap = g('ap'); d.loai = g('loai') || d.loai || 'ngheo';
+  if (has('namCongNhan')) d.namCongNhan = toYear(g('namCongNhan'));
+  if (has('diaChi')) d.diaChi = g('diaChi');
+  if (has('dienThoai')) d.dienThoai = g('dienThoai');
+  if (has('phuTrach')) d.phuTrach = g('phuTrach');
+  if (has('ghiChu')) d.ghiChu = f.elements.ghiChu.value.trim();
+  if (has('lat')) { d.lat = toNum(g('lat')); d.lng = toNum(g('lng')); }
+  if (has('thuNhap')) d.thuNhap = toMoney(g('thuNhap'));
   const vis = $$('input[data-th]', f), visIds = new Set(vis.map(x => x.dataset.th));
   d.thieuHut = [...d.thieuHut.filter(id => !visIds.has(id)), ...vis.filter(x => x.checked).map(x => x.dataset.th)];
-  const other = d.nguyenNhan.filter(x => !NGUYEN_NHAN.includes(x));
-  d.nguyenNhan = [...$$('input[data-nn]:checked', f).map(x => x.value), ...other];
-  const otherNc = d.nhuCau.filter(x => !NHU_CAU.includes(x));
-  d.nhuCau = [...$$('input[data-nc]:checked', f).map(x => x.value), ...otherNc];
-  d.thanhVien = $$('#tvList .tv', f).map(row => { const m = blankTV(); $$('[data-tv]', row).forEach(inp => { m[inp.dataset.tv] = inp.type === 'checkbox' ? inp.checked : inp.value.trim(); }); m.namSinh = toYear(m.namSinh); return m; });
-  d.hoTro = $$('#htList .ht', f).map(row => { const x = blankHT(); $$('[data-ht]', row).forEach(inp => { x[inp.dataset.ht] = inp.value.trim(); }); x.giaTri = toMoney(x.giaTri); return x; });
+  if ($('[data-sec=nguyennhan]', f)) { const other = d.nguyenNhan.filter(x => !NGUYEN_NHAN.includes(x)); d.nguyenNhan = [...$$('input[data-nn]:checked', f).map(x => x.value), ...other]; }
+  if ($('[data-sec=nhucau]', f)) { const otherNc = d.nhuCau.filter(x => !NHU_CAU.includes(x)); d.nhuCau = [...$$('input[data-nc]:checked', f).map(x => x.value), ...otherNc]; }
+  if ($('#tvList', f)) {
+    const old = d.thanhVien, tvf = SCHEMA().tv;
+    d.thanhVien = $$('#tvList .tv', f).map((row, i) => {
+      const base = old[i] || blankTV(), m = Object.assign(blankTV(), clone(base));
+      $$('[data-tv]', row).forEach(inp => { m[inp.dataset.tv] = inp.type === 'checkbox' ? inp.checked : inp.value.trim(); });
+      m.namSinh = toYear(m.namSinh); m.ext = readExt(row, 'data-tx', tvf, base.ext); return m;
+    });
+  }
+  if ($('#htList', f)) d.hoTro = $$('#htList .ht', f).map(row => { const x = blankHT(); $$('[data-ht]', row).forEach(inp => { x[inp.dataset.ht] = inp.value.trim(); }); x.giaTri = toMoney(x.giaTri); return x; });
+  d.ext = readExt(f, 'data-x', SCHEMA().f, d.ext);
   return d;
 }
 function updateSuggest() {
@@ -1900,7 +2290,7 @@ function updateSuggest() {
   const d = collectForm(true), gy = goiY(d);
   const mis = (gy.loai === 'ngheo' || gy.loai === 'canngheo') && (d.loai === 'ngheo' || d.loai === 'canngheo') && gy.loai !== d.loai;
   el.className = 'suggest' + (mis ? ' mis' : '');
-  el.innerHTML = gy.text + (mis ? ` <br>Khác với phân loại đã chọn (<b>${LOAI[d.loai].ten}</b>).` : '') + `<div class="sub2" style="margin-top:3px">Gợi ý theo ${esc(CHUAN[S.config.chuan].ngan)} — chỉ để tham khảo.</div>`;
+  el.innerHTML = gy.text + (mis ? ` <br>Khác với phân loại đã chọn (<b>${esc(loaiTen(d.loai))}</b>).` : '') + `<div class="sub2" style="margin-top:3px">Gợi ý theo ${esc(CHUAN[S.config.chuan].ngan)} — chỉ để tham khảo.</div>`;
 }
 function rerenderEdit(collect = true) { if (collect) collectForm(); const st = $('#v-edit .view-body').scrollTop; renderEdit(); $('#v-edit .view-body').scrollTop = st; }
 function placeEditMarker() {
@@ -1940,6 +2330,10 @@ async function saveEdit() {
   if (hasLoc(d) && !inVN(d.lat, d.lng)) { const ok = await confirmDlg('Tọa độ bất thường', 'Tọa độ nằm ngoài lãnh thổ Việt Nam. Có thể bạn đã nhập nhầm thứ tự vĩ độ/kinh độ. Vẫn lưu?', 'Vẫn lưu'); if (!ok) return; }
   const dup = d.maHo && S.households.find(h => h.id !== d.id && norm(h.maHo) === norm(d.maHo));
   if (dup) { toast(`Mã hộ “${d.maHo}” đã dùng cho hộ ${dup.chuHo}.`, 'err'); $('#editForm [name=maHo]').focus(); return; }
+  const miss = SCHEMA().sec.filter(s => !s.an).flatMap(s => fieldsIn(s.k, d.loai)).find(f => f.bb && !(f.qt && !isAdmin()) && isEmptyVal(d.ext[f.k]));
+  if (miss) { toast(`Vui lòng nhập “${miss.ten}”.`, 'err'); const el = $(`#editForm [data-x="${CSS.escape(miss.k)}"],#editForm [data-xm="${CSS.escape(miss.k)}"]`); if (el) el.focus(); return; }
+  const missTV = SCHEMA().tv.filter(f => !f.an && f.bb);
+  for (const [i, m] of d.thanhVien.entries()) { if (!m.hoTen) continue; const f = missTV.find(f => isEmptyVal(m.ext[f.k])); if (f) { toast(`Thành viên ${i + 1} (${m.hoTen}): vui lòng nhập “${f.ten}”.`, 'err'); return; } }
   d.thanhVien = d.thanhVien.filter(m => m.hoTen);
   if (!d.thanhVien.length) d.thanhVien.push(Object.assign(blankTV(), { hoTen: d.chuHo, quanHe: 'Chủ hộ' }));
   d.hoTro = d.hoTro.filter(x => x.noiDung || x.giaTri);
@@ -1963,41 +2357,58 @@ function leaveEdit() { stopPick(); draft = null; if (editMarker) { map.removeLay
 /* ---------- Thống kê ---------- */
 function renderStats() {
   $('#statsExport').style.display = can('export') ? '' : 'none';
-  const all = S.households, aps = apOrder(); if (all.some(h => !h.ap)) aps.push('');
-  const cnt = (arr, k) => arr.filter(h => h.loai === k).length, nk = arr => arr.reduce((s, h) => s + h.thanhVien.length, 0);
-  const targ = all.filter(h => h.loai === 'ngheo' || h.loai === 'canngheo'), mem = targ.flatMap(h => h.thanhVien);
-  const rows = aps.map(a => { const arr = all.filter(h => (h.ap || '') === a); return { a: a || 'Chưa rõ ấp', n: arr.length, ng: cnt(arr, 'ngheo'), cn: cnt(arr, 'canngheo'), tn: cnt(arr, 'thoatngheo'), kk: cnt(arr, 'khokhan'), nk: nk(arr), dv: arr.filter(hasLoc).length }; }).filter(r => r.n || (isAdmin() && S.config.apList.includes(r.a)));
-  const tot = rows.reduce((t, r) => { for (const k of ['n','ng','cn','tn','kk','nk','dv']) t[k] = (t[k] || 0) + r[k]; return t; }, {});
+  const s = SCHEMA(), all = S.households, aps = apOrder(); if (all.some(h => !h.ap)) aps.push('');
+  const cats = loaiShown(), nk = arr => arr.reduce((t, h) => t + h.thanhVien.length, 0);
+  const rows = aps.map(a => { const arr = all.filter(h => (h.ap || '') === a); return { a: a || `Chưa rõ ${apl()}`, ap: a, n: arr.length, c: cats.map(k => arr.filter(h => h.loai === k).length), nk: nk(arr), dv: arr.filter(hasLoc).length }; }).filter(r => r.n || (isAdmin() && S.config.apList.includes(r.a)));
+  const tot = rows.reduce((t, r) => { t.n += r.n; t.nk += r.nk; t.dv += r.dv; r.c.forEach((x, i) => t.c[i] += x); return t; }, { n: 0, nk: 0, dv: 0, c: cats.map(() => 0) });
+  const dtK = Object.keys(LOAI).filter(k => LOAI[k].dt), targ = all.filter(h => dtK.includes(h.loai)), mem = targ.flatMap(h => h.thanhVien);
+  const dtTen = dtK.map(k => loaiTen(k).replace(/^hộ\s+/i, '')).join(', ') || 'đối tượng';
   const ch = chiSoCur(), thc = ch.map(c => ({ c, n: targ.filter(h => h.thieuHut.includes(c.id)).length })).sort((a, b) => b.n - a.n), mx = Math.max(1, ...thc.map(x => x.n));
   const dtts = targ.filter(h => { const c0 = h.thanhVien.find(m => norm(m.quanHe) === 'chu ho') || h.thanhVien[0]; return c0 && isDTTS(c0); }).length;
   const ncc = {}; targ.forEach(h => h.nhuCau.forEach(x => ncc[x] = (ncc[x] || 0) + 1)); const ncs = Object.entries(ncc).sort((a, b) => b[1] - a[1]);
-  const tongHT = all.reduce((s, h) => s + h.hoTro.reduce((t, x) => t + (x.giaTri || 0), 0), 0);
+  const tongHT = all.reduce((t, h) => t + h.hoTro.reduce((u, x) => u + (x.giaTri || 0), 0), 0);
+  const bars = (items, color) => { const m = Math.max(1, ...items.map(x => x[1])); return items.map(([k, n]) => `<div class="bar"><span>${esc(k)}</span><div class="track"><div class="fill" style="width:${n / m * 100}%;background:${color || 'var(--navy)'}"></div></div><span class="n">${n}</span></div>`).join(''); };
+  /* Thống kê các trường bổ sung được đánh dấu "Đưa vào thống kê" */
+  const statField = (f, vals, unit) => {
+    const filled = vals.filter(v => !isEmptyVal(v));
+    if (['select', 'multi'].includes(f.kieu) || (f.kieu === 'text' && f.opts.length)) {
+      const cnt = {}; filled.forEach(v => (Array.isArray(v) ? v : [v]).forEach(x => cnt[x] = (cnt[x] || 0) + 1));
+      const items = [...f.opts.filter(o => cnt[o]).map(o => [o, cnt[o]]), ...Object.entries(cnt).filter(([k]) => !f.opts.includes(k)).sort((a, b) => b[1] - a[1])];
+      return `<div class="sub2" style="margin:10px 0 2px"><b>${esc(f.ten)}</b> · ${filled.length}/${vals.length} ${unit} đã nhập</div>${items.length ? bars(items) : '<p class="muted small" style="margin:0">Chưa có số liệu.</p>'}`;
+    }
+    if (f.kieu === 'bool') return `<div class="bar"><span><b>${esc(f.ten)}</b></span><div class="track"><div class="fill" style="width:${vals.length ? filled.length / vals.length * 100 : 0}%;background:var(--navy)"></div></div><span class="n">${filled.length}</span></div>`;
+    if (['number', 'money'].includes(f.kieu)) { const sum = filled.reduce((t, v) => t + (+v || 0), 0); return `<p style="margin:8px 0 0"><b>${esc(f.ten)}</b>: tổng <b>${fmt(sum)}${f.kieu === 'money' ? ' đ' : ''}</b> · ${filled.length} ${unit} đã nhập${filled.length ? ` · bình quân ${fmt(Math.round(sum / filled.length * 10) / 10)}` : ''}</p>`; }
+    return `<p style="margin:8px 0 0"><b>${esc(f.ten)}</b>: ${filled.length}/${vals.length} ${unit} đã nhập.</p>`;
+  };
+  const hf = s.f.filter(f => !f.an && f.tk), tf = s.tv.filter(f => !f.an && f.tk);
+  const apRows = s.apF.length ? aps.filter(a => a && apInfoKV(a)) : [];
   $('#stats').innerHTML = `
     ${!isAdmin() && myAps().length ? `<p class="hint" style="margin-top:0">Số liệu trong phạm vi được giao: <b>${esc(scopeText(myAps()))}</b>.</p>` : ''}
     <div class="kpis">
-      <div class="kpi" style="--c:var(--c-ngheo)"><div class="v">${fmt(tot.ng || 0)}</div><div class="l">Hộ nghèo · ${fmt(nk(all.filter(h => h.loai === 'ngheo')))} nhân khẩu</div></div>
-      <div class="kpi" style="--c:var(--c-canngheo)"><div class="v">${fmt(tot.cn || 0)}</div><div class="l">Hộ cận nghèo · ${fmt(nk(all.filter(h => h.loai === 'canngheo')))} nhân khẩu</div></div>
-      <div class="kpi" style="--c:var(--c-thoat)"><div class="v">${fmt(tot.tn || 0)}</div><div class="l">Hộ mới thoát nghèo</div></div>
-      <div class="kpi"><div class="v">${fmt(tot.dv || 0)}<span style="font-size:15px;color:var(--muted)">/${fmt(tot.n || 0)}</span></div><div class="l">Hộ đã định vị trên bản đồ</div></div>
+      ${cats.map((k, i) => { const arr = all.filter(h => h.loai === k); return `<div class="kpi" style="--c:${loaiOf(k).mau}"><div class="v">${fmt(arr.length)}</div><div class="l">${esc(loaiTen(k))}${arr.length ? ` · ${fmt(nk(arr))} nhân khẩu` : ''}</div></div>`; }).join('')}
+      <div class="kpi"><div class="v">${fmt(tot.dv)}<span style="font-size:15px;color:var(--muted)">/${fmt(tot.n)}</span></div><div class="l">Hộ đã định vị trên bản đồ</div></div>
     </div>
-    <div class="sec">Theo ấp</div>
-    <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Ấp</th><th class="num">Tổng hộ</th><th class="num">Nghèo</th><th class="num">Cận nghèo</th><th class="num">Thoát nghèo</th><th class="num">Khó khăn</th><th class="num">Nhân khẩu</th><th class="num">Đã định vị</th></tr></thead>
-    <tbody>${rows.map(r => `<tr><td>${esc(r.a)}</td><td class="num"><b>${r.n}</b></td><td class="num">${r.ng}</td><td class="num">${r.cn}</td><td class="num">${r.tn}</td><td class="num">${r.kk}</td><td class="num">${fmt(r.nk)}</td><td class="num">${r.dv}</td></tr>`).join('')}</tbody>
-    <tfoot><tr><td>Cộng</td><td class="num">${tot.n || 0}</td><td class="num">${tot.ng || 0}</td><td class="num">${tot.cn || 0}</td><td class="num">${tot.tn || 0}</td><td class="num">${tot.kk || 0}</td><td class="num">${fmt(tot.nk || 0)}</td><td class="num">${tot.dv || 0}</td></tr></tfoot></table></div>
-    <div class="sec">Đối tượng trong hộ nghèo, cận nghèo</div>
+    <div class="sec">Theo ${esc(apl())}</div>
+    <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>${esc(apL())}</th><th class="num">Tổng hộ</th>${cats.map(k => `<th class="num">${esc(loaiNgan(k))}</th>`).join('')}<th class="num">Nhân khẩu</th><th class="num">Đã định vị</th></tr></thead>
+    <tbody>${rows.map(r => `<tr><td>${esc(r.a)}</td><td class="num"><b>${r.n}</b></td>${r.c.map(x => `<td class="num">${x}</td>`).join('')}<td class="num">${fmt(r.nk)}</td><td class="num">${r.dv}</td></tr>`).join('')}</tbody>
+    <tfoot><tr><td>Cộng</td><td class="num">${tot.n}</td>${tot.c.map(x => `<td class="num">${x}</td>`).join('')}<td class="num">${fmt(tot.nk)}</td><td class="num">${tot.dv}</td></tr></tfoot></table></div>
+    ${dtK.length ? `<div class="sec">Đối tượng trong hộ ${esc(dtTen)}</div>
     <div class="kpis">
-      <div class="kpi"><div class="v">${mem.filter(m => age(m) >= 60).length}</div><div class="l">Người cao tuổi (từ 60 tuổi)</div></div>
-      <div class="kpi"><div class="v">${mem.filter(m => age(m) != null && age(m) < 16).length}</div><div class="l">Trẻ em (dưới 16 tuổi)</div></div>
-      <div class="kpi"><div class="v">${mem.filter(m => m.khuyetTat).length}</div><div class="l">Người khuyết tật</div></div>
-      <div class="kpi" style="--c:var(--err)"><div class="v">${mem.filter(m => !m.bhyt).length}</div><div class="l">Người chưa có thẻ BHYT</div></div>
-      <div class="kpi"><div class="v">${dtts}</div><div class="l">Hộ có chủ hộ là người dân tộc thiểu số</div></div>
-      <div class="kpi"><div class="v">${targ.filter(h => !h.phuTrach).length}</div><div class="l">Hộ chưa phân công đoàn thể giúp đỡ</div></div>
+      <div class="kpi"><div class="v">${mem.filter(m => age(m) >= s.ui.gia).length}</div><div class="l">Người cao tuổi (từ ${s.ui.gia} tuổi)</div></div>
+      <div class="kpi"><div class="v">${mem.filter(m => age(m) != null && age(m) < s.ui.tre).length}</div><div class="l">Trẻ em (dưới ${s.ui.tre} tuổi)</div></div>
+      ${TH('khuyetTat') ? '' : `<div class="kpi"><div class="v">${mem.filter(m => m.khuyetTat).length}</div><div class="l">${esc(TL('khuyetTat'))}</div></div>`}
+      ${TH('bhyt') ? '' : `<div class="kpi" style="--c:var(--err)"><div class="v">${mem.filter(m => !m.bhyt).length}</div><div class="l">Người chưa có thẻ BHYT</div></div>`}
+      ${TH('danToc') ? '' : `<div class="kpi"><div class="v">${dtts}</div><div class="l">Hộ có chủ hộ là người dân tộc thiểu số</div></div>`}
+      ${BH('phuTrach') ? '' : `<div class="kpi"><div class="v">${targ.filter(h => !h.phuTrach).length}</div><div class="l">Hộ chưa phân công đoàn thể giúp đỡ</div></div>`}
     </div>
-    <div class="sec">Chỉ số thiếu hụt phổ biến (${targ.length} hộ nghèo, cận nghèo)</div>
+    ${BH('thieuHut') || SECH('thunhap') ? '' : `<div class="sec">Chỉ số thiếu hụt phổ biến (${targ.length} hộ ${esc(dtTen)})</div>
     ${thc.map(x => `<div class="bar"><span>${esc(x.c.ten)}</span><div class="track"><div class="fill" style="width:${x.n / mx * 100}%"></div></div><span class="n">${x.n}</span></div>`).join('')}
-    <p class="muted small">Theo ${esc(CHUAN[S.config.chuan].ngan)}.</p>
-    ${ncs.length ? `<div class="sec">Nhu cầu hỗ trợ</div>${ncs.map(([k, n]) => `<div class="bar"><span>${esc(k)}</span><div class="track"><div class="fill" style="width:${n / ncs[0][1] * 100}%;background:var(--navy)"></div></div><span class="n">${n}</span></div>`).join('')}` : ''}
-    <div class="sec">Hỗ trợ đã ghi nhận</div><p style="margin:0">Tổng giá trị: <b>${fmt(tongHT)} đồng</b> · ${all.reduce((s, h) => s + h.hoTro.length, 0)} lượt hỗ trợ.</p>`;
+    <p class="muted small">Theo ${esc(CHUAN[S.config.chuan].ngan)}.</p>`}
+    ${ncs.length && !SECH('nhucau') ? `<div class="sec">${esc(SECT('nhucau'))}</div>${bars(ncs)}` : ''}` : ''}
+    ${hf.length ? `<div class="sec">Thông tin bổ sung của hộ (${all.length} hộ)</div>${hf.map(f => statField(f, all.map(h => h.ext[f.k]), 'hộ')).join('')}` : ''}
+    ${tf.length ? `<div class="sec">Thông tin bổ sung của thành viên (${fmt(nk(all))} người)</div>${tf.map(f => statField(f, all.flatMap(h => h.thanhVien.map(m => m.ext[f.k])), 'người')).join('')}` : ''}
+    ${SECH('hotro') ? '' : `<div class="sec">${esc(SECT('hotro'))}</div><p style="margin:0">Tổng giá trị: <b>${fmt(tongHT)} đồng</b> · ${all.reduce((t, h) => t + h.hoTro.length, 0)} lượt hỗ trợ.</p>`}
+    ${apRows.length && !SECH('apinfo') ? `<div class="sec">${esc(SECT('apinfo'))}</div>${apRows.map(a => `<div class="card" style="padding:8px 12px"><b>${esc(a)}</b><dl class="kv" style="margin:6px 0 0">${apInfoKV(a)}</dl></div>`).join('')}` : ''}`;
 }
 
 /* ---------- Dữ liệu ---------- */
@@ -2030,6 +2441,7 @@ function renderData() {
       <ol style="margin:0;padding-left:18px;font-size:13px;color:#333">
         <li><b>Cài đặt</b>: nhập danh sách ấp, kéo bản đồ về đúng địa bàn rồi bấm “Lấy khung bản đồ đang xem làm mặc định”.</li>
         <li><b>Nhập danh sách</b> hộ từ Excel hoặc chuyển dữ liệu từ phiên bản cũ.</li>
+        <li><b>Cấu trúc</b>: thêm/bớt trường thông tin, phân loại hộ, nhập Ban công tác Mặt trận, chi hội trưởng từng ấp; đổi màu, tên ứng dụng.</li>
         <li><b>Tài khoản</b>: tạo tài khoản cho cán bộ (chọn quyền, ấp được giao) → gửi cho cán bộ <b>link, tên đăng nhập và mật khẩu</b>.</li>
         <li>Cán bộ cài ứng dụng, đăng nhập, nhập hộ và định vị tại nhà dân — dữ liệu tự về Google Trang tính, mọi người thấy ngay.</li>
       </ol></div>${note}`;
@@ -2240,20 +2652,71 @@ async function showCredentials(u, pw, isNew) {
 }
 
 /* ----- Excel ----- */
-const COLS_HO = [
-  ['STT','stt',6],['Mã hộ','maHo',11],['Chủ hộ','chuHo',24],['Ấp','ap',14],['Địa chỉ','diaChi',26],['Phân loại','loai',17],['Năm công nhận','namCongNhan',10],['Số nhân khẩu','nk',9],
-  ['Điện thoại','dienThoai',13],['Thu nhập BQ (nghìn đ/người/tháng)','thuNhap',14],['Số chỉ số thiếu hụt','soTH',10],['Các chỉ số thiếu hụt','thieuHut',40],['Nguyên nhân nghèo','nguyenNhan',34],
-  ['Nhu cầu hỗ trợ','nhuCau',34],['Đoàn thể/cán bộ phụ trách','phuTrach',22],['Vĩ độ','lat',11],['Kinh độ','lng',11],['Xem bản đồ','link',13],['Ghi chú','ghiChu',30],['Người cập nhật','updatedBy',20],['Thời điểm cập nhật','updatedAtTxt',17]];
-const COLS_TV = [['STT','stt',6],['Mã hộ','maHo',11],['Chủ hộ','chuHo',22],['Ấp','ap',14],['Họ và tên','hoTen',24],['Năm sinh','namSinh',9],['Tuổi','tuoi',7],['Giới tính','gioiTinh',9],['Quan hệ với chủ hộ','quanHe',14],['Dân tộc','danToc',10],['Số CCCD','cccd',15],['Nghề nghiệp/tình trạng','ngheNghiep',22],['Khuyết tật','khuyetTat',10],['Có BHYT','bhyt',9],['Ghi chú','ghiChu',24]];
+/* Cột của file Excel dựng theo cấu trúc hiện tại: trường ẩn không xuất, trường bổ sung thêm cột (khóa 'x:<mã trường>') */
+const xw = t => Math.min(40, Math.max(11, String(t).length + 2));
+function colsHo() {
+  const s = SCHEMA(), c = [['STT', 'stt', 6], [BL('maHo'), 'maHo', 11], [BL('chuHo'), 'chuHo', 24], [apL(), 'ap', 14]];
+  if (!BH('diaChi')) c.push([BL('diaChi'), 'diaChi', 26]);
+  c.push([BL('loai'), 'loai', 17]);
+  if (!BH('namCongNhan')) c.push([BL('namCongNhan'), 'namCongNhan', 10]);
+  c.push(['Số nhân khẩu', 'nk', 9]);
+  if (!BH('dienThoai')) c.push([BL('dienThoai'), 'dienThoai', 13]);
+  if (!BH('thuNhap')) c.push([(s.bf.thuNhap || {}).ten || 'Thu nhập BQ (nghìn đ/người/tháng)', 'thuNhap', 14]);
+  if (!BH('thieuHut')) c.push(['Số chỉ số thiếu hụt', 'soTH', 10], ['Các chỉ số thiếu hụt', 'thieuHut', 40]);
+  if (!SECH('nguyennhan')) c.push([SECT('nguyennhan'), 'nguyenNhan', 34]);
+  if (!SECH('nhucau')) c.push([SECT('nhucau'), 'nhuCau', 34]);
+  if (!BH('phuTrach')) c.push([BL('phuTrach'), 'phuTrach', 22]);
+  c.push(['Vĩ độ', 'lat', 11], ['Kinh độ', 'lng', 11], ['Xem bản đồ', 'link', 13]);
+  s.f.filter(f => !f.an && f.xl).forEach(f => c.push([f.ten, 'x:' + f.k, xw(f.ten)]));
+  if (!SECH('ghichu')) c.push([SECT('ghichu'), 'ghiChu', 30]);
+  c.push(['Người cập nhật', 'updatedBy', 20], ['Thời điểm cập nhật', 'updatedAtTxt', 17]);
+  return c;
+}
+function colsTv() {
+  const c = [['STT', 'stt', 6], [BL('maHo'), 'maHo', 11], [BL('chuHo'), 'chuHo', 22], [apL(), 'ap', 14], [TL('hoTen'), 'hoTen', 24]];
+  if (!TH('namSinh')) c.push([TL('namSinh'), 'namSinh', 9], ['Tuổi', 'tuoi', 7]);
+  for (const k of ['gioiTinh', 'quanHe', 'danToc']) if (!TH(k)) c.push([TL(k), k, k === 'quanHe' ? 14 : 10]);
+  if (!TH('cccd')) c.push(['Số CCCD', 'cccd', 15]);
+  if (!TH('ngheNghiep')) c.push([TL('ngheNghiep'), 'ngheNghiep', 22]);
+  if (!TH('khuyetTat')) c.push(['Khuyết tật', 'khuyetTat', 10]);
+  if (!TH('bhyt')) c.push(['Có BHYT', 'bhyt', 9]);
+  SCHEMA().tv.filter(f => !f.an && f.xl).forEach(f => c.push([f.ten, 'x:' + f.k, xw(f.ten)]));
+  c.push(['Ghi chú', 'ghiChu', 24]);
+  return c;
+}
 const COLS_HT = [['STT','stt',6],['Mã hộ','maHo',11],['Chủ hộ','chuHo',22],['Ấp','ap',14],['Ngày','ngay',12],['Nội dung hỗ trợ','noiDung',30],['Đơn vị hỗ trợ','donVi',24],['Giá trị (đồng)','giaTri',15]];
 const MAP_HO = { 'ma ho':'maHo','chu ho':'chuHo','ho ten chu ho':'chuHo','ten chu ho':'chuHo','ap':'ap','dia chi':'diaChi','phan loai':'loai','loai ho':'loai','nam cong nhan':'namCongNhan','dien thoai':'dienThoai','so dien thoai':'dienThoai','thu nhap':'thuNhap','cac chi so thieu hut':'thieuHut','chi so thieu hut':'thieuHut','nguyen nhan':'nguyenNhan','nhu cau':'nhuCau','doan the':'phuTrach','phu trach':'phuTrach','nguoi phu trach':'phuTrach','vi do':'lat','kinh do':'lng','ghi chu':'ghiChu' };
 const MAP_TV = { 'ma ho':'maHo','ho va ten':'hoTen','ho ten':'hoTen','nam sinh':'namSinh','ngay sinh':'namSinh','gioi tinh':'gioiTinh','quan he':'quanHe','dan toc':'danToc','so cccd':'cccd','cccd':'cccd','so dinh danh':'cccd','nghe nghiep':'ngheNghiep','khuyet tat':'khuyetTat','co bhyt':'bhyt','bhyt':'bhyt','ghi chu':'ghiChu' };
 const MAP_HT = { 'ma ho':'maHo','ngay':'ngay','noi dung':'noiDung','don vi':'donVi','gia tri':'giaTri' };
 const hdrKey = h => norm(h).replace(/[^a-z0-9]+/g, ' ').trim();
-function matchHdr(text, mp) { const k = hdrKey(text); if (!k) return null; if (mp[k]) return mp[k]; for (const key of Object.keys(mp)) if (key.length > 3 && k.startsWith(key)) return mp[key]; return null; }
+/* Bảng đối chiếu tiêu đề cột khi nhập Excel: tên gốc + tên đã đổi + trường bổ sung */
+function mapHo() {
+  const s = SCHEMA(), m = {};
+  for (const f of s.f) m[hdrKey(f.ten)] = 'x:' + f.k;
+  Object.assign(m, MAP_HO);
+  for (const k of Object.keys(BF_GOC)) if (k !== 'thieuHut') m[hdrKey(BL(k))] = k;
+  m[hdrKey(SECT('nguyennhan'))] = 'nguyenNhan'; m[hdrKey(SECT('nhucau'))] = 'nhuCau'; m[hdrKey(SECT('ghichu'))] = 'ghiChu';
+  return m;
+}
+function mapTv() {
+  const m = {};
+  for (const f of SCHEMA().tv) m[hdrKey(f.ten)] = 'x:' + f.k;
+  Object.assign(m, MAP_TV);
+  for (const k of Object.keys(TVBF_GOC)) m[hdrKey(TL(k))] = k;
+  m[hdrKey(BL('maHo'))] = 'maHo';
+  return m;
+}
+function matchHdr(text, mp) { const k = hdrKey(text); if (!k) return null; if (mp[k]) return mp[k]; for (const key of Object.keys(mp)) if (key.length > 3 && !mp[key].startsWith('x:') && k.startsWith(key)) return mp[key]; return null; }
 function hoRow(h, i) {
   const th = thieuHutCur(h);
-  return { stt: i + 1, maHo: h.maHo, chuHo: h.chuHo, ap: h.ap, diaChi: h.diaChi, loai: LOAI[h.loai].ten, namCongNhan: h.namCongNhan, nk: h.thanhVien.length, dienThoai: h.dienThoai, thuNhap: h.thuNhap, soTH: th.length, thieuHut: th.map(chiSoTen).join('; '), nguyenNhan: h.nguyenNhan.join('; '), nhuCau: h.nhuCau.join('; '), phuTrach: h.phuTrach, lat: h.lat, lng: h.lng, link: hasLoc(h) ? { text: 'Mở bản đồ', hyperlink: viewLink(h) } : '', ghiChu: h.ghiChu, updatedBy: h.updatedBy, updatedAtTxt: dt(h.updatedAt) };
+  const r = { stt: i + 1, maHo: h.maHo, chuHo: h.chuHo, ap: h.ap, diaChi: h.diaChi, loai: loaiTen(h.loai), namCongNhan: h.namCongNhan, nk: h.thanhVien.length, dienThoai: h.dienThoai, thuNhap: h.thuNhap, soTH: th.length, thieuHut: th.map(chiSoTen).join('; '), nguyenNhan: h.nguyenNhan.join('; '), nhuCau: h.nhuCau.join('; '), phuTrach: h.phuTrach, lat: h.lat, lng: h.lng, link: hasLoc(h) ? { text: 'Mở bản đồ', hyperlink: viewLink(h) } : '', ghiChu: h.ghiChu, updatedBy: h.updatedBy, updatedAtTxt: dt(h.updatedAt) };
+  for (const f of SCHEMA().f) r['x:' + f.k] = fCell(f, h.ext[f.k]);
+  return r;
+}
+function tvRowX(h, m, i) {
+  const r = { stt: i, maHo: h.maHo, chuHo: h.chuHo, ap: h.ap, hoTen: m.hoTen, namSinh: m.namSinh, tuoi: age(m), gioiTinh: m.gioiTinh, quanHe: m.quanHe, danToc: m.danToc, cccd: m.cccd, ngheNghiep: m.ngheNghiep, khuyetTat: m.khuyetTat ? 'Có' : '', bhyt: m.bhyt ? 'Có' : 'Không', ghiChu: m.ghiChu };
+  for (const f of SCHEMA().tv) r['x:' + f.k] = fCell(f, (m.ext || {})[f.k]);
+  return r;
 }
 function styleSheet(ws, nCols, filter = true) {
   const hr = ws.getRow(1);
@@ -2268,28 +2731,42 @@ function styleSheet(ws, nCols, filter = true) {
 async function buildWorkbook(list, { template = false } = {}) {
   const wb = new ExcelJS.Workbook(); wb.creator = S.config.donVi; wb.created = new Date();
   const add = (name, cols) => { const ws = wb.addWorksheet(name); ws.columns = cols.map(([h, k, w]) => ({ header: h, key: k, width: w })); return ws; };
-  const ws1 = add('DanhSachHo', template ? COLS_HO.slice(0, -2) : COLS_HO), ws2 = add('ThanhVien', COLS_TV), ws3 = add('HoTro', COLS_HT);
+  const cH = colsHo(), cT = colsTv(), hasCol = (cols, k) => cols.some(c => c[1] === k);
+  const ws1 = add('DanhSachHo', template ? cH.slice(0, -2) : cH), ws2 = add('ThanhVien', cT), ws3 = add('HoTro', COLS_HT);
   let i2 = 0, i3 = 0;
   list.forEach((h, i) => {
     const r = ws1.addRow(hoRow(h, i)); const lc = r.getCell('link'); if (lc.value && lc.value.hyperlink) lc.font = { color: { argb: 'FF1D4EA8' }, underline: true };
-    h.thanhVien.forEach(m => { const r2 = ws2.addRow({ stt: ++i2, maHo: h.maHo, chuHo: h.chuHo, ap: h.ap, hoTen: m.hoTen, namSinh: m.namSinh, tuoi: age(m), gioiTinh: m.gioiTinh, quanHe: m.quanHe, danToc: m.danToc, cccd: m.cccd, ngheNghiep: m.ngheNghiep, khuyetTat: m.khuyetTat ? 'Có' : '', bhyt: m.bhyt ? 'Có' : 'Không', ghiChu: m.ghiChu }); r2.getCell('cccd').numFmt = '@'; });
+    h.thanhVien.forEach(m => { const r2 = ws2.addRow(tvRowX(h, m, ++i2)); if (hasCol(cT, 'cccd')) r2.getCell('cccd').numFmt = '@'; });
     h.hoTro.forEach(x => ws3.addRow({ stt: ++i3, maHo: h.maHo, chuHo: h.chuHo, ap: h.ap, ngay: dateVN(x.ngay), noiDung: x.noiDung, donVi: x.donVi, giaTri: x.giaTri }));
   });
-  ws1.getColumn('thuNhap').numFmt = '#,##0'; ws3.getColumn('giaTri').numFmt = '#,##0'; ws2.getColumn('cccd').numFmt = '@';
-  styleSheet(ws1, ws1.columnCount); styleSheet(ws2, COLS_TV.length); styleSheet(ws3, COLS_HT.length);
+  if (hasCol(cH, 'thuNhap')) ws1.getColumn('thuNhap').numFmt = '#,##0';
+  ws3.getColumn('giaTri').numFmt = '#,##0'; if (hasCol(cT, 'cccd')) ws2.getColumn('cccd').numFmt = '@';
+  SCHEMA().f.filter(f => f.kieu === 'money' && hasCol(cH, 'x:' + f.k)).forEach(f => { ws1.getColumn('x:' + f.k).numFmt = '#,##0'; });
+  styleSheet(ws1, ws1.columnCount); styleSheet(ws2, cT.length); styleSheet(ws3, COLS_HT.length);
   if (template) {
     const g = wb.addWorksheet('HuongDan'); g.getColumn(1).width = 110;
-    ['HƯỚNG DẪN NHẬP DỮ LIỆU','• Giữ nguyên tên các trang (DanhSachHo, ThanhVien, HoTro) và dòng tiêu đề. Xóa dòng ví dụ trước khi nhập.','• Mã hộ dùng để nối Danh sách hộ với Thành viên, Hỗ trợ. Mỗi hộ một mã duy nhất.',
-     '• Phân loại ghi: Hộ nghèo / Hộ cận nghèo / Hộ mới thoát nghèo / Hộ khó khăn khác.','• Thu nhập ghi theo nghìn đồng/người/tháng (ví dụ 1500 = 1.500.000 đồng).',
+    const xf = [...SCHEMA().f.filter(f => !f.an && f.xl).map(f => [f, 'DanhSachHo']), ...SCHEMA().tv.filter(f => !f.an && f.xl).map(f => [f, 'ThanhVien'])];
+    const xnote = ([f, ws]) => `• Cột “${f.ten}” (trang ${ws}): ${KIEU[f.kieu]}` + (f.kieu === 'select' ? ` — ghi một trong: ${f.opts.join('; ')}` : f.kieu === 'multi' ? ` — ghi nhiều mục cách nhau bằng dấu chấm phẩy, trong số: ${f.opts.join('; ')}` : f.kieu === 'bool' ? ' — ghi Có hoặc để trống' : f.kieu === 'nguoi' ? ' — ghi họ tên rồi số điện thoại, ví dụ: Nguyễn Văn A - 0912345678' : f.kieu === 'date' ? ' — ghi ngày/tháng/năm' : '') + '.';
+    ['HƯỚNG DẪN NHẬP DỮ LIỆU', '• Giữ nguyên tên các trang (DanhSachHo, ThanhVien, HoTro) và dòng tiêu đề. Xóa dòng ví dụ trước khi nhập.', `• ${BL('maHo')} dùng để nối Danh sách hộ với Thành viên, Hỗ trợ. Mỗi hộ một mã duy nhất.`,
+     `• ${BL('loai')} ghi một trong: ${Object.keys(LOAI).filter(k => !LOAI[k].an).map(loaiTen).join(' / ')}.`, '• Thu nhập ghi theo nghìn đồng/người/tháng (ví dụ 1500 = 1.500.000 đồng).',
      '• Các chỉ số thiếu hụt, nguyên nhân, nhu cầu: ghi nhiều mục cách nhau bằng dấu chấm phẩy (;), đúng tên trong ứng dụng.',
-     '• Vĩ độ, kinh độ: dạng số thập phân (ví dụ 9.691234 và 106.031234). Có thể để trống rồi định vị sau trên bản đồ.','• Cột Có BHYT ghi Có/Không; cột Khuyết tật ghi Có hoặc để trống.',
+     '• Vĩ độ, kinh độ: dạng số thập phân (ví dụ 9.691234 và 106.031234). Có thể để trống rồi định vị sau trên bản đồ.', '• Cột Có BHYT ghi Có/Không; cột Khuyết tật ghi Có hoặc để trống.',
+     ...xf.map(xnote),
      '• Tên các chỉ số thiếu hụt hợp lệ: ' + CHI_SO.map(c => c.ten).join('; ')].forEach((t, i) => { const c = g.getCell(i + 1, 1); c.value = t; c.alignment = { wrapText: true }; c.font = { name: 'Times New Roman', size: 12, bold: i === 0 }; });
   } else {
-    const ws4 = wb.addWorksheet('ThongKe'); ws4.columns = [['Ấp',18],['Tổng số hộ',10],['Hộ nghèo',10],['Hộ cận nghèo',11],['Hộ mới thoát nghèo',12],['Hộ khó khăn khác',12],['Nhân khẩu',10],['Đã định vị',10]].map(([h, w]) => ({ header: h, width: w }));
-    const aps = [...new Set([...apOrder(), ...list.map(h => h.ap || '')])], t = [0,0,0,0,0,0,0];
-    aps.forEach(a => { const arr = list.filter(h => (h.ap || '') === a); if (!arr.length) return; const v = [arr.length, ...['ngheo','canngheo','thoatngheo','khokhan'].map(k => arr.filter(h => h.loai === k).length), arr.reduce((s, h) => s + h.thanhVien.length, 0), arr.filter(hasLoc).length]; v.forEach((x, i) => t[i] += x); ws4.addRow([a || 'Chưa rõ ấp', ...v]); });
+    const cats = [...new Set([...Object.keys(LOAI).filter(k => !LOAI[k].an), ...list.map(h => h.loai)])];
+    const ws4 = wb.addWorksheet('ThongKe'); ws4.columns = [[apL(), 18], ['Tổng số hộ', 10], ...cats.map(k => [loaiTen(k), 12]), ['Nhân khẩu', 10], ['Đã định vị', 10]].map(([h, w]) => ({ header: h, width: w }));
+    const aps = [...new Set([...apOrder(), ...list.map(h => h.ap || '')])], t = new Array(cats.length + 3).fill(0);
+    aps.forEach(a => { const arr = list.filter(h => (h.ap || '') === a); if (!arr.length) return; const v = [arr.length, ...cats.map(k => arr.filter(h => h.loai === k).length), arr.reduce((s, h) => s + h.thanhVien.length, 0), arr.filter(hasLoc).length]; v.forEach((x, i) => t[i] += x); ws4.addRow([a || `Chưa rõ ${apl()}`, ...v]); });
     const tr = ws4.addRow(['Cộng', ...t]);
-    styleSheet(ws4, 8, false); tr.font = { bold: true, name: 'Times New Roman', size: 12 };
+    styleSheet(ws4, cats.length + 4, false); tr.font = { bold: true, name: 'Times New Roman', size: 12 };
+    /* Thông tin ấp: Ban công tác Mặt trận, chi hội trưởng */
+    const sA = SCHEMA(), apsInfo = apOrder().filter(a => apInfoKV(a));
+    if (sA.apF.length && apsInfo.length) {
+      const ws5 = wb.addWorksheet('ThongTinAp'); ws5.columns = [[apL(), 18], ...sA.apF.map(f => [f.ten, xw(f.ten) + 6])].map(([h, w]) => ({ header: h, width: w }));
+      apsInfo.forEach(a => { const v = sA.apInfo[a] || {}; ws5.addRow([a, ...sA.apF.map(f => fCell(f, v[f.k]))]); });
+      styleSheet(ws5, sA.apF.length + 1, false);
+    }
   }
   return wb;
 }
@@ -2337,12 +2814,14 @@ const findWs = (wb, names) => wb.worksheets.find(w => names.includes(hdrKey(w.na
 async function readExcel(file) {
   const wb = new ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer());
   const wsHo = findWs(wb, ['danhsachho','dsho','danhsach']) || wb.worksheets[0];
-  const rows = sheetRows(wsHo, MAP_HO);
+  const rows = sheetRows(wsHo, mapHo());
   if (!rows) throw new Error('Không tìm thấy dòng tiêu đề (cần ít nhất các cột “Mã hộ”, “Chủ hộ”, “Ấp”…). Hãy dùng file mẫu.');
   const grp = arr => { const g = {}; (arr || []).forEach(o => { const k = norm(o.maHo); if (!k) return; (g[k] = g[k] || []).push(o); }); return g; };
-  const tvG = grp(sheetRows(findWs(wb, ['thanhvien','nhankhau']), MAP_TV)), htG = grp(sheetRows(findWs(wb, ['hotro']), MAP_HT));
+  /* tách các cột trường bổ sung ('x:<mã>') vào ext */
+  const takeExt = o => { const e = {}; for (const k of Object.keys(o)) if (k.startsWith('x:')) { e[k.slice(2)] = o[k]; delete o[k]; } o.ext = e; return o; };
+  const tvG = grp((sheetRows(findWs(wb, ['thanhvien','nhankhau']), mapTv()) || []).map(takeExt)), htG = grp(sheetRows(findWs(wb, ['hotro']), MAP_HT));
   return rows.filter(o => o.chuHo).map(o => {
-    const k = norm(o.maHo);
+    const k = norm(o.maHo); takeExt(o);
     const h = sanitizeHH(Object.assign({}, o, { id: undefined, maHo: o.maHo == null ? '' : String(o.maHo), thieuHut: parseThieuHut(o.thieuHut), thanhVien: tvG[k] || [], hoTro: htG[k] || [] }));
     h._noTV = !tvG[k]; h._noHT = !htG[k];
     return h;
@@ -2363,7 +2842,7 @@ async function applyImport(incoming, source) {
   if (mode === 'replace') incoming.forEach(h => up.push(stampHH(Object.assign(h, { id: uid() }))));
   else for (const h of incoming) {
     const ex = h.maHo && S.households.find(x => norm(x.maHo) === norm(h.maHo));
-    if (ex) { const m = Object.assign(clone(ex), h, { id: ex.id, createdAt: ex.createdAt, createdBy: ex.createdBy, createdById: ex.createdById, thanhVien: h._noTV ? ex.thanhVien : h.thanhVien, hoTro: h._noHT ? ex.hoTro : h.hoTro, lat: hasLoc(h) ? h.lat : ex.lat, lng: hasLoc(h) ? h.lng : ex.lng, sample: false }); up.push(stampHH(m)); }
+    if (ex) { const m = Object.assign(clone(ex), h, { id: ex.id, createdAt: ex.createdAt, createdBy: ex.createdBy, createdById: ex.createdById, thanhVien: h._noTV ? ex.thanhVien : h.thanhVien, hoTro: h._noHT ? ex.hoTro : h.hoTro, lat: hasLoc(h) ? h.lat : ex.lat, lng: hasLoc(h) ? h.lng : ex.lng, ext: Object.assign({}, ex.ext, h.ext), sample: false }); up.push(stampHH(m)); }
     else { if (S.households.some(x => x.id === h.id)) h.id = uid(); up.push(stampHH(h)); }
   }
   const aps = [...new Set(incoming.map(h => h.ap).filter(a => a && !S.config.apList.includes(a)))];
@@ -2376,24 +2855,33 @@ async function applyImport(incoming, source) {
 
 /* ---------- In phiếu ---------- */
 function printHH(h) {
-  const C = S.config, th = thieuHutCur(h);
+  const C = S.config, s = SCHEMA(), th = thieuHutCur(h), dots = '..........................';
+  const pf = f => f.inP, kvLines = fs => fs.filter(pf).map(f => { const t = fText(f, h.ext[f.k]); return `<div>${esc(f.ten)}: ${t ? esc(t) : dots}</div>`; }).join('');
+  let n = 0; const H = t => `<div class="p-h">${++n}. ${esc(t)}</div>`;
+  const tvf = s.tv.filter(f => !f.an && f.inP), tcol = k => !TH(k);
+  const SEC_PRINT = {
+    chung: () => '', vitri: () => '',
+    thanhvien: () => `${H(`${SECT('thanhvien')} (${h.thanhVien.length} người)`)}
+      <table class="p-tbl"><thead><tr><th>TT</th><th>${esc(TL('hoTen'))}</th>${tcol('namSinh') ? `<th>${esc(TL('namSinh'))}</th>` : ''}${tcol('gioiTinh') ? `<th>${esc(TL('gioiTinh'))}</th>` : ''}${tcol('quanHe') ? `<th>${esc(TL('quanHe'))}</th>` : ''}${tcol('danToc') ? `<th>${esc(TL('danToc'))}</th>` : ''}${tcol('ngheNghiep') ? `<th>${esc(TL('ngheNghiep'))}</th>` : ''}${tvf.map(f => `<th>${esc(f.ten)}</th>`).join('')}<th>Ghi chú</th></tr></thead>
+      <tbody>${h.thanhVien.map((m, i) => `<tr><td>${i + 1}</td><td>${esc(m.hoTen)}</td>${tcol('namSinh') ? `<td>${m.namSinh || ''}</td>` : ''}${tcol('gioiTinh') ? `<td>${esc(m.gioiTinh)}</td>` : ''}${tcol('quanHe') ? `<td>${esc(m.quanHe)}</td>` : ''}${tcol('danToc') ? `<td>${esc(m.danToc)}</td>` : ''}${tcol('ngheNghiep') ? `<td>${esc(m.ngheNghiep)}</td>` : ''}${tvf.map(f => `<td>${esc(fText(f, m.ext[f.k]))}</td>`).join('')}<td>${memberTags(m).map(t => t[0]).join(', ')}</td></tr>`).join('')}</tbody></table>`,
+    thunhap: fx => { const a = !BH('thuNhap'), b = !BH('thieuHut'); if (!a && !b && !fx.some(pf)) return ''; return `${H(SECT('thunhap'))}
+      ${a || b ? `<div>${a ? `Thu nhập bình quân: ${h.thuNhap != null ? fmt(h.thuNhap * 1000) + ' đồng/người/tháng' : dots}. ` : ''}${b ? `Số chỉ số thiếu hụt: ${th.length}/${chiSoCur().length}${th.length ? ' (' + th.map(id => esc(chiSoTen(id))).join('; ') + ')' : ''}.` : ''}</div>` : ''}${kvLines(fx)}`; },
+    nguyennhan: fx => `${H(SECT('nguyennhan'))}<div>${esc(h.nguyenNhan.join('; ')) || '—'}.</div>${kvLines(fx)}`,
+    nhucau: fx => `${H(SECT('nhucau'))}<div>${esc(h.nhuCau.join('; ')) || '—'}.</div>${kvLines(fx)}`,
+    hotro: fx => `${H(SECT('hotro'))}${h.hoTro.length ? `<table class="p-tbl"><thead><tr><th>Ngày</th><th>Nội dung</th><th>Đơn vị hỗ trợ</th><th>Giá trị (đồng)</th></tr></thead><tbody>${h.hoTro.map(x => `<tr><td>${dateVN(x.ngay)}</td><td>${esc(x.noiDung)}</td><td>${esc(x.donVi)}</td><td style="text-align:right">${fmt(x.giaTri)}</td></tr>`).join('')}</tbody></table>` : '<div>Chưa ghi nhận.</div>'}${kvLines(fx)}`,
+    apinfo: () => { const v = h.ap && s.apInfo[h.ap]; const ls = v ? s.apF.filter(f => !isEmptyVal(v[f.k])).map(f => `<div>${esc(f.ten)}: ${esc(fText(f, v[f.k]))}</div>`).join('') : ''; return ls ? `${H(`${SECT('apinfo')} (${h.ap})`)}${ls}` : ''; },
+    ghichu: fx => h.ghiChu || fx.some(f => pf(f) && !isEmptyVal(h.ext[f.k])) ? `${H(SECT('ghichu'))}${h.ghiChu ? `<div style="white-space:pre-wrap">${esc(h.ghiChu)}</div>` : ''}${kvLines(fx)}` : ''
+  };
+  const body = s.sec.filter(x => !x.an).map(x => { const fx = fieldsIn(x.k, h.loai); if (SEC_PRINT[x.k]) return SEC_PRINT[x.k](fx); return fx.some(pf) ? `${H(x.ten)}${kvLines(fx)}` : ''; }).join('');
   $('#printArea').innerHTML = `
     <div class="p-top"><div><span>${esc(C.donVi.replace(/xã .*/i, '').trim().toUpperCase() || 'ỦY BAN MTTQ VIỆT NAM')}</span><b>${esc(('xã ' + C.tenXa).toUpperCase())}</b></div><div><b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><b style="text-decoration:underline">Độc lập - Tự do - Hạnh phúc</b></div></div>
-    <div class="p-title">PHIẾU THÔNG TIN HỘ GIA ĐÌNH</div><div class="p-subtitle">(${esc(LOAI[h.loai].ten)}${h.namCongNhan ? ', năm ' + h.namCongNhan : ''})</div>
-    <div>Họ và tên chủ hộ: <b>${esc(h.chuHo)}</b> — Mã hộ: <b>${esc(h.maHo)}</b></div>
-    <div>Địa chỉ: ${esc(h.diaChi)}${h.diaChi ? ', ' : ''}${esc(h.ap)}, xã ${esc(C.tenXa)}${C.tinh ? ', ' + esc(C.tinh) : ''}</div>
-    <div>Điện thoại: ${esc(h.dienThoai) || '..........................'} — Tọa độ: ${hasLoc(h) ? h.lat.toFixed(6) + ', ' + h.lng.toFixed(6) : 'chưa xác định'}</div>
-    <div>Đoàn thể/cán bộ phụ trách giúp đỡ: ${esc(h.phuTrach) || '..........................'}</div>
-    <div class="p-h">1. Thành viên trong hộ (${h.thanhVien.length} người)</div>
-    <table class="p-tbl"><thead><tr><th>TT</th><th>Họ và tên</th><th>Năm sinh</th><th>Giới tính</th><th>Quan hệ với chủ hộ</th><th>Dân tộc</th><th>Nghề nghiệp/tình trạng</th><th>Ghi chú</th></tr></thead>
-    <tbody>${h.thanhVien.map((m, i) => `<tr><td>${i + 1}</td><td>${esc(m.hoTen)}</td><td>${m.namSinh || ''}</td><td>${esc(m.gioiTinh)}</td><td>${esc(m.quanHe)}</td><td>${esc(m.danToc)}</td><td>${esc(m.ngheNghiep)}</td><td>${memberTags(m).map(t => t[0]).join(', ')}</td></tr>`).join('')}</tbody></table>
-    <div class="p-h">2. Thu nhập và thiếu hụt dịch vụ xã hội cơ bản</div>
-    <div>Thu nhập bình quân: ${h.thuNhap != null ? fmt(h.thuNhap * 1000) + ' đồng/người/tháng' : '..........................'}. Số chỉ số thiếu hụt: ${th.length}/${chiSoCur().length}${th.length ? ' (' + th.map(id => esc(chiSoTen(id))).join('; ') + ')' : ''}.</div>
-    <div class="p-h">3. Nguyên nhân và nhu cầu hỗ trợ</div>
-    <div>Nguyên nhân: ${esc(h.nguyenNhan.join('; ')) || '—'}.</div><div>Nhu cầu: ${esc(h.nhuCau.join('; ')) || '—'}.</div>
-    <div class="p-h">4. Hỗ trợ đã nhận</div>
-    ${h.hoTro.length ? `<table class="p-tbl"><thead><tr><th>Ngày</th><th>Nội dung</th><th>Đơn vị hỗ trợ</th><th>Giá trị (đồng)</th></tr></thead><tbody>${h.hoTro.map(x => `<tr><td>${dateVN(x.ngay)}</td><td>${esc(x.noiDung)}</td><td>${esc(x.donVi)}</td><td style="text-align:right">${fmt(x.giaTri)}</td></tr>`).join('')}</tbody></table>` : '<div>Chưa ghi nhận.</div>'}
-    ${h.ghiChu ? `<div class="p-h">5. Ghi chú</div><div style="white-space:pre-wrap">${esc(h.ghiChu)}</div>` : ''}
+    <div class="p-title">PHIẾU THÔNG TIN HỘ GIA ĐÌNH</div><div class="p-subtitle">(${esc(loaiTen(h.loai))}${h.namCongNhan && !BH('namCongNhan') ? ', năm ' + h.namCongNhan : ''})</div>
+    <div>${esc(BL('chuHo'))}: <b>${esc(h.chuHo)}</b> — ${esc(BL('maHo'))}: <b>${esc(h.maHo)}</b></div>
+    <div>${esc(BL('diaChi'))}: ${BH('diaChi') ? '' : esc(h.diaChi) + (h.diaChi ? ', ' : '')}${esc(h.ap)}, xã ${esc(C.tenXa)}${C.tinh ? ', ' + esc(C.tinh) : ''}</div>
+    <div>${BH('dienThoai') ? '' : `${esc(BL('dienThoai'))}: ${esc(h.dienThoai) || dots} — `}Tọa độ: ${hasLoc(h) ? h.lat.toFixed(6) + ', ' + h.lng.toFixed(6) : 'chưa xác định'}</div>
+    ${BH('phuTrach') ? '' : `<div>${esc(BL('phuTrach'))}: ${esc(h.phuTrach) || dots}</div>`}
+    ${kvLines(fieldsIn('chung', h.loai))}${kvLines(fieldsIn('vitri', h.loai))}
+    ${body}
     <div class="p-sign"><div><b>Đại diện hộ gia đình</b><br><i>(Ký, ghi rõ họ tên)</i></div><div><i>${esc(C.tenXa)}, ngày ${new Date().getDate()} tháng ${new Date().getMonth() + 1} năm ${YEAR}</i><br><b>Người lập phiếu</b><br><i>(Ký, ghi rõ họ tên)</i></div></div>`;
   setTimeout(() => window.print(), 50);
 }
@@ -2402,6 +2890,7 @@ function printHH(h) {
 function renderSettings() {
   const C = S.config, ad = isAdmin();
   $('#setForm').innerHTML = `
+    ${ad ? `<div class="card" style="border-color:var(--navy)"><h3>${I('layers')} Cấu trúc ứng dụng</h3><p>Thêm, bớt, đổi tên các trường thông tin; thêm phân loại hộ; nhập Ban công tác Mặt trận, chi hội trưởng từng ${esc(apl())}; đổi màu, tên ứng dụng…</p><button type="button" class="btn btn-navy btn-sm" data-act="go-schema">Mở Cấu trúc ứng dụng</button></div>` : ''}
     ${ad ? `<fieldset><legend>Đơn vị (áp dụng cho mọi người)</legend>
       <label class="f"><span>Tên cơ quan (hiện trên tiêu đề, phiếu in)</span><input name="donVi" value="${esc(C.donVi)}"></label>
       <div class="grid2"><label class="f"><span>Tên xã</span><input name="tenXa" value="${esc(C.tenXa)}"></label><label class="f"><span>Tỉnh/thành phố</span><input name="tinh" value="${esc(C.tinh)}"></label></div>
@@ -2442,6 +2931,292 @@ async function saveSettings() {
 }
 
 /* =========================================================
+   CẤU TRÚC ỨNG DỤNG — trình chỉnh sửa của quản trị viên
+   Sửa trên bản nháp SE.s; bấm "Lưu cấu trúc" mới gửi lên máy chủ và áp dụng cho mọi người
+   ========================================================= */
+const SE = { s: null, tab: 'ui', dirty: false, first: false };
+const SE_TABS = [['ui', 'Giao diện'], ['loai', 'Phân loại hộ'], ['ho', 'Thông tin hộ'], ['tv', 'Thành viên'], ['ap', 'Thông tin ấp'], ['ds', 'Danh mục'], ['bk', 'Sao lưu']];
+const srvHasSchema = () => isObj(S.srv && S.srv.schema);
+function seOpen() {
+  if (!SE.s || !SE.dirty || SE.first) {
+    if (srvHasSchema()) { SE.s = clone(SCHEMA()); SE.dirty = false; SE.first = false; }
+    else { SE.s = SE.first && SE.s ? SE.s : normSchema(null); SE.dirty = true; SE.first = true; }   /* lần đầu: cấu trúc mặc định mới, chờ lưu */
+  }
+  renderSchema();
+}
+function seMark() { SE.dirty = true; SE.first = false; seFoot(); }
+function seFoot() { const st = $('#seState'); if (!st) return; st.innerHTML = SE.dirty ? '<b style="color:var(--warn)">Có thay đổi chưa lưu</b>' : 'Đã lưu, đang áp dụng'; $('#seSave').disabled = !SE.dirty; $('#seUndo').disabled = !SE.dirty; }
+function renderSchema() {
+  const box = $('#schemaBody'), st = box.scrollTop;
+  $('#seTabs').innerHTML = SE_TABS.map(([k, t]) => `<button type="button" class="chip ${SE.tab === k ? 'on' : ''}" style="--c:var(--navy)" data-act="se-tab" data-k="${k}">${k === 'ap' ? `Thông tin ${esc(apl())}` : t}</button>`).join('');
+  box.innerHTML = (SE.first ? `<div class="banner info" style="margin:0 0 12px"><div>Máy chủ chưa lưu cấu trúc nào. Đây là <b>cấu trúc mặc định mới</b> (đã có sẵn phân loại “Hộ thoát nghèo năm trước” và mục Ban công tác Mặt trận, chi hội trưởng ${esc(apl())}). Chỉnh nếu cần rồi bấm <b>Lưu cấu trúc</b> để bắt đầu áp dụng cho mọi người.</div></div>` : '') + SE_VIEW[SE.tab]();
+  box.scrollTop = st; seFoot();
+}
+const seArr = kind => ({ loai: SE.s.loai, sec: SE.s.sec, f: SE.s.f, tv: SE.s.tv, apF: SE.s.apF })[kind];
+const seBL = k => (SE.s.bf[k] || {}).ten || BF_GOC[k][0];
+const seBtn = (act, inner, title, data, cls) => `<button type="button" class="icon-btn ${cls || ''}" data-act="${act}"${title ? ` title="${esc(title)}" aria-label="${esc(title)}"` : ''} ${Object.entries(data || {}).map(([k, v]) => `data-${k}="${esc(v)}"`).join(' ')}>${inner}</button>`;
+const seUD = (kind, i, j, n) => (j > 0 ? seBtn('se-move', I('up', 14), 'Đưa lên', { kind, i, d: -1 }) : '') + (j < n - 1 ? seBtn('se-move', I('down', 14), 'Đưa xuống', { kind, i, d: 1 }) : '');
+const seChk = (path, on, label) => `<label class="chk"><input type="checkbox" data-se="${path}" ${on ? 'checked' : ''}> ${label}</label>`;
+const seArrChk = (path, arr, val, label) => `<label class="chk"><input type="checkbox" data-se-arr="${path}" value="${esc(val)}" ${arr.includes(val) ? 'checked' : ''}> ${esc(label)}</label>`;
+const newKey = (p, ex) => { let k; do { k = p + Math.random().toString(36).slice(2, 7); } while (ex.includes(k)); return k; };
+function seFieldRow(f, kind, gi, j, n) {
+  const flags = kind === 'apF' ? [] : [f.bb && 'bắt buộc', f.qt && 'chỉ QTV sửa', f.tk && 'thống kê', !f.xl && 'không Excel', f.loai && f.loai.length && ('chỉ: ' + f.loai.map(k => (SE.s.loai.find(x => x.k === k) || { ten: k }).ten).join(', '))].filter(Boolean);
+  return `<div class="se-f ${f.an ? 'off' : ''}"><span class="nm grow">${esc(f.ten)}</span><span class="tag info">${esc(KIEU[f.kieu])}</span>${flags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}${f.an ? '<span class="tag warn">đang ẩn</span>' : ''}
+    <div class="se-btns">${seBtn('se-f-edit', I('edit', 14), 'Sửa trường', { kind, i: gi })}${seUD(kind, gi, j, n)}${kind === 'apF' ? '' : seBtn('se-f-hide', f.an ? 'Hiện' : 'Ẩn', f.an ? 'Hiện lại trường' : 'Ẩn trường (giữ dữ liệu)', { kind, i: gi })}${seBtn('se-f-del', I('trash', 14), 'Xóa trường', { kind, i: gi }, 'del')}</div></div>`;
+}
+const SE_VIEW = {
+  ui: () => {
+    const s = SE.s, u = s.ui, custom = s.f.filter(f => !f.an);
+    const metaAll = [...META_GOC.filter(([k]) => !(k in BF_GOC) || !(s.bf[k] || {}).an).map(([k, t]) => [k, k in BF_GOC ? seBL(k) : t]), ...custom.map(f => [f.k, f.ten])];
+    const locAll = [['namCongNhan', seBL('namCongNhan')], ['phuTrach', seBL('phuTrach')], ...custom.filter(f => f.kieu !== 'textarea').map(f => [f.k, f.ten])];
+    const pinOpts = [['nk', 'Số nhân khẩu'], ['none', 'Không hiện số'], ...custom.filter(f => ['number', 'year', 'text', 'select'].includes(f.kieu)).map(f => [f.k, f.ten + ' (3 ký tự đầu)'])];
+    return `
+    <fieldset><legend>Tên và màu sắc</legend>
+      <label class="f"><span>Tên ứng dụng (thanh tiêu đề, màn hình đăng nhập)</span><input data-se="ui.title" value="${esc(u.title)}"></label>
+      <label class="f"><span>Tên ngắn (hiện trên điện thoại)</span><input data-se="ui.short" value="${esc(u.short)}"></label>
+      <div class="grid2"><label class="f"><span>Màu thanh tiêu đề</span><input type="color" data-se="ui.navy" value="${u.navy}"></label><label class="f"><span>Màu nút chính, điểm nhấn</span><input type="color" data-se="ui.red" value="${u.red}"></label></div>
+      <p class="se-note">Tên và màu đổi ngay trên màn hình của bạn để xem thử; bấm <b>Lưu cấu trúc</b> mới áp dụng cho mọi người. Tên đơn vị, danh sách ${esc(apl())}, chuẩn nghèo: chỉnh ở mục Cài đặt.</p>
+    </fieldset>
+    <fieldset><legend>Danh sách hộ</legend>
+      <div class="f"><span>Dòng thông tin dưới tên chủ hộ</span><div class="ck-grid">${metaAll.map(([k, t]) => seArrChk('ui.list', u.list, k, t)).join('')}</div></div>
+      <div class="f"><span>Thêm ô lọc phía trên danh sách</span><div class="ck-grid">${locAll.map(([k, t]) => seArrChk('ui.loc', u.loc, k, t)).join('')}</div></div>
+    </fieldset>
+    <fieldset><legend>Bản đồ</legend>
+      <label class="f"><span>Số hiện trong ghim của mỗi hộ</span><select data-se="ui.pin">${pinOpts.map(([k, t]) => `<option value="${esc(k)}" ${u.pin === k ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+      <div class="f"><span>Khung thông tin khi bấm vào ghim</span><div class="ck-grid">${metaAll.map(([k, t]) => seArrChk('ui.pop', u.pop, k, t)).join('')}</div></div>
+      ${seChk('ui.legend', u.legend, 'Hiện bảng chú giải phân loại trên bản đồ (màn hình máy tính)')}
+    </fieldset>
+    <fieldset><legend>Khác</legend>
+      ${seChk('ui.goiY', u.goiY, 'Hiện ô gợi ý phân loại theo chuẩn nghèo (thu nhập + chỉ số thiếu hụt)')}
+      <div class="grid2 mt8"><label class="f"><span>Tính “người cao tuổi” từ (tuổi)</span><input type="number" min="40" max="100" data-se="ui.gia" data-num value="${u.gia}"></label><label class="f"><span>Tính “trẻ em” dưới (tuổi)</span><input type="number" min="1" max="30" data-se="ui.tre" data-num value="${u.tre}"></label></div>
+    </fieldset>`;
+  },
+  loai: () => {
+    const a = SE.s.loai, cnt = k => S.households.filter(h => h.loai === k).length;
+    return `<p class="se-note" style="margin:0 0 10px">Đổi tên, đổi màu ghim, thêm phân loại mới. Phân loại <b>ẩn</b> không còn để chọn khi thêm/sửa hộ (hộ cũ vẫn giữ nguyên). <b>Đối tượng chính sách</b>: được tính vào thống kê thiếu hụt, người cao tuổi, trẻ em, BHYT…</p>
+    ${a.map((x, i) => `<div class="se-card ${x.an ? 'off' : ''}">
+      <div class="se-row"><input type="color" data-se="loai.${i}.mau" value="${x.mau}" title="Màu ghim trên bản đồ"><input data-se="loai.${i}.ten" value="${esc(x.ten)}" class="grow" aria-label="Tên phân loại"><span class="tag" title="Số hộ đang thuộc phân loại này">${cnt(x.k)} hộ</span><div class="se-btns">${seUD('loai', i, i, a.length)}</div></div>
+      <div class="row gap wrap mt8 small">${seChk(`loai.${i}.dt`, x.dt, 'Đối tượng chính sách')}${seChk(`loai.${i}.an`, x.an, 'Ẩn khi thêm/sửa hộ')}<span class="grow"></span>
+        ${cnt(x.k) ? `<button type="button" class="btn btn-sm" data-act="se-loai-move" data-k="${esc(x.k)}">Chuyển hộ sang phân loại khác…</button>` : ''}${LOAI_GOC[x.k] ? '' : `<button type="button" class="btn btn-sm btn-danger" data-act="se-loai-del" data-i="${i}">Xóa</button>`}</div>
+    </div>`).join('')}
+    <button type="button" class="btn se-add" data-act="se-loai-add">${I('plus', 15)} Thêm phân loại hộ</button>
+    <p class="se-note mt12">Mẹo cuối năm: bấm <b>Chuyển hộ sang phân loại khác…</b> để chuyển cả loạt, ví dụ các hộ “mới thoát nghèo” năm trước sang “thoát nghèo năm trước”.</p>`;
+  },
+  ho: () => {
+    const s = SE.s;
+    const note = { vitri: 'Tọa độ, chọn trên bản đồ, GPS.', thanhvien: 'Các ô của từng thành viên: chỉnh ở thẻ <b>Thành viên</b>.', apinfo: `Hiện Ban công tác Mặt trận, chi hội trưởng… của ${esc(apl())} nơi hộ cư trú. Chỉnh ở thẻ <b>Thông tin ${esc(apl())}</b>.`, nguyennhan: 'Các ô đánh dấu: chỉnh ở thẻ <b>Danh mục</b>.', nhucau: 'Các ô đánh dấu: chỉnh ở thẻ <b>Danh mục</b>.', hotro: 'Các lượt hỗ trợ: ngày, nội dung, đơn vị, giá trị.', ghichu: 'Ô ghi chú tự do.' };
+    return `<p class="se-note" style="margin:0 0 10px">Các <b>nhóm thông tin</b> hiện theo đúng thứ tự dưới đây ở màn hình thêm/sửa hộ, chi tiết hộ và phiếu in. Có thể đổi tên, đổi thứ tự, ẩn nhóm; thêm trường mới vào nhóm có sẵn hoặc tạo nhóm mới.</p>
+    ${s.sec.map((x, i) => {
+      const goc = SEC_GOC.some(g => g[0] === x.k), bfs = Object.keys(BF_GOC).filter(k => BF_GOC[k][1] === x.k), fs = s.f.map((f, gi) => [f, gi]).filter(([f]) => f.sec === x.k);
+      return `<div class="se-card ${x.an ? 'off' : ''}">
+        <div class="se-head"><b>${esc(x.ten)}</b>${goc ? '' : '<span class="tag info">nhóm thêm</span>'}${x.an ? '<span class="tag warn">đang ẩn</span>' : ''}
+          <div class="se-btns">${seBtn('se-sec-ren', I('edit', 14), 'Đổi tên nhóm', { i })}${seUD('sec', i, i, s.sec.length)}${SEC_KHOA.includes(x.k) ? '' : seBtn('se-sec-hide', x.an ? 'Hiện' : 'Ẩn', x.an ? 'Hiện lại nhóm' : 'Ẩn cả nhóm', { i })}${goc ? '' : seBtn('se-sec-del', I('trash', 14), 'Xóa nhóm', { i }, 'del')}</div></div>
+        ${note[x.k] ? `<p class="se-note">${note[x.k]}</p>` : ''}
+        ${bfs.length || fs.length ? `<div class="se-fields">
+          ${bfs.map(k => { const o = s.bf[k] || {}, lock = BF_GOC[k][2]; return `<div class="se-f ${o.an ? 'off' : ''}"><span class="nm grow">${esc(o.ten || BF_GOC[k][0])}</span><span class="tag">có sẵn</span>${o.an ? '<span class="tag warn">đang ẩn</span>' : ''}<div class="se-btns">${seBtn('se-bf-ren', I('edit', 14), 'Đổi tên', { k })}${lock ? '' : seBtn('se-bf-hide', o.an ? 'Hiện' : 'Ẩn', o.an ? 'Hiện lại' : 'Ẩn trường (giữ dữ liệu)', { k })}</div></div>`; }).join('')}
+          ${fs.map(([f, gi], j) => seFieldRow(f, 'f', gi, j, fs.length)).join('')}
+        </div>` : ''}
+        ${SEC_NOFIELD.includes(x.k) ? '' : `<button type="button" class="btn btn-sm se-add mt8" data-act="se-f-add" data-sec="${esc(x.k)}">${I('plus', 14)} Thêm trường vào nhóm này</button>`}
+      </div>`;
+    }).join('')}
+    <button type="button" class="btn se-add" data-act="se-sec-add">${I('plus', 15)} Thêm nhóm thông tin mới</button>`;
+  },
+  tv: () => {
+    const s = SE.s, fs = s.tv.map((f, gi) => [f, gi]);
+    return `<p class="se-note" style="margin:0 0 10px">Các ô nhập cho <b>từng thành viên</b> trong hộ (màn hình thêm/sửa hộ, chi tiết, phiếu in, trang ThanhVien trong Excel).</p>
+    <div class="se-card"><div class="se-head"><b>Trường có sẵn</b></div><div class="se-fields">
+      ${Object.keys(TVBF_GOC).map(k => { const o = s.tvbf[k] || {}, lock = TVBF_GOC[k][1]; return `<div class="se-f ${o.an ? 'off' : ''}"><span class="nm grow">${esc(o.ten || TVBF_GOC[k][0])}</span>${o.an ? '<span class="tag warn">đang ẩn</span>' : ''}<div class="se-btns">${seBtn('se-tvbf-ren', I('edit', 14), 'Đổi tên', { k })}${lock ? '' : seBtn('se-tvbf-hide', o.an ? 'Hiện' : 'Ẩn', o.an ? 'Hiện lại' : 'Ẩn trường (giữ dữ liệu)', { k })}</div></div>`; }).join('')}
+    </div></div>
+    <div class="se-card"><div class="se-head"><b>Trường thêm</b></div>
+      ${fs.length ? `<div class="se-fields">${fs.map(([f, gi], j) => seFieldRow(f, 'tv', gi, j, fs.length)).join('')}</div>` : '<p class="se-note">Chưa có. Ví dụ: “Trình độ học vấn”, “Đối tượng bảo trợ xã hội”, “Đang hưởng trợ cấp”…</p>'}
+      <button type="button" class="btn btn-sm se-add mt8" data-act="se-f-add" data-kind="tv">${I('plus', 14)} Thêm trường cho thành viên</button></div>`;
+  },
+  ap: () => {
+    const s = SE.s, si = s.sec.findIndex(x => x.k === 'apinfo'), aps = [...new Set([...S.config.apList, ...Object.keys(s.apInfo)])], fs = s.apF.map((f, gi) => [f, gi]);
+    return `<p class="se-note" style="margin:0 0 10px">Thông tin chung của từng ${esc(apl())}: Ban công tác Mặt trận, chi hội trưởng các đoàn thể, số điện thoại… Hiện ở chi tiết mỗi hộ thuộc ${esc(apl())} đó (bấm số điện thoại là gọi được), ở danh sách hộ (nút <b>Liên hệ</b>), phiếu in, Thống kê và file Excel.</p>
+    <label class="f"><span>Tên mục hiển thị</span><input data-se="sec.${si}.ten" value="${esc(s.sec[si].ten)}"></label>
+    <div class="se-card"><div class="se-head"><b>Các ô thông tin của mỗi ${esc(apl())}</b></div>
+      ${fs.length ? `<div class="se-fields">${fs.map(([f, gi], j) => seFieldRow(f, 'apF', gi, j, fs.length)).join('')}</div>` : ''}
+      <button type="button" class="btn btn-sm se-add mt8" data-act="se-f-add" data-kind="apF">${I('plus', 14)} Thêm ô (ví dụ: Chi hội trưởng Hội Người cao tuổi)</button></div>
+    <div class="sec">Nhập thông tin từng ${esc(apl())}</div>
+    ${aps.length ? aps.map(a => { const v = s.apInfo[a] || {}, n = s.apF.filter(f => !isEmptyVal(v[f.k])).length; return `<div class="se-card"><div class="se-head"><b>${esc(a)}</b><span class="tag ${n ? 'info' : 'warn'}">${n}/${s.apF.length} ô</span>${S.config.apList.includes(a) ? '' : `<span class="tag red">không còn trong danh sách ${esc(apl())}</span>`}<div class="se-btns"><button type="button" class="btn btn-sm btn-navy" data-act="se-ap-edit" data-ap="${esc(a)}">Nhập / sửa</button></div></div>${n ? `<dl class="kv mt8" style="margin-bottom:0">${extKV(s.apF, v)}</dl>` : ''}</div>`; }).join('') : `<p class="muted">Chưa có danh sách ${esc(apl())}. Nhập ở mục Cài đặt.</p>`}`;
+  },
+  ds: () => `<p class="se-note" style="margin:0 0 10px">Mỗi dòng một mục. Bớt một mục không làm mất dữ liệu đã nhập của các hộ (mục đó hiện thành dòng “Khác”).</p>
+    ${Object.entries(DS_TEN).map(([k, [t, h]]) => `<label class="f"><span><b>${esc(t)}</b> — ${esc(h)}</span><textarea data-se="ds.${k}" data-lines rows="${Math.min(10, Math.max(4, SE.s.ds[k].length + 1))}">${esc(SE.s.ds[k].join('\n'))}</textarea></label>`).join('')}`,
+  bk: () => `<div class="card"><h3>${I('download')} Tải cấu trúc về máy</h3><p>Lưu toàn bộ cấu trúc đang sửa (kể cả thông tin ${esc(apl())}) ra file .json để dự phòng, hoặc dùng cho đơn vị khác.</p><button type="button" class="btn btn-navy" data-act="se-export">Tải file cấu trúc</button></div>
+    <div class="card"><h3>${I('upload')} Nạp cấu trúc từ file</h3><p>Thay bản nháp bằng nội dung file .json đã tải trước đó. Kiểm tra lại rồi bấm Lưu cấu trúc.</p><button type="button" class="btn" data-act="se-import">Chọn file cấu trúc…</button></div>
+    <div class="card"><h3>Khôi phục cấu trúc gốc</h3><p>Trở về giao diện, trường thông tin như ban đầu. Giữ lại thông tin ${esc(apl())} và các phân loại đang có hộ.</p><button type="button" class="btn btn-danger" data-act="se-reset">Khôi phục cấu trúc gốc</button></div>
+    <p class="muted small"><b>Ẩn</b> một trường: dữ liệu cũ vẫn giữ, hiện lại khi bỏ ẩn. <b>Xóa</b> một trường: dữ liệu cũ vẫn nằm trong Google Trang tính nhưng không hiện trong ứng dụng. Dữ liệu hộ không bao giờ bị xóa khi chỉnh cấu trúc.</p>`
+};
+async function askText(title, cur, dflt) {
+  const r = await dialog(title, `<label class="f"><span>Tên mới${dflt ? ` <span class="muted">(để trống: dùng tên gốc “${esc(dflt)}”)</span>` : ''}</span><input id="askIn" value="${esc(cur || '')}"></label>`, [{ label: 'Hủy', value: null }, { label: 'Đồng ý', cls: 'btn-navy', value: b => $('#askIn', b).value }]);
+  return r == null ? null : String(r).trim();
+}
+const pickFile = accept => new Promise(res => { const i = document.createElement('input'); i.type = 'file'; i.accept = accept; i.onchange = () => res(i.files[0] || null); i.click(); });
+function seMove(kind, i, d) {
+  const a = seArr(kind); let j = i + d;
+  if (kind === 'f') { const sec = a[i].sec; while (j >= 0 && j < a.length && a[j].sec !== sec) j += d; }
+  if (j < 0 || j >= a.length) return;
+  [a[i], a[j]] = [a[j], a[i]]; seMark(); renderSchema();
+}
+async function seFieldDlg(kind, idx, sec) {
+  const s = SE.s, arr = seArr(kind), old = idx != null ? arr[idx] : null;
+  const kinds = kind === 'f' ? KIEU_HO : kind === 'tv' ? KIEU_TV : KIEU_AP;
+  const init = old ? Object.assign({}, old, { opts: old.opts.join('\n'), list: s.ui.list.includes(old.k), pop: s.ui.pop.includes(old.k), loc: s.ui.loc.includes(old.k) })
+    : { kieu: kind === 'apF' ? 'nguoi' : 'text', sec: sec || 'chung', inP: true, xl: true, loai: [] };
+  const chk = (n, t, on) => `<label class="chk" style="margin:2px 0"><input type="checkbox" name="${n}" ${on ? 'checked' : ''}> ${t}</label>`;
+  const body = v => { v = v || init; const isOpt = ['select', 'multi', 'text'].includes(v.kieu);
+    return `<label class="f"><span>Tên trường <em>*</em></span><input name="ten" value="${esc(v.ten || '')}" placeholder="${kind === 'apF' ? 'Ví dụ: Chi hội trưởng Hội Người cao tuổi' : kind === 'tv' ? 'Ví dụ: Trình độ học vấn' : 'Ví dụ: Chi hội trưởng phụ trách giúp đỡ'}"></label>
+    <label class="f"><span>Kiểu dữ liệu</span><select name="kieu" data-kieu>${kinds.map(k => `<option value="${k}" ${v.kieu === k ? 'selected' : ''}>${esc(KIEU[k])}</option>`).join('')}</select></label>
+    <label class="f" data-opt ${isOpt ? '' : 'hidden'}><span>Các lựa chọn — mỗi dòng một lựa chọn <span class="muted">(kiểu Chữ: chỉ dùng làm gợi ý khi gõ)</span></span><textarea name="opts" rows="5">${esc(v.opts || '')}</textarea></label>
+    <label class="f"><span>Gợi ý nhập (chữ mờ trong ô, không bắt buộc)</span><input name="goiY" value="${esc(v.goiY || '')}"></label>
+    ${kind === 'f' ? `<label class="f"><span>Thuộc nhóm</span><select name="sec">${s.sec.filter(x => !SEC_NOFIELD.includes(x.k)).map(x => `<option value="${esc(x.k)}" ${v.sec === x.k ? 'selected' : ''}>${esc(x.ten)}</option>`).join('')}</select></label>` : ''}
+    ${kind !== 'apF' ? `<div class="f"><span>Tùy chọn</span>
+      ${chk('bb', 'Bắt buộc nhập', v.bb)}
+      ${kind === 'f' ? chk('qt', 'Chỉ quản trị viên được nhập/sửa (cán bộ chỉ xem)', v.qt) : ''}
+      ${kind === 'f' ? chk('list', 'Hiện ở dòng phụ trong danh sách hộ', v.list) : ''}
+      ${kind === 'f' ? chk('pop', 'Hiện khi bấm vào ghim trên bản đồ', v.pop) : ''}
+      ${kind === 'f' ? chk('loc', 'Thêm ô lọc theo trường này ở danh sách hộ', v.loc) : ''}
+      ${kind === 'tv' ? chk('ds', 'Hiện dưới tên thành viên ở màn hình chi tiết', v.ds) : ''}
+      ${chk('tk', 'Đưa vào Thống kê', v.tk)}
+      ${chk('inP', 'In trên phiếu thông tin hộ', v.inP)}
+      ${chk('xl', 'Có cột trong file Excel (xuất và nhập)', v.xl)}</div>` : ''}
+    ${kind === 'f' ? `<div class="f"><span>Chỉ áp dụng cho phân loại (không chọn = mọi hộ)</span><div class="ck-grid">${s.loai.map(x => `<label class="chk"><input type="checkbox" name="loai" data-multi="1" value="${esc(x.k)}" ${(v.loai || []).includes(x.k) ? 'checked' : ''}>${esc(x.ten)}</label>`).join('')}</div></div>` : ''}
+    ${old && old.kieu !== 'text' ? '<p class="hint">Đổi kiểu dữ liệu không xóa giá trị đã nhập; giá trị không hợp kiểu mới vẫn được giữ nguyên.</p>' : ''}`;
+  };
+  const r = await formDialog(old ? `Sửa trường — ${old.ten}` : 'Thêm trường thông tin', body, old ? 'Lưu' : 'Thêm',
+    x => { if (!String(x.ten).trim()) return 'Nhập tên trường.'; if ((x.kieu === 'select' || x.kieu === 'multi') && !arrStr(x.opts).length) return 'Nhập ít nhất một lựa chọn (mỗi dòng một lựa chọn).'; if (arr.some((f, i) => i !== idx && norm(f.ten) === norm(x.ten))) return 'Đã có trường trùng tên.'; return ''; }, { wide: true });
+  if (!r) return;
+  const all = [...s.f, ...s.tv, ...s.apF].map(x => x.k);
+  const f = normField({ k: old ? old.k : newKey(kind === 'apF' ? 'a' : kind === 'tv' ? 't' : 'x', all), ten: r.ten, kieu: r.kieu, opts: arrStr(r.opts), goiY: r.goiY, sec: kind === 'f' ? r.sec : undefined, bb: r.bb, qt: r.qt, tk: r.tk, ds: r.ds, an: old ? old.an : false, inP: kind === 'apF' ? true : r.inP, xl: kind === 'apF' ? true : r.xl, loai: r.loai || [] }, kinds);
+  if (!f) return;
+  if (old) arr[idx] = f; else arr.push(f);
+  if (kind === 'f') for (const k of ['list', 'pop', 'loc']) { const on = !!r[k], has = s.ui[k].includes(f.k); if (on && !has) s.ui[k].push(f.k); if (!on && has) s.ui[k] = s.ui[k].filter(x => x !== f.k); }
+  seMark(); renderSchema();
+  if (!old) toast(`Đã thêm “${f.ten}”. Bấm Lưu cấu trúc để áp dụng.`, 'ok');
+}
+async function seApEdit(ap) {
+  const s = SE.s, v0 = s.apInfo[ap] || {};
+  if (!s.apF.length) { toast('Chưa có ô thông tin nào — bấm “Thêm ô” trước.', 'err'); return; }
+  const r = await dialog(`Thông tin ${ap}`, `<p class="muted small" style="margin-top:0">${esc((s.sec.find(x => x.k === 'apinfo') || {}).ten || '')}</p><div class="grid2">${s.apF.map(f => fInput(f, v0[f.k], 'data-ax')).join('')}</div>`,
+    [{ label: 'Hủy', value: null }, { label: 'Xong', cls: 'btn-navy', value: b => readExt(b, 'data-ax', s.apF, {}) }], { wide: true });
+  if (!r) return;
+  if (Object.keys(r).length) s.apInfo[ap] = r; else delete s.apInfo[ap];
+  seMark(); renderSchema(); toast('Đã ghi vào bản nháp. Bấm Lưu cấu trúc để lưu lên máy chủ.');
+}
+async function seLoaiMove(k) {
+  if (SE.dirty) { toast('Hãy bấm Lưu cấu trúc trước, rồi mới chuyển hộ.', 'err'); return; }
+  const src = S.households.filter(h => h.loai === k); if (!src.length) return;
+  const years = [...new Set(src.map(h => h.namCongNhan).filter(Boolean))].sort((a, b) => b - a);
+  const r = await formDialog(`Chuyển hộ — ${loaiTen(k)}`, v => `<p>Có <b>${src.length}</b> hộ thuộc “${esc(loaiTen(k))}”.</p>
+    <label class="f"><span>Chuyển sang phân loại</span><select name="to">${Object.keys(LOAI).filter(x => x !== k).map(x => `<option value="${esc(x)}" ${v && v.to === x ? 'selected' : ''}>${esc(loaiTen(x))}</option>`).join('')}</select></label>
+    ${years.length ? `<label class="f"><span>Chỉ chuyển các hộ có ${esc(BL('namCongNhan').toLowerCase())}</span><select name="nam"><option value="">Tất cả</option>${years.map(y => `<option ${v && v.nam == y ? 'selected' : ''}>${y}</option>`).join('')}</select></label>` : ''}`, 'Tiếp tục', () => '');
+  if (!r) return;
+  const list = src.filter(h => !r.nam || String(h.namCongNhan) === String(r.nam));
+  if (!list.length) { toast('Không có hộ nào khớp.', 'err'); return; }
+  if (!(await confirmDlg('Xác nhận chuyển', `Chuyển <b>${list.length}</b> hộ từ “${esc(loaiTen(k))}” sang “${esc(loaiTen(r.to))}”?`, 'Chuyển'))) return;
+  const now = Date.now(), up = list.map(h => Object.assign(clone(h), { loai: r.to, updatedAt: now, updatedBy: curName(), updatedById: curId() }));
+  const res = await sendBulk(up, [], `Chuyển phân loại: ${loaiTen(k)} → ${loaiTen(r.to)}`);
+  toast(`Đã chuyển ${res.upd + res.add} hộ sang “${loaiTen(r.to)}”.`, 'ok'); SE.s = clone(SCHEMA()); renderSchema();
+}
+async function seSave() {
+  const s = normSchema(SE.s);
+  if (!s.loai.some(x => !x.an)) throw new Error('Cần ít nhất một phân loại hộ không bị ẩn.');
+  const size = JSON.stringify(s).length; if (size > 45000) throw new Error('Cấu trúc quá lớn để lưu (' + fmt(size) + ' ký tự). Hãy rút bớt danh mục hoặc thông tin ấp.');
+  const r = await withBusy('Đang lưu cấu trúc…', () => api('config', { config: { schema: s } }));
+  if (!r.config || !isObj(r.config.schema)) { await dialog('Máy chủ chưa hỗ trợ', '<p>Máy chủ dữ liệu <b>chưa lưu được cấu trúc</b>. Cần cập nhật mã máy chủ (Google Apps Script) lên phiên bản mới, Triển khai lại, rồi bấm Lưu cấu trúc lần nữa.</p><p class="muted small">Bản nháp vẫn còn trên màn hình này cho tới khi bạn bấm Hủy thay đổi.</p>', [{ label: 'Đã hiểu', cls: 'btn-navy' }]); return; }
+  S.srv = r.config; S.config = mergeConfig(S.srv); S.rev = null;
+  S.households = S.households.map(sanitizeHH); saveCache();
+  SE.dirty = false; SE.first = false; SE.s = clone(SCHEMA());
+  renderAll(); renderSchema();
+  toast('Đã lưu cấu trúc. Máy của cán bộ tự cập nhật khi mở ứng dụng hoặc đồng bộ.', 'ok');
+}
+async function seAct(act, el) {
+  const d = el.dataset, s = SE.s;
+  if (!s && act !== 'se-tab') return;
+  switch (act) {
+    case 'se-tab': SE.tab = d.k; if (!SE.s) SE.s = clone(SCHEMA()); renderSchema(); $('#schemaBody').scrollTop = 0; break;
+    case 'se-save': await seSave(); break;
+    case 'se-undo': { if (SE.dirty && !(await confirmDlg('Hủy thay đổi?', 'Các thay đổi cấu trúc chưa lưu sẽ bị bỏ.', 'Hủy thay đổi', true))) break; SE.s = clone(SCHEMA()); SE.dirty = false; SE.first = false; applyTheme(SCHEMA().ui, S.config.tenXa); renderSchema(); break; }
+    case 'se-move': seMove(d.kind, +d.i, +d.d); break;
+    case 'se-loai-add': {
+      const r = await formDialog('Thêm phân loại hộ', v => `<label class="f"><span>Tên phân loại <em>*</em></span><input name="ten" value="${esc((v && v.ten) || '')}" placeholder="Ví dụ: Hộ thoát nghèo năm trước"></label><label class="f"><span>Màu ghim trên bản đồ</span><input type="color" name="mau" value="${(v && v.mau) || '#00838f'}"></label><label class="chk"><input type="checkbox" name="dt" ${v && v.dt ? 'checked' : ''}> Đối tượng chính sách (tính vào thống kê thiếu hụt, đối tượng)</label>`, 'Thêm',
+        x => !String(x.ten).trim() ? 'Nhập tên phân loại.' : s.loai.some(l => norm(l.ten) === norm(x.ten)) ? 'Đã có phân loại trùng tên.' : '');
+      if (!r) break;
+      s.loai.push({ k: newKey('l', s.loai.map(x => x.k)), ten: String(r.ten).trim(), mau: okColor(r.mau, '#00838f'), dt: !!r.dt, an: false }); seMark(); renderSchema(); break; }
+    case 'se-loai-del': {
+      const x = s.loai[+d.i]; if (!x) break; const n = S.households.filter(h => h.loai === x.k).length;
+      if (n) { await dialog('Chưa xóa được', `<p>Đang có <b>${n} hộ</b> thuộc “${esc(x.ten)}”. Hãy bấm <b>Chuyển hộ sang phân loại khác…</b> trước, hoặc đánh dấu <b>Ẩn</b>.</p>`, [{ label: 'Đã hiểu', cls: 'btn-navy' }]); break; }
+      if (!(await confirmDlg('Xóa phân loại', `Xóa phân loại “${esc(x.ten)}”?`, 'Xóa', true))) break;
+      s.loai.splice(+d.i, 1); for (const f of s.f) f.loai = f.loai.filter(k => k !== x.k); seMark(); renderSchema(); break; }
+    case 'se-loai-move': await seLoaiMove(d.k); break;
+    case 'se-sec-add': {
+      const r = await formDialog('Thêm nhóm thông tin', v => `<label class="f"><span>Tên nhóm <em>*</em></span><input name="ten" value="${esc((v && v.ten) || '')}" placeholder="Ví dụ: Người phụ trách giúp đỡ"></label><p class="hint">Nhóm mới nằm cuối danh sách; dùng nút mũi tên để đổi vị trí, rồi bấm “Thêm trường vào nhóm này”.</p>`, 'Thêm nhóm', x => String(x.ten).trim() ? '' : 'Nhập tên nhóm.');
+      if (!r) break; s.sec.push({ k: newKey('s', s.sec.map(x => x.k)), ten: String(r.ten).trim(), an: false }); seMark(); renderSchema(); break; }
+    case 'se-sec-ren': { const x = s.sec[+d.i]; if (!x) break; const g = (SEC_GOC.find(z => z[0] === x.k) || [])[1]; const t = await askText('Đổi tên nhóm', x.ten, g); if (t == null) break; x.ten = t || g || x.ten; seMark(); renderSchema(); break; }
+    case 'se-sec-hide': { const x = s.sec[+d.i]; if (!x || SEC_KHOA.includes(x.k)) break; x.an = !x.an; seMark(); renderSchema(); break; }
+    case 'se-sec-del': {
+      const x = s.sec[+d.i]; if (!x || SEC_GOC.some(g => g[0] === x.k)) break; const fs = s.f.filter(f => f.sec === x.k);
+      if (!(await confirmDlg('Xóa nhóm', `Xóa nhóm “${esc(x.ten)}”?${fs.length ? ` ${fs.length} trường trong nhóm sẽ chuyển về nhóm “${esc((s.sec.find(g => g.k === 'chung') || {}).ten)}”.` : ''}`, 'Xóa nhóm', true))) break;
+      fs.forEach(f => { f.sec = 'chung'; }); s.sec.splice(+d.i, 1); seMark(); renderSchema(); break; }
+    case 'se-bf-ren': case 'se-tvbf-ren': {
+      const tv = act === 'se-tvbf-ren', o = tv ? s.tvbf : s.bf, G = tv ? TVBF_GOC : BF_GOC, k = d.k; if (!G[k]) break;
+      const t = await askText('Đổi tên trường', (o[k] || {}).ten || G[k][0], G[k][0]); if (t == null) break;
+      const e = Object.assign({}, o[k]); if (t && t !== G[k][0]) e.ten = t; else delete e.ten;
+      if (Object.keys(e).length) o[k] = e; else delete o[k]; seMark(); renderSchema(); break; }
+    case 'se-bf-hide': case 'se-tvbf-hide': {
+      const o = act === 'se-tvbf-hide' ? s.tvbf : s.bf, e = Object.assign({}, o[d.k]);
+      if (e.an) delete e.an; else e.an = true;
+      if (Object.keys(e).length) o[d.k] = e; else delete o[d.k]; seMark(); renderSchema(); break; }
+    case 'se-f-add': await seFieldDlg(d.kind || 'f', null, d.sec); break;
+    case 'se-f-edit': await seFieldDlg(d.kind, +d.i); break;
+    case 'se-f-hide': { const f = seArr(d.kind)[+d.i]; if (!f) break; f.an = !f.an; seMark(); renderSchema(); break; }
+    case 'se-f-del': {
+      const a = seArr(d.kind), f = a[+d.i]; if (!f) break;
+      const used = d.kind === 'f' ? S.households.filter(h => !isEmptyVal(h.ext[f.k])).length : d.kind === 'tv' ? S.households.reduce((t, h) => t + h.thanhVien.filter(m => !isEmptyVal(m.ext[f.k])).length, 0) : Object.values(s.apInfo).filter(v => !isEmptyVal(v[f.k])).length;
+      const unit = d.kind === 'f' ? 'hộ' : d.kind === 'tv' ? 'thành viên' : apl();
+      if (!(await confirmDlg('Xóa trường', `<p>Xóa trường “<b>${esc(f.ten)}</b>”?</p>${used ? `<p>Đã có <b>${used} ${esc(unit)}</b> nhập trường này. ${d.kind === 'apF' ? 'Thông tin đã nhập của ô này sẽ bị bỏ.' : 'Dữ liệu cũ vẫn nằm trong Google Trang tính nhưng không hiện trong ứng dụng nữa.'} Nếu chỉ muốn tạm không dùng, hãy chọn <b>Ẩn</b>.</p>` : ''}`, 'Xóa trường', true))) break;
+      a.splice(+d.i, 1);
+      if (d.kind === 'apF') for (const v of Object.values(s.apInfo)) delete v[f.k];
+      for (const k of ['list', 'pop', 'loc']) s.ui[k] = s.ui[k].filter(x => x !== f.k); if (s.ui.pin === f.k) s.ui.pin = 'nk';
+      seMark(); renderSchema(); break; }
+    case 'se-ap-edit': await seApEdit(d.ap); break;
+    case 'se-export': download(new Blob([JSON.stringify({ app: APPID, type: 'cau-truc', at: Date.now(), donVi: S.config.donVi, schema: normSchema(s) }, null, 2)], { type: 'application/json' }), `CauTruc_${slugXa()}_${stamp()}.json`); break;
+    case 'se-import': {
+      const f = await pickFile('.json,application/json'); if (!f) break;
+      let j; try { j = JSON.parse(await f.text()); } catch (e) { throw new Error('File không đúng định dạng.'); }
+      const raw = j && j.type === 'cau-truc' ? j.schema : (j && j.ui && j.loai ? j : null);
+      if (!isObj(raw)) throw new Error('Đây không phải file cấu trúc của ứng dụng.');
+      if (!(await confirmDlg('Nạp cấu trúc', `Thay bản nháp bằng nội dung file “${esc(f.name)}”${j.donVi ? ` (${esc(j.donVi)})` : ''}? Chưa áp dụng cho tới khi bấm Lưu cấu trúc.`, 'Nạp'))) break;
+      SE.s = normSchema(raw); seMark(); applyTheme(SE.s.ui, S.config.tenXa); renderSchema(); toast('Đã nạp. Kiểm tra lại rồi bấm Lưu cấu trúc.', 'ok'); break; }
+    case 'se-reset': {
+      if (!(await confirmDlg('Khôi phục cấu trúc gốc', 'Trở về cấu trúc ban đầu (giữ lại thông tin ấp và các phân loại đang có hộ). Chưa áp dụng cho tới khi bấm Lưu cấu trúc.', 'Khôi phục', true))) break;
+      const n = normSchema(null); n.apF = s.apF; n.apInfo = s.apInfo;
+      for (const x of s.loai) if (!n.loai.some(y => y.k === x.k) && S.households.some(h => h.loai === x.k)) n.loai.push(x);
+      SE.s = n; seMark(); applyTheme(n.ui, S.config.tenXa); renderSchema(); break; }
+  }
+}
+function setPath(o, path, v) { const ks = path.split('.'); let t = o; for (let i = 0; i < ks.length - 1; i++) t = t[ks[i]]; t[ks[ks.length - 1]] = v; }
+function getPath(o, path) { return path.split('.').reduce((t, k) => t == null ? t : t[k], o); }
+function seInput(e) {
+  const t = e.target; if (!SE.s || !t.closest || !t.closest('#schemaBody')) return;
+  const isChk = t.type === 'checkbox';
+  if (isChk ? e.type !== 'change' : e.type !== 'input') return;
+  if (t.dataset.se) {
+    const v = isChk ? t.checked : t.dataset.num !== undefined ? (toNum(t.value) || 0) : t.dataset.lines !== undefined ? arrStr(t.value) : t.value;
+    setPath(SE.s, t.dataset.se, v); seMark();
+    if (/^ui\.(navy|red|title|short)$/.test(t.dataset.se)) applyTheme(Object.assign({}, SCHEMA().ui, { navy: okColor(SE.s.ui.navy, '#14213d'), red: okColor(SE.s.ui.red, '#a3191c'), title: SE.s.ui.title || SCHEMA().ui.title, short: SE.s.ui.short || SCHEMA().ui.short }), S.config.tenXa);
+    if (isChk && /\.an$/.test(t.dataset.se)) renderSchema();
+  } else if (t.dataset.seArr) {
+    const a = getPath(SE.s, t.dataset.seArr); if (!Array.isArray(a)) return;
+    const i = a.indexOf(t.value);
+    if (t.checked && i < 0) a.push(t.value); if (!t.checked && i >= 0) a.splice(i, 1); seMark();
+  }
+}
+document.addEventListener('input', seInput); document.addEventListener('change', seInput);
+$('#dlg').addEventListener('change', e => { const k = e.target.closest('[data-kieu]'); if (!k) return; const o = $('#dlg [data-opt]'); if (o) o.hidden = !['select', 'multi', 'text'].includes(k.value); });
+
+/* =========================================================
    CÀI LÊN ĐIỆN THOẠI (ứng dụng web cài đặt được)
    ========================================================= */
 const WEB = /^https?:$/.test(location.protocol);
@@ -2478,7 +3253,7 @@ async function installGuide() {
 /* =========================================================
    CỔNG ĐĂNG NHẬP / THIẾT LẬP
    ========================================================= */
-const gateBrand = sub2 => `<div class="gate-brand"><div class="brand-mark" style="width:44px;height:44px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><path d="M9 10.5 12 8l3 2.5V13H9z" fill="#fff" stroke="none"/></svg></div><div><h2>Bản đồ số hộ nghèo, hộ cận nghèo</h2><div class="muted small">${sub2}</div></div></div>`;
+const gateBrand = sub2 => `<div class="gate-brand"><div class="brand-mark" style="width:44px;height:44px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><path d="M9 10.5 12 8l3 2.5V13H9z" fill="#fff" stroke="none"/></svg></div><div><h2>${esc(SCHEMA().ui.title)}</h2><div class="muted small">${sub2}</div></div></div>`;
 /* Nút cài ứng dụng ngay trên màn hình đăng nhập */
 function installCTA() {
   if (isStandalone() || !WEB) return '';
@@ -2600,7 +3375,7 @@ async function forgotPassword() {
 }
 let started = false;
 function applyRoleUI() {
-  $('#tabAccounts').hidden = !isAdmin();
+  $('#tabAccounts').hidden = !isAdmin(); $('#tabSchema').hidden = !isAdmin();
   $('#userChip .av').textContent = initials(curName()); $('#userChip .nm').textContent = curName(); $('#userChip .role').textContent = ROLE[curRole()] || '';
 }
 function startApp() {
@@ -2625,11 +3400,13 @@ function renderAll() {
   if (ui.view === 'data') renderData();
   if (ui.view === 'settings') renderSettings();
   if (ui.view === 'accounts' && isAdmin()) renderAccounts();
+  if (ui.view === 'schema' && isAdmin() && !SE.dirty) seOpen();
 }
 const userByU = u => (USERS || []).find(x => x.u === u);
 async function onAct(act, el, e) {
   const id = el.dataset.id;
   try {
+  if (act.startsWith('se-')) { if (isAdmin()) await seAct(act, el); return; }
   switch (act) {
     /* cổng */
     case 'gate-setup': showGate('setup'); break;
@@ -2715,6 +3492,8 @@ async function onAct(act, el, e) {
       const r = await dialog(curName(), `<p style="margin-top:0">${ROLE[curRole()]} · tên đăng nhập <b>${esc(curId())}</b>${!isAdmin() ? `<br>${esc(permText(ME))} · Phạm vi: ${esc(scopeText(ME.aps))}` : ''}</p><p class="muted small">${esc(S.config.donVi)} · Dữ liệu cập nhật ${S.loadedAt ? dt(S.loadedAt) : 'chưa tải'}${OUT.length ? ` · ${OUT.length} hộ chờ gửi` : ''}</p>`, [{ label: 'Đóng', value: null }, { label: 'Đổi mật khẩu', value: 'pw' }, { label: 'Đồng bộ ngay', value: 'sync' }, { label: 'Đăng xuất', cls: 'btn-navy', value: 'out' }]);
       if (r === 'pw') await changePassword(); else if (r === 'sync') await onAct('sync-now', el); else if (r === 'out') await onAct('logout', el);
       break; }
+    case 'ap-info': await apInfoDlg(el.dataset.ap); break;
+    case 'go-schema': if (isAdmin()) { showView('schema'); seOpen(); } break;
     case 'settings-save': await saveSettings(); break;
     case 'set-center': {
       const c = [round6(map.getCenter().lat), round6(map.getCenter().lng)], z = map.getZoom();
@@ -2729,9 +3508,10 @@ document.addEventListener('click', e => {
   const tab = e.target.closest('.tab');
   if (tab) {
     const t = tab.dataset.tab; if (ui.view === 'edit') { toast('Hãy Lưu hoặc Hủy việc đang sửa trước.', 'err'); return; }
-    if (t === 'accounts' && !isAdmin()) return;
+    if (ui.view === 'schema' && SE.dirty && !SE.first && t !== 'schema') { toast('Hãy Lưu cấu trúc hoặc Hủy thay đổi trước.', 'err'); return; }
+    if ((t === 'accounts' || t === 'schema') && !isAdmin()) return;
     if (t === 'list') { showView(ui.selId && byId(ui.selId) ? 'detail' : 'list'); if (ui.view === 'list') renderList(); }
-    else { showView(t); if (t === 'stats') renderStats(); if (t === 'data') renderData(); if (t === 'settings') renderSettings(); if (t === 'accounts') { USERS = null; renderAccounts(); } }
+    else { showView(t); if (t === 'stats') renderStats(); if (t === 'data') renderData(); if (t === 'settings') renderSettings(); if (t === 'accounts') { USERS = null; renderAccounts(); } if (t === 'schema') seOpen(); }
     return;
   }
   const el = e.target.closest('[data-act]'); if (!el || el.closest('#dlg')) return;
@@ -2756,8 +3536,10 @@ $('#editForm').addEventListener('change', e => {
     if (lat != null && lng != null) setEditLoc(lat, lng, { pan: true });
   }
   if (t.dataset.th !== undefined || t.name === 'loai') updateSuggest();
+  if (t.name === 'loai' && draft && SCHEMA().f.some(f => f.loai.length)) rerenderEdit();   /* hiện/ẩn trường chỉ áp dụng cho một số phân loại */
 });
 $('#editForm').addEventListener('submit', e => e.preventDefault());
+$('#fExt').addEventListener('change', e => { const s = e.target.closest('select[data-loc]'); if (!s) return; ui.f.x[s.dataset.loc] = s.value; renderList(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && ui.pick) stopPick(); });
 document.addEventListener('click', e => { const b = e.target.closest('.pw-eye'); if (!b) return; e.preventDefault(); e.stopPropagation(); const i = b.parentElement.querySelector('input'); if (i) { i.type = i.type === 'password' ? 'text' : 'password'; i.focus(); } }, true);
 $('#fileJson').addEventListener('change', async e => {
@@ -2794,6 +3576,7 @@ addEventListener('beforeinstallprompt', () => setTimeout(refreshInstallCTA, 0));
    ========================================================= */
 $$('i[data-ic]').forEach(i => { i.outerHTML = I(i.dataset.ic); });
 (async function boot() {
+  { const c = lsGet(CKEY); S.config = mergeConfig(c && c.srv); }     /* áp cấu trúc (tên, màu…) đã lưu trên máy ngay từ màn hình đăng nhập */
   if (!API) { showGate('connect'); return; }
   TOKEN = lsGet(TKEY) || lsGet(TKEY, sessionStorage);
   const c = lsGet(CKEY);
