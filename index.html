@@ -815,6 +815,7 @@ textarea{resize:vertical}
 .tbl{width:100%;border-collapse:collapse;font-size:13px}
 .tbl th{text-align:left;font-weight:600;color:var(--muted);font-size:12px;padding:6px 6px;border-bottom:1px solid var(--line);background:var(--soft)}
 .tbl td{padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr.tot-row td{font-weight:700;color:var(--navy);background:#eef2f8;border-bottom:2px solid var(--navy)}
 .tbl td.num,.tbl th.num{text-align:right;font-variant-numeric:tabular-nums}
 .tbl tfoot td{font-weight:700;background:var(--soft)}
 #stats .tbl td:first-child{white-space:nowrap}
@@ -1276,7 +1277,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.26h';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.26i';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -2463,6 +2464,7 @@ function leaveEdit() { stopPick(); draft = null; if (editMarker) { map.removeLay
 
 /* ---------- Thống kê ---------- */
 /* Phạm vi thống kê: cả xã (ui.stAp = '*') hoặc một ấp */
+const xaTong = () => isAdmin() || !myAps().length ? `Xã ${S.config.tenXa || ''}`.trim() : 'Cộng phạm vi được giao';
 function statScope(aps0) {
   const sel = $('#stScope'), opts = aps0.filter(a => S.households.some(h => (h.ap || '') === a));
   if (ui.stAp == null || (ui.stAp !== '*' && !opts.includes(ui.stAp))) ui.stAp = '*';
@@ -2556,8 +2558,7 @@ function renderStats() {
     ${tkHTML}
     <div class="sec">${one ? `Tổng hợp ${esc(apName(ui.stAp))}` : `Theo ${esc(apl())}`}</div>
     <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>${esc(apL())}</th><th class="num">Tổng hộ</th>${cats.map(k => `<th class="num">${esc(loaiNgan(k))}</th>`).join('')}<th class="num">Nhân khẩu</th><th class="num">Đã định vị</th></tr></thead>
-    <tbody>${rows.map(r => `<tr><td>${esc(r.a)}</td><td class="num"><b>${r.n}</b></td>${r.c.map(x => `<td class="num">${x}</td>`).join('')}<td class="num">${fmt(r.nk)}</td><td class="num">${r.dv}</td></tr>`).join('')}</tbody>
-    ${one ? '' : `<tfoot><tr><td>Cộng</td><td class="num">${tot.n}</td>${tot.c.map(x => `<td class="num">${x}</td>`).join('')}<td class="num">${fmt(tot.nk)}</td><td class="num">${tot.dv}</td></tr></tfoot>`}</table></div>
+    <tbody>${one ? '' : `<tr class="tot-row"><td>${esc(xaTong())}</td><td class="num">${fmt(tot.n)}</td>${tot.c.map(x => `<td class="num">${fmt(x)}</td>`).join('')}<td class="num">${fmt(tot.nk)}</td><td class="num">${fmt(tot.dv)}</td></tr>`}${rows.map(r => `<tr><td>${esc(r.a)}</td><td class="num"><b>${r.n}</b></td>${r.c.map(x => `<td class="num">${x}</td>`).join('')}<td class="num">${fmt(r.nk)}</td><td class="num">${r.dv}</td></tr>`).join('')}</tbody></table></div>
     ${kemHTML}
     ${dtK.length ? `<div class="sec">Đối tượng trong hộ ${esc(dtTen)}</div>
     <div class="kpis">
@@ -2928,9 +2929,9 @@ async function buildWorkbook(list, { template = false } = {}) {
   } else {
     const cats = [...new Set([...Object.keys(LOAI).filter(k => !LOAI[k].an), ...list.map(h => h.loai)])];
     const ws4 = wb.addWorksheet('ThongKe'); ws4.columns = [[apL(), 18], ['Tổng số hộ', 10], ...cats.map(k => [loaiTen(k), 12]), ['Nhân khẩu', 10], ['Đã định vị', 10]].map(([h, w]) => ({ header: h, width: w }));
-    const aps = [...new Set([...apOrder(), ...list.map(h => h.ap || '')])], t = new Array(cats.length + 3).fill(0);
-    aps.forEach(a => { const arr = list.filter(h => (h.ap || '') === a); if (!arr.length) return; const v = [arr.length, ...cats.map(k => arr.filter(h => inLoai(h, k)).length), arr.reduce((s, h) => s + h.thanhVien.length, 0), arr.filter(hasLoc).length]; v.forEach((x, i) => t[i] += x); ws4.addRow([a || `Chưa rõ ${apl()}`, ...v]); });
-    const tr = ws4.addRow(['Cộng', ...t]);
+    const aps = [...new Set([...apOrder(), ...list.map(h => h.ap || '')])], t = new Array(cats.length + 3).fill(0), rx = [];
+    aps.forEach(a => { const arr = list.filter(h => (h.ap || '') === a); if (!arr.length) return; const v = [arr.length, ...cats.map(k => arr.filter(h => inLoai(h, k)).length), arr.reduce((s, h) => s + h.thanhVien.length, 0), arr.filter(hasLoc).length]; v.forEach((x, i) => t[i] += x); rx.push([a || `Chưa rõ ${apl()}`, ...v]); });
+    const tr = ws4.addRow([xaTong(), ...t]); rx.forEach(r => ws4.addRow(r));
     styleSheet(ws4, cats.length + 4, false); tr.font = { bold: true, name: 'Times New Roman', size: 12 };
     /* Thông tin ấp: Ban công tác Mặt trận, chi hội trưởng */
     const sA = SCHEMA(), apsInfo = apOrder().filter(a => apInfoKV(a));
