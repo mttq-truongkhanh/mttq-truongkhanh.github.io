@@ -1055,7 +1055,7 @@ input[type=color]{cursor:pointer}
       <div class="list-foot" id="listFoot"></div>
     </section>
     <section class="view" id="v-detail">
-      <div class="view-head row gap"><button class="btn btn-sm btn-ghost" data-act="back"><i data-ic="back"></i>Danh sách</button></div>
+      <div class="view-head row gap"><button class="btn btn-sm btn-ghost" data-act="back"><i data-ic="back"></i>Danh sách</button><span class="grow"></span><button class="btn btn-sm btn-primary det-new" data-act="new"><i data-ic="plus"></i>Thêm hộ mới</button><button class="btn btn-sm det-new" data-act="new-gps" title="Thêm hộ mới tại vị trí của tôi (GPS)" aria-label="Thêm hộ mới tại vị trí của tôi"><i data-ic="gps"></i></button></div>
       <div class="view-body" id="detail"></div>
     </section>
     <section class="view" id="v-edit">
@@ -1247,7 +1247,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.26b';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.26c';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -2017,7 +2017,26 @@ map.on('click', e => { if (ui.pick) { setEditLoc(e.latlng.lat, e.latlng.lng); st
    ========================================================= */
 const ui = { view: 'list', tab: 'list', selId: null, pick: false, gateIntent: null, f: { q: '', ap: '', loai: new Set(), noLoc: false, x: {} } };
 let draft = null, draftSnap = '', editMarker = null;
+/* Nút quay lại (Back) của điện thoại: đang ở trang con (chi tiết, sửa, thống kê…) thì quay về danh sách, không tắt ứng dụng */
+let navIgnore = false;
+const navKeep = () => { try { history.pushState({ hn: 'sub' }, ''); } catch (e) {} };
+function navSync(v) {
+  try {
+    const sub = !!(history.state && history.state.hn === 'sub');
+    if (v === 'list') { if (sub && !navIgnore) { navIgnore = true; history.back(); } }
+    else if (!sub && !navIgnore) navKeep();
+  } catch (e) {}
+}
+addEventListener('popstate', () => {
+  if (navIgnore) { navIgnore = false; if (ME && ui.view !== 'list') navKeep(); return; }
+  if (!ME) return;
+  if (!$('#dlg').hidden) { navKeep(); return; }                 /* đang mở hộp thoại: giữ nguyên */
+  if (ui.pick) { navKeep(); stopPick(); return; }               /* đang chọn vị trí trên bản đồ */
+  if (ui.view === 'edit') { navKeep(); cancelEdit(); return; }  /* đang nhập/sửa hộ: hỏi trước khi bỏ */
+  if (ui.view !== 'list') { ui.selId = null; highlight(null); showView('list'); renderList(); }
+});
 function showView(v) {
+  navSync(v);
   ui.view = v; document.body.dataset.view = v;
   $$('.view').forEach(s => s.classList.toggle('active', s.id === 'v-' + v));
   const tab = ['list', 'detail', 'edit'].includes(v) ? 'list' : v; ui.tab = tab;
@@ -2129,6 +2148,7 @@ function openDetail(id, { fly = true } = {}) {
 }
 function renderDetail() {
   const h = byId(ui.selId); if (!h) { showView('list'); return; }
+  $$('#v-detail .det-new').forEach(b => { b.style.display = can('add') ? '' : 'none'; });
   const L0 = loaiOf(h.loai), ce = can('edit', h);
   const body = SCHEMA().sec.filter(s => !s.an).map(s => {
     const fx = fieldsIn(s.k, h), kv = extKV(fx, h.ext), inner = SEC_DETAIL[s.k] ? SEC_DETAIL[s.k](h, kv) : null;
@@ -2195,7 +2215,7 @@ const SEC_DETAIL = {
 function enterEdit(h, { gps = false } = {}) {
   if (h ? !can('edit', h) : !can('add')) { toast('Tài khoản của bạn không có quyền này.', 'err'); return; }
   const aps = apOrder().filter(inScope);
-  const defAp = ui.f.ap && ui.f.ap !== '__none' && inScope(ui.f.ap) ? ui.f.ap : (myAps().length === 1 ? myAps()[0] : '');
+  const defAp = ui.f.ap && ui.f.ap !== '__none' && inScope(ui.f.ap) ? ui.f.ap : (myAps().length === 1 ? myAps()[0] : (ui.lastAp && inScope(ui.lastAp) ? ui.lastAp : ''));
   draft = h ? clone(h) : Object.assign(blankHH(), { ap: defAp, thanhVien: [Object.assign(blankTV(), { quanHe: 'Chủ hộ' })] });
   draft._new = !h; draft._base = h ? h.updatedAt : 0; if (!aps.length && myAps().length) draft.ap = myAps()[0];
   $('#editTitle').textContent = h ? 'Sửa thông tin hộ' : 'Thêm hộ mới';
@@ -2380,7 +2400,7 @@ async function saveEdit() {
   d.hoTro = d.hoTro.filter(x => x.noiDung || x.giaTri);
   d.updatedAt = Date.now(); d.updatedBy = curName(); d.updatedById = curId();
   if (isNew) { d.createdAt = d.updatedAt; d.createdBy = curName(); d.createdById = curId(); }
-  const clean = sanitizeHH(d);
+  const clean = sanitizeHH(d); if (clean.ap) ui.lastAp = clean.ap;
   replaceLocal(clean); queueSave(clean, isNew ? 0 : d._base); saveCache();
   leaveEdit(); renderList(); openDetail(clean.id, { fly: true });
   await sync({ quiet: true, toastSent: false });
