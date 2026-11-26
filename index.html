@@ -741,6 +741,14 @@ textarea{resize:vertical}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #d6dbe2;background:#fff;border-radius:999px;padding:4px 10px;font-size:12.5px;cursor:pointer}
 .chip .dot{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.kdot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--c);margin-right:2px;flex:none}
+.kem-box{background:#fbf7ee;border:1px dashed var(--gold);border-radius:9px;padding:8px 10px}
+.kem-box small{color:var(--muted);font-weight:400}
+.mrg-list{max-height:52vh;overflow:auto;border:1px solid var(--line);border-radius:9px;padding:4px 8px}
+.mrg-list .chk{align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--line)}
+.mrg-list .chk:last-child{border-bottom:0}
+.st-scope{min-width:0;max-width:260px;font-weight:600}
+.hh-side .badge+.badge{margin-top:0}
 .chip b{font-weight:600;color:var(--muted)}
 .chip.on{border-color:var(--c);background:#f7f7f7;background:color-mix(in srgb,var(--c) 10%,#fff);box-shadow:inset 0 0 0 1px var(--c)}
 .badge{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;color:var(--c);background:#f6f6f6;background:color-mix(in srgb,var(--c) 12%,#fff);border:1px solid #ddd;border:1px solid color-mix(in srgb,var(--c) 35%,#fff);white-space:nowrap}
@@ -1056,7 +1064,7 @@ input[type=color]{cursor:pointer}
       <div class="view-foot"><button class="btn" data-act="edit-cancel">Hủy</button><button class="btn btn-primary" data-act="edit-save"><i data-ic="check"></i>Lưu hộ</button></div>
     </section>
     <section class="view" id="v-stats">
-      <div class="view-head row gap"><h2 class="grow">Thống kê theo ấp</h2><button class="btn btn-sm" data-act="export-xlsx" id="statsExport"><i data-ic="download"></i>Xuất Excel</button></div>
+      <div class="view-head row gap"><h2>Thống kê</h2><select id="stScope" class="grow st-scope" aria-label="Phạm vi thống kê: cả xã hoặc từng ấp"></select><button class="btn btn-sm" data-act="export-xlsx" id="statsExport"><i data-ic="download"></i>Xuất Excel</button></div>
       <div class="view-body" id="stats"></div>
     </section>
     <section class="view" id="v-data">
@@ -1239,7 +1247,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.12';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.26';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -1294,6 +1302,16 @@ const LOAI_GOC = {
 };
 const LOAI = {};
 const loaiOf = k => LOAI[k] || { ten: k ? `Phân loại “${k}”` : 'Chưa phân loại', mau: '#607d8b', an: true };
+/* Diện kèm theo (ví dụ: Hộ bức xúc về nhà ở): hộ có 1 phân loại chính (h.loai: nghèo, cận nghèo…) và có thể thuộc thêm
+   các diện kèm theo, lưu trong h.ext._kem — một hộ chỉ nhập 1 lần. Hộ chỉ thuộc diện kèm theo thì h.loai = mã diện đó. */
+const KEM_X = '_kem';
+const isKem = k => !!(LOAI[k] && LOAI[k].kem);
+const kemKeys = () => Object.keys(LOAI).filter(isKem);
+const kemOf = h => { const a = (h && h.ext && Array.isArray(h.ext[KEM_X])) ? h.ext[KEM_X].filter(isKem) : []; if (h && isKem(h.loai) && !a.includes(h.loai)) a.unshift(h.loai); return [...new Set(a)]; };
+const chinhOf = h => isKem(h.loai) ? '' : h.loai;
+const inLoai = (h, k) => isKem(k) ? kemOf(h).includes(k) : h.loai === k;
+const loaiAll = h => { const c = chinhOf(h); return c ? [c, ...kemOf(h)] : kemOf(h); };
+const loaiBadges = h => loaiAll(h).map(k => { const v = loaiOf(k); return `<span class="badge" style="--c:${v.mau}">${esc(v.ten)}</span>`; }).join(' ');
 const DIM = { vl: 'Việc làm', yt: 'Y tế', gd: 'Giáo dục', no: 'Nhà ở', nc: { '2026': 'Nước sinh hoạt và vệ sinh', '2027': 'Nước sinh hoạt, vệ sinh và môi trường' }, tt: 'Thông tin' };
 const CHI_SO = [
   { id: 'vieclam', d: 'vl', ten: 'Việc làm' }, { id: 'phuthuoc', d: 'vl', ten: 'Người phụ thuộc trong hộ gia đình' },
@@ -1390,6 +1408,7 @@ function sanitizeHH(o) {
   h.thanhVien = Array.isArray(o.thanhVien) ? o.thanhVien.map(sanitizeTV).filter(m => m.hoTen) : [];
   h.hoTro = Array.isArray(o.hoTro) ? o.hoTro.map(sanitizeHT).filter(x => x.noiDung || x.giaTri) : [];
   h.ext = cleanExt(SCHEMA().f, o.ext);
+  if (h.ext[KEM_X] != null) { const a = [...new Set(arrStr(h.ext[KEM_X]).filter(okKey))]; if (a.length) h.ext[KEM_X] = a; else delete h.ext[KEM_X]; }
   h.sample = !!o.sample; h.createdAt = toNum(o.createdAt) || Date.now(); h.updatedAt = toNum(o.updatedAt) || Date.now();
   return h;
 }
@@ -1471,7 +1490,7 @@ function normSchema(raw) {
   o.ui = u;
   const seen = new Set();
   o.loai = (Array.isArray(s.loai) ? s.loai : d.loai).filter(x => isObj(x) && okKey(x.k) && !seen.has(x.k) && seen.add(x.k))
-    .map(x => ({ k: x.k, ten: String(x.ten || (LOAI_GOC[x.k] || {}).ten || x.k).trim().slice(0, 80) || x.k, mau: okColor(x.mau, (LOAI_GOC[x.k] || {}).mau || '#607d8b'), dt: !!x.dt, an: !!x.an }));
+    .map(x => ({ k: x.k, ten: String(x.ten || (LOAI_GOC[x.k] || {}).ten || x.k).trim().slice(0, 80) || x.k, mau: okColor(x.mau, (LOAI_GOC[x.k] || {}).mau || '#607d8b'), dt: !!x.dt, an: !!x.an, kem: !!x.kem }));
   for (const [k, v] of Object.entries(LOAI_GOC)) if (!seen.has(k)) o.loai.push({ k, ten: v.ten, mau: v.mau, dt: !!v.dt, an: true });
   const ss = new Set();
   o.sec = (Array.isArray(s.sec) ? s.sec : d.sec).filter(x => isObj(x) && okKey(x.k) && !ss.has(x.k) && ss.add(x.k))
@@ -1528,7 +1547,7 @@ const TH = k => !!(SCHEMA().tvbf[k] || {}).an && !TVBF_GOC[k][1];
 const secOf = k => SCHEMA().sec.find(x => x.k === k);
 const SECT = k => (secOf(k) || {}).ten || (SEC_GOC.find(g => g[0] === k) || [0, k])[1];
 const SECH = k => !!(secOf(k) || {}).an;
-const fieldsIn = (sec, loai) => SCHEMA().f.filter(f => !f.an && f.sec === sec && (!f.loai.length || loai == null || f.loai.includes(loai)));
+const fieldsIn = (sec, x) => { const ks = x == null ? null : typeof x === 'object' ? loaiAll(x) : [x]; return SCHEMA().f.filter(f => !f.an && f.sec === sec && (!f.loai.length || ks == null || f.loai.some(k => ks.includes(k)))); };
 const fByK = k => SCHEMA().f.find(f => f.k === k);
 const apL = () => BL('ap'), apl = () => BL('ap').toLowerCase();
 const loaiTen = k => loaiOf(k).ten, loaiNgan = k => { const t = loaiTen(k).replace(/^hộ\s+/i, ''); return t.charAt(0).toUpperCase() + t.slice(1); };
@@ -1603,7 +1622,7 @@ function applyTheme(u, tenXa) {
 function applySchema(c) {
   const s = c.schema;
   for (const k of Object.keys(LOAI)) delete LOAI[k];
-  for (const x of s.loai) LOAI[x.k] = { ten: x.ten, mau: x.mau, dt: x.dt, an: x.an };
+  for (const x of s.loai) LOAI[x.k] = { ten: x.ten, mau: x.mau, dt: x.dt, an: x.an, kem: !!x.kem };
   NGUYEN_NHAN.splice(0, NGUYEN_NHAN.length, ...s.ds.nguyenNhan);
   NHU_CAU.splice(0, NHU_CAU.length, ...s.ds.nhuCau);
   for (const [k, id] of Object.entries(DS_DL)) { const d = document.getElementById(id); if (d) d.innerHTML = s.ds[k].map(x => `<option>${esc(x)}</option>`).join(''); }
@@ -1761,10 +1780,10 @@ let srvWarned = false;
 function checkServerKeeps(sent, got) {
   if (srvWarned || !got) return;
   const nx = o => o && isObj(o.ext) ? Object.keys(o.ext).length : 0;
-  const lostExt = nx(sent) && !nx(got), lostTv = (sent.thanhVien || []).some(m => nx(m)) && !(got.thanhVien || []).some(m => nx(m)), lostLoai = got.loai && sent.loai !== got.loai;
-  if (!lostExt && !lostTv && !lostLoai) return;
+  const lostExt = nx(sent) && !nx(got), lostTv = (sent.thanhVien || []).some(m => nx(m)) && !(got.thanhVien || []).some(m => nx(m)), lostLoai = got.loai && sent.loai !== got.loai, lostKem = !!(sent.ext && sent.ext[KEM_X]) && !(got.ext && got.ext[KEM_X]);
+  if (!lostExt && !lostTv && !lostLoai && !lostKem) return;
   srvWarned = true;
-  setTimeout(() => dialog('Máy chủ chưa lưu đủ thông tin', `<p>Hộ <b>${esc(sent.chuHo)}</b> đã lưu, nhưng máy chủ dữ liệu ${lostLoai ? `đổi phân loại thành “${esc(loaiTen(got.loai))}”` : 'bỏ mất các trường thông tin bổ sung'}.</p><p>Nguyên nhân: mã máy chủ (Google Apps Script) <b>chưa được cập nhật</b> lên phiên bản hỗ trợ “Cấu trúc ứng dụng”.</p><p class="muted small">${isAdmin() ? 'Quản trị viên: dán mã máy chủ mới vào Apps Script và Triển khai lại (giữ nguyên địa chỉ /exec), rồi sửa lại hộ này.' : 'Vui lòng báo quản trị viên.'}</p>`, [{ label: 'Đã hiểu', cls: 'btn-navy' }]), 400);
+  setTimeout(() => dialog('Máy chủ chưa lưu đủ thông tin', `<p>Hộ <b>${esc(sent.chuHo)}</b> đã lưu, nhưng máy chủ dữ liệu ${lostLoai ? `đổi phân loại thành “${esc(loaiTen(got.loai))}”` : lostKem && !lostExt ? 'bỏ mất phần “diện kèm theo” (ví dụ bức xúc về nhà ở)' : 'bỏ mất các trường thông tin bổ sung'}.</p><p>Nguyên nhân: mã máy chủ (Google Apps Script) <b>chưa được cập nhật</b> lên phiên bản hỗ trợ “Cấu trúc ứng dụng”.</p><p class="muted small">${isAdmin() ? 'Quản trị viên: dán mã máy chủ mới vào Apps Script và Triển khai lại (giữ nguyên địa chỉ /exec), rồi sửa lại hộ này.' : 'Vui lòng báo quản trị viên.'}</p>`, [{ label: 'Đã hiểu', cls: 'btn-navy' }]), 400);
 }
 let syncWaiters = [];
 async function sync(opt) {
@@ -1939,14 +1958,15 @@ function metaParts(h, keys) {
   }).filter(Boolean);
 }
 function pinIcon(h, sel) {
-  const c = loaiOf(h.loai).mau, n = pinText(h);
+  const c = loaiOf(h.loai).mau, n = pinText(h), kx = (chinhOf(h) ? kemOf(h) : kemOf(h).slice(1)).slice(0, 2);
+  const dots = kx.map((k, i) => `<circle cx="${23.2 - i * 8}" cy="4.8" r="4.3" fill="${loaiOf(k).mau}" stroke="#fff" stroke-width="1.6"/>`).join('');
   return L.divIcon({ className: 'pin-wrap' + (sel ? ' sel' : ''), iconSize: [28, 38], iconAnchor: [14, 37], popupAnchor: [0, -34], tooltipAnchor: [0, -40],
-    html: `<svg viewBox="0 0 28 38" width="28" height="38"><path d="M14 1.2C7 1.2 1.6 6.6 1.6 13.3 1.6 22.6 14 36.8 14 36.8S26.4 22.6 26.4 13.3C26.4 6.6 21 1.2 14 1.2z" fill="${c}" stroke="#fff" stroke-width="2"/><circle cx="14" cy="13.2" r="7.6" fill="#fff"/><text x="14" y="17" text-anchor="middle" font-family="Arial,sans-serif" font-size="10.5" font-weight="700" fill="${c}">${n}</text></svg>` });
+    html: `<svg viewBox="0 0 28 38" width="28" height="38"><path d="M14 1.2C7 1.2 1.6 6.6 1.6 13.3 1.6 22.6 14 36.8 14 36.8S26.4 22.6 26.4 13.3C26.4 6.6 21 1.2 14 1.2z" fill="${c}" stroke="#fff" stroke-width="2"/><circle cx="14" cy="13.2" r="7.6" fill="#fff"/><text x="14" y="17" text-anchor="middle" font-family="Arial,sans-serif" font-size="10.5" font-weight="700" fill="${c}">${n}</text>${dots}</svg>` });
 }
 function popupHTML(h) {
   const L0 = loaiOf(h.loai), mp = metaParts(h, SCHEMA().ui.pop);
   return `<b>${esc(h.chuHo)}</b>${mp.length ? `<div class="sub2">${esc(mp.join(' · '))}</div>` : ''}
-    <div style="margin-top:4px"><span class="badge" style="--c:${L0.mau}">${esc(L0.ten)}</span></div>
+    <div style="margin-top:4px">${loaiBadges(h)}</div>
     <div class="pop-actions"><button class="btn btn-sm btn-navy" data-act="open" data-id="${h.id}">Chi tiết</button><a class="btn btn-sm" href="${dirLink(h)}" target="_blank" rel="noopener">${I('route', 14)}Chỉ đường</a></div>`;
 }
 function refreshMarkers(list) {
@@ -2005,7 +2025,7 @@ function filtered() {
   const q = norm(ui.f.q);
   return S.households.filter(h => {
     if (ui.f.ap === '__none') { if (h.ap) return false; } else if (ui.f.ap && h.ap !== ui.f.ap) return false;
-    if (ui.f.loai.size && !ui.f.loai.has(h.loai)) return false;
+    if (ui.f.loai.size && ![...ui.f.loai].some(k => inLoai(h, k))) return false;
     if (ui.f.noLoc && hasLoc(h)) return false;
     for (const [k, val] of Object.entries(ui.f.x)) if (val !== '' && !matchLoc(h, k, val)) return false;
     if (q) { const xs = SCHEMA().f.map(f => fText(f, h.ext[f.k])); const hay = norm([h.chuHo, h.maHo, h.diaChi, h.ap, h.dienThoai, h.phuTrach, ...xs, ...h.thanhVien.map(m => m.hoTen + ' ' + (m.cccd || ''))].join(' | ')); if (!hay.includes(q)) return false; }
@@ -2047,12 +2067,12 @@ function renderFilters() {
   ap.innerHTML = `<option value="">Tất cả ${esc(apl())} (${S.households.length} hộ)</option>` + apOrder().filter(a => isAdmin() || inScope(a) || S.households.some(h => h.ap === a)).map(a => `<option value="${esc(a)}">${esc(a)} (${S.households.filter(h => h.ap === a).length})</option>`).join('') + (S.households.some(h => !h.ap) ? `<option value="__none">Chưa rõ ${esc(apl())}</option>` : '');
   ap.value = cur; if (ap.value !== cur) { ui.f.ap = ''; ap.value = ''; }
   { const ks = loaiShown(); for (const k of [...ui.f.loai]) if (!ks.includes(k)) ui.f.loai.delete(k); }
-  $('#fLoai').innerHTML = loaiShown().map(k => { const v = loaiOf(k); return `<button class="chip ${ui.f.loai.has(k) ? 'on' : ''}" data-act="f-loai" data-k="${esc(k)}" style="--c:${v.mau}" aria-pressed="${ui.f.loai.has(k)}"><span class="dot"></span>${esc(v.ten)} <b>${S.households.filter(h => h.loai === k).length}</b></button>`; }).join('');
+  $('#fLoai').innerHTML = loaiShown().map(k => { const v = loaiOf(k); return `<button class="chip ${ui.f.loai.has(k) ? 'on' : ''}" data-act="f-loai" data-k="${esc(k)}" style="--c:${v.mau}" aria-pressed="${ui.f.loai.has(k)}"><span class="dot"></span>${esc(v.ten)} <b>${S.households.filter(h => inLoai(h, k)).length}</b></button>`; }).join('');
   renderExtFilters();
   $('#addBtns').style.display = can('add') ? '' : 'none';
 }
 /* Phân loại hiện trên bộ lọc, chú giải: phân loại không ẩn + phân loại đang có hộ */
-const loaiShown = () => { const ks = Object.keys(LOAI).filter(k => !LOAI[k].an || S.households.some(h => h.loai === k)); for (const h of S.households) if (!ks.includes(h.loai)) ks.push(h.loai); return ks; };
+const loaiShown = () => { const ks = Object.keys(LOAI).filter(k => !LOAI[k].an || S.households.some(h => inLoai(h, k))); for (const h of S.households) if (!ks.includes(h.loai)) ks.push(h.loai); return ks; };
 function apInfoKV(ap) { const s = SCHEMA(), v = s.apInfo[ap]; return v ? extKV(s.apF, v) : ''; }
 function apInfoDlg(ap) {
   const kv = apInfoKV(ap);
@@ -2071,20 +2091,26 @@ function renderList() {
     html += `<button class="hh ${h.id === ui.selId ? 'sel' : ''}" data-act="open" data-id="${h.id}" style="--c:${L0.mau}">
       <div class="hh-main"><div class="hh-name">${esc(h.chuHo)}${h.sample ? '<span class="tag">mẫu</span>' : ''}${pend.has(h.id) ? '<span class="tag info">chưa gửi</span>' : ''}</div>
       ${mp.length ? `<div class="hh-meta">${esc(mp.join(' · '))}</div>` : ''}</div>
-      <div class="hh-side"><span class="badge" style="--c:${L0.mau}">${esc(L0.ten)}</span>${hasLoc(h) ? '' : '<span class="tag warn">Chưa định vị</span>'}</div></button>`;
+      <div class="hh-side">${loaiBadges(h)}${hasLoc(h) ? '' : '<span class="tag warn">Chưa định vị</span>'}</div></button>`;
   }
   $('#list').innerHTML = html || `<div class="empty">${S.households.length ? 'Không có hộ nào khớp bộ lọc.' : isAdmin() ? 'Chưa có hộ nào. Bấm <b>Thêm hộ</b>, hoặc vào mục <b>Dữ liệu</b> để nhập từ Excel / chuyển dữ liệu phiên bản cũ.' : can('add') ? 'Chưa có hộ nào trong phạm vi được giao. Bấm <b>Thêm hộ</b> để nhập.' : 'Chưa có hộ nào trong phạm vi được giao.'}</div>`;
   const nk = list.reduce((s, h) => s + h.thanhVien.length, 0), noLoc = list.filter(h => !hasLoc(h)).length;
   $('#listFoot').innerHTML = `<span>Hiển thị ${list.length}/${S.households.length} hộ · ${fmt(nk)} nhân khẩu · ${noLoc} hộ chưa định vị</span><button class="linkbtn sync-btn" data-act="sync-now" title="Tải số liệu mới nhất">⟳ <span id="syncInfo"></span></button>`; syncUI();
   refreshMarkers(list); renderLegend(list); renderBanners();
 }
-function renderLegend(list) { $('#legend').innerHTML = loaiShown().map(k => { const v = loaiOf(k); return `<div style="--c:${v.mau}"><i></i>${esc(v.ten)}<b class="lg-n">${list.filter(h => h.loai === k && hasLoc(h)).length}</b></div>`; }).join(''); }
+function renderLegend(list) { $('#legend').innerHTML = loaiShown().map(k => { const v = loaiOf(k); return `<div style="--c:${v.mau}"><i></i>${esc(v.ten)}<b class="lg-n">${list.filter(h => inLoai(h, k) && hasLoc(h)).length}</b></div>`; }).join(''); }
 function renderBanners() {
   if (!ME) return;
   let h = '';
   if (!storageOk) h += `<div class="banner warn">${I('x')}<div>Bộ nhớ trình duyệt đầy hoặc bị chặn — dữ liệu chưa gửi có thể mất khi đóng ứng dụng.</div></div>`;
   if (OUT.length) h += `<div class="banner warn"><div><b>${OUT.length} hộ</b> đã lưu trên máy nhưng <b>chưa gửi</b> lên máy chủ${net.online ? '' : ' (đang mất mạng)'}. Ứng dụng sẽ tự gửi khi có mạng.</div><button class="btn btn-sm" data-act="sync-now">Gửi ngay</button></div>`;
   else if (!net.online) h += `<div class="banner info"><div>Đang mất kết nối — bạn đang xem dữ liệu lưu trên máy${S.loadedAt ? ` (cập nhật ${dt(S.loadedAt)})` : ''}.</div><button class="btn btn-sm" data-act="sync-now">Thử lại</button></div>`;
+  if (isAdmin()) {
+    const kh = kemHintKey();
+    if (kh) h += `<div class="banner info"><div>Phân loại <b>“${esc(loaiTen(kh))}”</b> đang tách riêng, nên một hộ vừa nghèo vừa ${esc(loaiNgan(kh).toLowerCase())} phải nhập thành 2 hộ. Chuyển thành <b>diện kèm theo</b> để chỉ cần đánh dấu thêm?</div><div class="row gap" style="margin-left:auto;flex:none"><button class="btn btn-sm btn-navy" data-act="kem-convert" data-k="${esc(kh)}">Chuyển</button><button class="btn btn-sm" data-act="kem-later" data-k="${esc(kh)}">Để sau</button></div></div>`;
+    const dn = dupPairs().length;
+    if (dn) h += `<div class="banner warn"><div>Có <b>${dn}</b> hộ có thể bị <b>nhập trùng</b> (một bản phân loại chính, một bản chỉ là diện kèm theo).</div><button class="btn btn-sm" data-act="merge-dups">Xem và gộp</button></div>`;
+  }
   if (isAdmin() && (oldLocal() || (readLegacy() || { households: [] }).households.length)) h += `<div class="banner info"><div>Máy này còn <b>dữ liệu nhập ở phiên bản cũ</b>. Chuyển lên Google Trang tính để mọi người cùng dùng.</div><button class="btn btn-sm" data-act="${oldLocal() ? 'migrate-local' : 'migrate-legacy'}">Chuyển</button></div>`;
   $('#banners').innerHTML = h;
 }
@@ -2101,17 +2127,18 @@ function renderDetail() {
   const h = byId(ui.selId); if (!h) { showView('list'); return; }
   const L0 = loaiOf(h.loai), ce = can('edit', h);
   const body = SCHEMA().sec.filter(s => !s.an).map(s => {
-    const fx = fieldsIn(s.k, h.loai), kv = extKV(fx, h.ext), inner = SEC_DETAIL[s.k] ? SEC_DETAIL[s.k](h, kv) : null;
+    const fx = fieldsIn(s.k, h), kv = extKV(fx, h.ext), inner = SEC_DETAIL[s.k] ? SEC_DETAIL[s.k](h, kv) : null;
     if (inner != null) return inner;
     return kv ? `<div class="sec">${esc(s.ten)}</div><dl class="kv">${kv}</dl>` : '';
   }).join('');
   $('#detail').innerHTML = `
-    <div class="d-head" style="--c:${L0.mau}"><span class="badge" style="--c:${L0.mau}">${esc(L0.ten)}</span>${h.sample ? '<span class="tag">Dữ liệu mẫu</span>' : ''}${pendIds().has(h.id) ? '<span class="tag info">Chưa gửi lên máy chủ</span>' : ''}
+    <div class="d-head" style="--c:${L0.mau}">${loaiBadges(h)}${h.sample ? '<span class="tag">Dữ liệu mẫu</span>' : ''}${pendIds().has(h.id) ? '<span class="tag info">Chưa gửi lên máy chủ</span>' : ''}
       <h2>${esc(h.chuHo)}</h2><div class="muted">${esc(BL('maHo'))} <b>${esc(h.maHo || 'chờ cấp')}</b> · ${esc(h.ap || 'Chưa rõ ' + apl())}${h.namCongNhan && !BH('namCongNhan') ? ` · ${esc(BL('namCongNhan'))} ${h.namCongNhan}` : ''}</div></div>
     <div class="d-actions">
       ${ce ? `<button class="btn btn-sm btn-navy" data-act="edit" data-id="${h.id}">${I('edit', 15)}Sửa</button>` : ''}
       ${hasLoc(h) ? `<button class="btn btn-sm" data-act="fly" data-id="${h.id}">${I('map', 15)}Xem trên bản đồ</button><a class="btn btn-sm" href="${dirLink(h)}" target="_blank" rel="noopener">${I('route', 15)}Chỉ đường</a>` : ce ? `<button class="btn btn-sm" data-act="edit-gps" data-id="${h.id}">${I('gps', 15)}Định vị ngay</button>` : ''}
       <button class="btn btn-sm" data-act="print" data-id="${h.id}">${I('print', 15)}In phiếu</button>
+      ${can('delete') && !chinhOf(h) ? `<button class="btn btn-sm" data-act="merge-pick" data-id="${h.id}" title="Hộ này bị nhập trùng với một hộ nghèo, cận nghèo… đã có">Gộp vào hộ chính…</button>` : ''}
       ${can('delete') ? `<button class="btn btn-sm btn-danger" data-act="delete" data-id="${h.id}">${I('trash', 15)}Xóa</button>` : ''}
     </div>
     ${body}
@@ -2204,13 +2231,17 @@ function renderEdit() {
   const d = draft;
   $('#editForm').innerHTML = (!isAdmin() && myAps().length ? `<p class="hint" style="margin:0 0 10px">${I('shield', 14)} Bạn được giao nhập liệu tại: <b>${esc(scopeText(myAps()))}</b>.</p>` : '')
     + SCHEMA().sec.filter(s => !s.an && s.k !== 'apinfo').map(s => {
-      const fx = fieldsIn(s.k, d.loai), inner = SEC_EDIT[s.k] ? SEC_EDIT[s.k](d) : '';
+      const fx = fieldsIn(s.k, d), inner = SEC_EDIT[s.k] ? SEC_EDIT[s.k](d) : '';
       const ext = fx.length ? `<div class="grid2">${fx.map(f => fInput(f, d.ext[f.k], 'data-x', f.qt && !isAdmin())).join('')}</div>` : '';
       return inner || ext ? `<fieldset data-sec="${esc(s.k)}"><legend>${esc(s.ten)}${s.k === 'thanhvien' ? ` (${d.thanhVien.length})` : s.k === 'hotro' ? ` (${d.hoTro.length})` : ''}</legend>${inner}${ext}</fieldset>` : '';
     }).join('');
   updateSuggest();
 }
-const loaiOptions = cur => { const ks = Object.keys(LOAI).filter(k => !LOAI[k].an || k === cur); if (cur && !ks.includes(cur)) ks.push(cur); return ks.map(k => `<option value="${esc(k)}" ${k === cur ? 'selected' : ''}>${esc(loaiTen(k))}</option>`).join(''); };
+const loaiOptions = (cur, allowNone) => { const ks = Object.keys(LOAI).filter(k => !isKem(k) && (!LOAI[k].an || k === cur)); if (cur && !ks.includes(cur)) ks.push(cur); return ks.map(k => `<option value="${esc(k)}" ${k === cur ? 'selected' : ''}>${esc(loaiTen(k))}</option>`).join('') + (allowNone ? `<option value="" ${cur ? '' : 'selected'}>— Không (chỉ thuộc diện đánh dấu bên dưới) —</option>` : ''); };
+const kemBox = d => {
+  const cur = kemOf(d), ks = kemKeys().filter(k => !LOAI[k].an || cur.includes(k)); if (!ks.length) return '';
+  return `<div class="f span2 kem-box"><span>Đồng thời thuộc diện <small>(đánh dấu kèm theo phân loại trên — không nhập thành hộ riêng)</small></span><div class="ck-grid">${ks.map(k => `<label class="chk"><input type="checkbox" data-kem="${esc(k)}" ${cur.includes(k) ? 'checked' : ''}><i class="kdot" style="--c:${loaiOf(k).mau}"></i>${esc(loaiTen(k))}</label>`).join('')}</div></div>`;
+};
 /* Ô nhập của các nhóm thông tin có sẵn */
 const SEC_EDIT = {
   chung: d => {
@@ -2220,8 +2251,9 @@ const SEC_EDIT = {
       <label class="f span2"><span>${lb('chuHo')} <em>*</em></span><input name="chuHo" value="${esc(d.chuHo)}" required></label>
       <label class="f"><span>${lb('maHo')}</span><input name="maHo" value="${esc(d.maHo)}"${ph('maHo')}></label>
       <label class="f"><span>${lb('ap')}</span><select name="ap"><option value="">— Chọn ${esc(apl())} —</option>${aps.map(a => `<option ${a === d.ap ? 'selected' : ''}>${esc(a)}</option>`).join('')}</select></label>
-      <label class="f"><span>${lb('loai')}</span><select name="loai">${loaiOptions(d.loai)}</select></label>
+      <label class="f"><span>${lb('loai')}</span><select name="loai">${loaiOptions(chinhOf(d), kemKeys().length > 0)}</select></label>
       ${sh('namCongNhan') ? `<label class="f"><span>${lb('namCongNhan')}</span><input name="namCongNhan" type="number" min="2000" max="2100" value="${d.namCongNhan ?? ''}"></label>` : ''}
+      ${kemBox(d)}
       ${sh('diaChi') ? `<label class="f span2"><span>${lb('diaChi')}</span><input name="diaChi" value="${esc(d.diaChi)}"${ph('diaChi')}></label>` : ''}
       ${sh('dienThoai') ? `<label class="f"><span>${lb('dienThoai')}</span><input name="dienThoai" type="tel" value="${esc(d.dienThoai)}"></label>` : ''}
       ${sh('phuTrach') ? `<label class="f"><span>${lb('phuTrach')}</span><input name="phuTrach" list="dlPhuTrach" value="${esc(d.phuTrach)}"></label>` : ''}
@@ -2261,7 +2293,9 @@ function collectForm(dry) {
   const f = $('#editForm'), d = dry ? clone(draft) : draft;
   const has = n => !!f.elements[n], g = n => (f.elements[n] ? String(f.elements[n].value).trim() : '');
   /* chỉ đọc những ô đang hiện — trường bị ẩn giữ nguyên giá trị cũ */
-  d.chuHo = g('chuHo'); d.maHo = g('maHo'); d.ap = g('ap'); d.loai = g('loai') || d.loai || 'ngheo';
+  d.chuHo = g('chuHo'); d.maHo = g('maHo'); d.ap = g('ap');
+  const kb = $$('input[data-kem]', f), kemSel = kb.length ? kb.filter(x => x.checked).map(x => x.dataset.kem) : kemOf(d), mainSel = has('loai') ? g('loai') : chinhOf(d);
+  d.loai = mainSel || kemSel[0] || '';
   if (has('namCongNhan')) d.namCongNhan = toYear(g('namCongNhan'));
   if (has('diaChi')) d.diaChi = g('diaChi');
   if (has('dienThoai')) d.dienThoai = g('dienThoai');
@@ -2283,6 +2317,7 @@ function collectForm(dry) {
   }
   if ($('#htList', f)) d.hoTro = $$('#htList .ht', f).map(row => { const x = blankHT(); $$('[data-ht]', row).forEach(inp => { x[inp.dataset.ht] = inp.value.trim(); }); x.giaTri = toMoney(x.giaTri); return x; });
   d.ext = readExt(f, 'data-x', SCHEMA().f, d.ext);
+  if (kemSel.length) d.ext[KEM_X] = kemSel; else delete d.ext[KEM_X];
   return d;
 }
 function updateSuggest() {
@@ -2325,12 +2360,13 @@ async function saveEdit() {
   const d = draft, isNew = !!d._new;
   if (isNew ? !can('add') : !can('edit', byId(d.id))) { toast('Tài khoản của bạn không có quyền này.', 'err'); return; }
   if (!d.chuHo) { toast('Vui lòng nhập họ tên chủ hộ.', 'err'); $('#editForm [name=chuHo]').focus(); return; }
+  if (!d.loai) { toast(`Chọn ${BL('loai').toLowerCase()} hoặc đánh dấu diện kèm theo.`, 'err'); $('#editForm [name=loai]').focus(); return; }
   if (!isAdmin() && myAps().length && !inScope(d.ap)) { toast(`Bạn chỉ được nhập hộ thuộc: ${scopeText(myAps())}.`, 'err'); return; }
   if ((d.lat == null) !== (d.lng == null)) { toast('Vị trí cần có đủ vĩ độ và kinh độ.', 'err'); return; }
   if (hasLoc(d) && !inVN(d.lat, d.lng)) { const ok = await confirmDlg('Tọa độ bất thường', 'Tọa độ nằm ngoài lãnh thổ Việt Nam. Có thể bạn đã nhập nhầm thứ tự vĩ độ/kinh độ. Vẫn lưu?', 'Vẫn lưu'); if (!ok) return; }
   const dup = d.maHo && S.households.find(h => h.id !== d.id && norm(h.maHo) === norm(d.maHo));
   if (dup) { toast(`Mã hộ “${d.maHo}” đã dùng cho hộ ${dup.chuHo}.`, 'err'); $('#editForm [name=maHo]').focus(); return; }
-  const miss = SCHEMA().sec.filter(s => !s.an).flatMap(s => fieldsIn(s.k, d.loai)).find(f => f.bb && !(f.qt && !isAdmin()) && isEmptyVal(d.ext[f.k]));
+  const miss = SCHEMA().sec.filter(s => !s.an).flatMap(s => fieldsIn(s.k, d)).find(f => f.bb && !(f.qt && !isAdmin()) && isEmptyVal(d.ext[f.k]));
   if (miss) { toast(`Vui lòng nhập “${miss.ten}”.`, 'err'); const el = $(`#editForm [data-x="${CSS.escape(miss.k)}"],#editForm [data-xm="${CSS.escape(miss.k)}"]`); if (el) el.focus(); return; }
   const missTV = SCHEMA().tv.filter(f => !f.an && f.bb);
   for (const [i, m] of d.thanhVien.entries()) { if (!m.hoTen) continue; const f = missTV.find(f => isEmptyVal(m.ext[f.k])); if (f) { toast(`Thành viên ${i + 1} (${m.hoTen}): vui lòng nhập “${f.ten}”.`, 'err'); return; } }
@@ -2355,13 +2391,23 @@ async function cancelEdit() {
 function leaveEdit() { stopPick(); draft = null; if (editMarker) { map.removeLayer(editMarker); editMarker = null; } $('#mapWrap').classList.remove('editing'); }
 
 /* ---------- Thống kê ---------- */
+/* Phạm vi thống kê: cả xã (ui.stAp = '*') hoặc một ấp */
+function statScope(aps0) {
+  const sel = $('#stScope'), opts = aps0.filter(a => S.households.some(h => (h.ap || '') === a));
+  if (ui.stAp == null || (ui.stAp !== '*' && !opts.includes(ui.stAp))) ui.stAp = '*';
+  const whole = isAdmin() || !myAps().length ? 'Cả xã' : 'Toàn bộ phạm vi được giao';
+  if (sel) { sel.innerHTML = `<option value="*">${esc(whole)} (${S.households.length} hộ)</option>` + opts.map(a => `<option value="${esc(a)}">${esc(a || 'Chưa rõ ' + apl())} (${S.households.filter(h => (h.ap || '') === a).length} hộ)</option>`).join(''); sel.value = ui.stAp; }
+  return ui.stAp !== '*';
+}
+const statList = () => ui.stAp != null && ui.stAp !== '*' ? S.households.filter(h => (h.ap || '') === ui.stAp) : S.households;
 function renderStats() {
   $('#statsExport').style.display = can('export') ? '' : 'none';
-  const s = SCHEMA(), all = S.households, aps = apOrder(); if (all.some(h => !h.ap)) aps.push('');
+  const s = SCHEMA(), aps0 = apOrder(); if (S.households.some(h => !h.ap)) aps0.push('');
+  const one = statScope(aps0), all = statList(), aps = one ? [ui.stAp] : aps0, apName = a => a || `Chưa rõ ${apl()}`;
   const cats = loaiShown(), nk = arr => arr.reduce((t, h) => t + h.thanhVien.length, 0);
-  const rows = aps.map(a => { const arr = all.filter(h => (h.ap || '') === a); return { a: a || `Chưa rõ ${apl()}`, ap: a, n: arr.length, c: cats.map(k => arr.filter(h => h.loai === k).length), nk: nk(arr), dv: arr.filter(hasLoc).length }; }).filter(r => r.n || (isAdmin() && S.config.apList.includes(r.a)));
+  const rows = aps.map(a => { const arr = all.filter(h => (h.ap || '') === a); return { a: apName(a), ap: a, n: arr.length, c: cats.map(k => arr.filter(h => inLoai(h, k)).length), nk: nk(arr), dv: arr.filter(hasLoc).length }; }).filter(r => r.n || one || (isAdmin() && S.config.apList.includes(r.a)));
   const tot = rows.reduce((t, r) => { t.n += r.n; t.nk += r.nk; t.dv += r.dv; r.c.forEach((x, i) => t.c[i] += x); return t; }, { n: 0, nk: 0, dv: 0, c: cats.map(() => 0) });
-  const dtK = Object.keys(LOAI).filter(k => LOAI[k].dt), targ = all.filter(h => dtK.includes(h.loai)), mem = targ.flatMap(h => h.thanhVien);
+  const dtK = Object.keys(LOAI).filter(k => LOAI[k].dt), targ = all.filter(h => loaiAll(h).some(k => dtK.includes(k))), mem = targ.flatMap(h => h.thanhVien);
   const dtTen = dtK.map(k => loaiTen(k).replace(/^hộ\s+/i, '')).join(', ') || 'đối tượng';
   const ch = chiSoCur(), thc = ch.map(c => ({ c, n: targ.filter(h => h.thieuHut.includes(c.id)).length })).sort((a, b) => b.n - a.n), mx = Math.max(1, ...thc.map(x => x.n));
   const dtts = targ.filter(h => { const c0 = h.thanhVien.find(m => norm(m.quanHe) === 'chu ho') || h.thanhVien[0]; return c0 && isDTTS(c0); }).length;
@@ -2382,16 +2428,26 @@ function renderStats() {
   };
   const hf = s.f.filter(f => !f.an && f.tk), tf = s.tv.filter(f => !f.an && f.tk);
   const apRows = s.apF.length ? aps.filter(a => a && apInfoKV(a)) : [];
+  /* Diện kèm theo: chú thích + số hộ chia theo phân loại chính */
+  const kc = cats.filter(isKem);
+  const kemHTML = !kc.length ? '' : `<p class="muted small" style="margin:6px 0 0">${kc.map(k => `<b>${esc(loaiNgan(k))}</b>`).join(', ')}: diện <b>kèm theo</b> — một hộ có thể vừa thuộc phân loại chính vừa thuộc diện này, nên cột <b>Tổng hộ</b> chỉ tính mỗi hộ 1 lần.</p>` +
+    kc.map(k => { const arr = all.filter(h => inLoai(h, k)); if (!arr.length) return ''; const by = {}; arr.forEach(h => { const c = chinhOf(h); by[c] = (by[c] || 0) + 1; });
+      const items = Object.entries(by).sort((a, b) => b[1] - a[1]).map(([c, n]) => [c ? loaiTen(c) : `Chỉ thuộc diện ${loaiNgan(k).toLowerCase()}`, n]);
+      return `<div class="sec">${esc(loaiTen(k))}: ${arr.length} hộ, trong đó</div>${bars(items, loaiOf(k).mau)}`; }).join('');
+  const dupN = isAdmin() ? dupPairs().length : 0;
   $('#stats').innerHTML = `
+    ${dupN ? `<div class="banner warn" style="margin:0 0 10px"><div>Có <b>${dupN}</b> hộ có thể bị <b>nhập trùng</b> (cùng tên chủ hộ, cùng ${esc(apl())}: một bản phân loại chính, một bản chỉ là diện kèm theo) — số liệu đang bị đếm 2 lần.</div><button class="btn btn-sm" data-act="merge-dups">Xem và gộp</button></div>` : ''}
+    ${one ? `<p class="hint" style="margin-top:0">Đang xem số liệu riêng <b>${esc(apName(ui.stAp))}</b>. Chọn <b>Cả xã</b> ở ô phía trên để xem toàn xã.</p>` : ''}
     ${!isAdmin() && myAps().length ? `<p class="hint" style="margin-top:0">Số liệu trong phạm vi được giao: <b>${esc(scopeText(myAps()))}</b>.</p>` : ''}
     <div class="kpis">
-      ${cats.map((k, i) => { const arr = all.filter(h => h.loai === k); return `<div class="kpi" style="--c:${loaiOf(k).mau}"><div class="v">${fmt(arr.length)}</div><div class="l">${esc(loaiTen(k))}${arr.length ? ` · ${fmt(nk(arr))} nhân khẩu` : ''}</div></div>`; }).join('')}
+      ${cats.map((k, i) => { const arr = all.filter(h => inLoai(h, k)); return `<div class="kpi" style="--c:${loaiOf(k).mau}"><div class="v">${fmt(arr.length)}</div><div class="l">${esc(loaiTen(k))}${arr.length ? ` · ${fmt(nk(arr))} nhân khẩu` : ''}</div></div>`; }).join('')}
       <div class="kpi"><div class="v">${fmt(tot.dv)}<span style="font-size:15px;color:var(--muted)">/${fmt(tot.n)}</span></div><div class="l">Hộ đã định vị trên bản đồ</div></div>
     </div>
-    <div class="sec">Theo ${esc(apl())}</div>
+    <div class="sec">${one ? `Tổng hợp ${esc(apName(ui.stAp))}` : `Theo ${esc(apl())}`}</div>
     <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>${esc(apL())}</th><th class="num">Tổng hộ</th>${cats.map(k => `<th class="num">${esc(loaiNgan(k))}</th>`).join('')}<th class="num">Nhân khẩu</th><th class="num">Đã định vị</th></tr></thead>
     <tbody>${rows.map(r => `<tr><td>${esc(r.a)}</td><td class="num"><b>${r.n}</b></td>${r.c.map(x => `<td class="num">${x}</td>`).join('')}<td class="num">${fmt(r.nk)}</td><td class="num">${r.dv}</td></tr>`).join('')}</tbody>
-    <tfoot><tr><td>Cộng</td><td class="num">${tot.n}</td>${tot.c.map(x => `<td class="num">${x}</td>`).join('')}<td class="num">${fmt(tot.nk)}</td><td class="num">${tot.dv}</td></tr></tfoot></table></div>
+    ${one ? '' : `<tfoot><tr><td>Cộng</td><td class="num">${tot.n}</td>${tot.c.map(x => `<td class="num">${x}</td>`).join('')}<td class="num">${fmt(tot.nk)}</td><td class="num">${tot.dv}</td></tr></tfoot>`}</table></div>
+    ${kemHTML}
     ${dtK.length ? `<div class="sec">Đối tượng trong hộ ${esc(dtTen)}</div>
     <div class="kpis">
       <div class="kpi"><div class="v">${mem.filter(m => age(m) >= s.ui.gia).length}</div><div class="l">Người cao tuổi (từ ${s.ui.gia} tuổi)</div></div>
@@ -2435,6 +2491,8 @@ function renderData() {
     <div class="card"><h3>${I('send')} Chuyển dữ liệu từ phiên bản cũ</h3><p>Dữ liệu nhập ở phiên bản trước (lưu riêng trên từng máy) có thể chuyển lên Google Trang tính để mọi người cùng dùng.</p>
       <div class="row gap wrap">${old ? `<button class="btn btn-navy" data-act="migrate-local">Chuyển dữ liệu cũ trên máy này</button>` : ''}${leg && leg.households.length ? `<button class="btn btn-navy" data-act="migrate-legacy">Chuyển ${leg.households.length} hộ (bản đầu tiên) trên máy này</button>` : ''}<button class="btn" data-act="pick-json">Chọn file sao lưu bản cũ…</button></div>
       <p class="muted small" style="margin:8px 0 0">${old ? 'Máy này còn dữ liệu phiên bản cũ — cần mật khẩu cũ để mở.' : 'Máy này không còn dữ liệu phiên bản cũ.'} File sao lưu cũ có tên bắt đầu bằng <code>SaoLuu_HeThong_</code>.</p></div>
+    ${kemKeys().length ? `<div class="card"><h3>${I('users')} Gộp hộ bị nhập trùng</h3><p>Tìm các hộ cùng tên chủ hộ, cùng ${esc(apl())}, trong đó một bản là phân loại chính (nghèo, cận nghèo…) và một bản chỉ là diện kèm theo (${kemKeys().map(k => esc(loaiTen(k))).join(', ')}) — gộp thành 1 hộ mang cả hai.</p>
+      <button class="btn btn-navy" data-act="merge-dups">Tìm và gộp hộ trùng (${dupPairs().length})</button><p class="muted small" style="margin:8px 0 0">Hộ trùng tên khác (gõ sai dấu…): mở hộ đó, bấm <b>Gộp vào hộ chính…</b>.</p></div>` : ''}
     <div class="card"><h3>${I('trash')} Dọn dữ liệu <span class="tag red">Chỉ quản trị viên</span></h3><p>Xóa sạch danh sách hộ để nhập lại (tài khoản cán bộ vẫn giữ). Các hộ bị xóa vẫn còn trong Google Trang tính với trạng thái “Đã xóa”.</p>
       <button class="btn btn-danger" data-act="wipe" ${S.households.length ? '' : 'disabled'}>Xóa toàn bộ danh sách hộ</button></div>
     <div class="card"><h3>Hướng dẫn nhanh</h3>
@@ -2658,6 +2716,7 @@ function colsHo() {
   const s = SCHEMA(), c = [['STT', 'stt', 6], [BL('maHo'), 'maHo', 11], [BL('chuHo'), 'chuHo', 24], [apL(), 'ap', 14]];
   if (!BH('diaChi')) c.push([BL('diaChi'), 'diaChi', 26]);
   c.push([BL('loai'), 'loai', 17]);
+  kemKeys().filter(k => !LOAI[k].an || S.households.some(h => inLoai(h, k))).forEach(k => c.push([loaiTen(k), 'kem:' + k, xw(loaiTen(k))]));
   if (!BH('namCongNhan')) c.push([BL('namCongNhan'), 'namCongNhan', 10]);
   c.push(['Số nhân khẩu', 'nk', 9]);
   if (!BH('dienThoai')) c.push([BL('dienThoai'), 'dienThoai', 13]);
@@ -2693,6 +2752,7 @@ const hdrKey = h => norm(h).replace(/[^a-z0-9]+/g, ' ').trim();
 function mapHo() {
   const s = SCHEMA(), m = {};
   for (const f of s.f) m[hdrKey(f.ten)] = 'x:' + f.k;
+  for (const k of kemKeys()) m[hdrKey(loaiTen(k))] = 'kem:' + k;
   Object.assign(m, MAP_HO);
   for (const k of Object.keys(BF_GOC)) if (k !== 'thieuHut') m[hdrKey(BL(k))] = k;
   m[hdrKey(SECT('nguyennhan'))] = 'nguyenNhan'; m[hdrKey(SECT('nhucau'))] = 'nhuCau'; m[hdrKey(SECT('ghichu'))] = 'ghiChu';
@@ -2711,6 +2771,7 @@ function hoRow(h, i) {
   const th = thieuHutCur(h);
   const r = { stt: i + 1, maHo: h.maHo, chuHo: h.chuHo, ap: h.ap, diaChi: h.diaChi, loai: loaiTen(h.loai), namCongNhan: h.namCongNhan, nk: h.thanhVien.length, dienThoai: h.dienThoai, thuNhap: h.thuNhap, soTH: th.length, thieuHut: th.map(chiSoTen).join('; '), nguyenNhan: h.nguyenNhan.join('; '), nhuCau: h.nhuCau.join('; '), phuTrach: h.phuTrach, lat: h.lat, lng: h.lng, link: hasLoc(h) ? { text: 'Mở bản đồ', hyperlink: viewLink(h) } : '', ghiChu: h.ghiChu, updatedBy: h.updatedBy, updatedAtTxt: dt(h.updatedAt) };
   for (const f of SCHEMA().f) r['x:' + f.k] = fCell(f, h.ext[f.k]);
+  for (const k of kemKeys()) r['kem:' + k] = inLoai(h, k) ? 'Có' : '';
   return r;
 }
 function tvRowX(h, m, i) {
@@ -2748,7 +2809,7 @@ async function buildWorkbook(list, { template = false } = {}) {
     const xf = [...SCHEMA().f.filter(f => !f.an && f.xl).map(f => [f, 'DanhSachHo']), ...SCHEMA().tv.filter(f => !f.an && f.xl).map(f => [f, 'ThanhVien'])];
     const xnote = ([f, ws]) => `• Cột “${f.ten}” (trang ${ws}): ${KIEU[f.kieu]}` + (f.kieu === 'select' ? ` — ghi một trong: ${f.opts.join('; ')}` : f.kieu === 'multi' ? ` — ghi nhiều mục cách nhau bằng dấu chấm phẩy, trong số: ${f.opts.join('; ')}` : f.kieu === 'bool' ? ' — ghi Có hoặc để trống' : f.kieu === 'nguoi' ? ' — ghi họ tên rồi số điện thoại, ví dụ: Nguyễn Văn A - 0912345678' : f.kieu === 'date' ? ' — ghi ngày/tháng/năm' : '') + '.';
     ['HƯỚNG DẪN NHẬP DỮ LIỆU', '• Giữ nguyên tên các trang (DanhSachHo, ThanhVien, HoTro) và dòng tiêu đề. Xóa dòng ví dụ trước khi nhập.', `• ${BL('maHo')} dùng để nối Danh sách hộ với Thành viên, Hỗ trợ. Mỗi hộ một mã duy nhất.`,
-     `• ${BL('loai')} ghi một trong: ${Object.keys(LOAI).filter(k => !LOAI[k].an).map(loaiTen).join(' / ')}.`, '• Thu nhập ghi theo nghìn đồng/người/tháng (ví dụ 1500 = 1.500.000 đồng).',
+     `• ${BL('loai')} ghi một trong: ${Object.keys(LOAI).filter(k => !LOAI[k].an && !isKem(k)).map(loaiTen).join(' / ')}.`, ...kemKeys().filter(k => !LOAI[k].an).map(k => `• Cột “${loaiTen(k)}”: ghi Có nếu hộ đồng thời thuộc diện này (ví dụ hộ nghèo có bức xúc về nhà ở) — mỗi hộ chỉ nhập 1 dòng, không tách thành 2 hộ.`), '• Thu nhập ghi theo nghìn đồng/người/tháng (ví dụ 1500 = 1.500.000 đồng).',
      '• Các chỉ số thiếu hụt, nguyên nhân, nhu cầu: ghi nhiều mục cách nhau bằng dấu chấm phẩy (;), đúng tên trong ứng dụng.',
      '• Vĩ độ, kinh độ: dạng số thập phân (ví dụ 9.691234 và 106.031234). Có thể để trống rồi định vị sau trên bản đồ.', '• Cột Có BHYT ghi Có/Không; cột Khuyết tật ghi Có hoặc để trống.',
      ...xf.map(xnote),
@@ -2757,7 +2818,7 @@ async function buildWorkbook(list, { template = false } = {}) {
     const cats = [...new Set([...Object.keys(LOAI).filter(k => !LOAI[k].an), ...list.map(h => h.loai)])];
     const ws4 = wb.addWorksheet('ThongKe'); ws4.columns = [[apL(), 18], ['Tổng số hộ', 10], ...cats.map(k => [loaiTen(k), 12]), ['Nhân khẩu', 10], ['Đã định vị', 10]].map(([h, w]) => ({ header: h, width: w }));
     const aps = [...new Set([...apOrder(), ...list.map(h => h.ap || '')])], t = new Array(cats.length + 3).fill(0);
-    aps.forEach(a => { const arr = list.filter(h => (h.ap || '') === a); if (!arr.length) return; const v = [arr.length, ...cats.map(k => arr.filter(h => h.loai === k).length), arr.reduce((s, h) => s + h.thanhVien.length, 0), arr.filter(hasLoc).length]; v.forEach((x, i) => t[i] += x); ws4.addRow([a || `Chưa rõ ${apl()}`, ...v]); });
+    aps.forEach(a => { const arr = list.filter(h => (h.ap || '') === a); if (!arr.length) return; const v = [arr.length, ...cats.map(k => arr.filter(h => inLoai(h, k)).length), arr.reduce((s, h) => s + h.thanhVien.length, 0), arr.filter(hasLoc).length]; v.forEach((x, i) => t[i] += x); ws4.addRow([a || `Chưa rõ ${apl()}`, ...v]); });
     const tr = ws4.addRow(['Cộng', ...t]);
     styleSheet(ws4, cats.length + 4, false); tr.font = { bold: true, name: 'Times New Roman', size: 12 };
     /* Thông tin ấp: Ban công tác Mặt trận, chi hội trưởng */
@@ -2822,6 +2883,7 @@ async function readExcel(file) {
   const tvG = grp((sheetRows(findWs(wb, ['thanhvien','nhankhau']), mapTv()) || []).map(takeExt)), htG = grp(sheetRows(findWs(wb, ['hotro']), MAP_HT));
   return rows.filter(o => o.chuHo).map(o => {
     const k = norm(o.maHo); takeExt(o);
+    { const kk = Object.keys(o).filter(x => x.startsWith('kem:')), on = kk.filter(x => toBool(o[x], false)).map(x => x.slice(4)); kk.forEach(x => delete o[x]); if (on.length) { o.ext[KEM_X] = on; if (!String(o.loai ?? '').trim()) o.loai = on[0]; } }
     const h = sanitizeHH(Object.assign({}, o, { id: undefined, maHo: o.maHo == null ? '' : String(o.maHo), thieuHut: parseThieuHut(o.thieuHut), thanhVien: tvG[k] || [], hoTro: htG[k] || [] }));
     h._noTV = !tvG[k]; h._noHT = !htG[k];
     return h;
@@ -2872,15 +2934,15 @@ function printHH(h) {
     apinfo: () => { const v = h.ap && s.apInfo[h.ap]; const ls = v ? s.apF.filter(f => !isEmptyVal(v[f.k])).map(f => `<div>${esc(f.ten)}: ${esc(fText(f, v[f.k]))}</div>`).join('') : ''; return ls ? `${H(`${SECT('apinfo')} (${h.ap})`)}${ls}` : ''; },
     ghichu: fx => h.ghiChu || fx.some(f => pf(f) && !isEmptyVal(h.ext[f.k])) ? `${H(SECT('ghichu'))}${h.ghiChu ? `<div style="white-space:pre-wrap">${esc(h.ghiChu)}</div>` : ''}${kvLines(fx)}` : ''
   };
-  const body = s.sec.filter(x => !x.an).map(x => { const fx = fieldsIn(x.k, h.loai); if (SEC_PRINT[x.k]) return SEC_PRINT[x.k](fx); return fx.some(pf) ? `${H(x.ten)}${kvLines(fx)}` : ''; }).join('');
+  const body = s.sec.filter(x => !x.an).map(x => { const fx = fieldsIn(x.k, h); if (SEC_PRINT[x.k]) return SEC_PRINT[x.k](fx); return fx.some(pf) ? `${H(x.ten)}${kvLines(fx)}` : ''; }).join('');
   $('#printArea').innerHTML = `
     <div class="p-top"><div><span>${esc(C.donVi.replace(/xã .*/i, '').trim().toUpperCase() || 'ỦY BAN MTTQ VIỆT NAM')}</span><b>${esc(('xã ' + C.tenXa).toUpperCase())}</b></div><div><b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><b style="text-decoration:underline">Độc lập - Tự do - Hạnh phúc</b></div></div>
-    <div class="p-title">PHIẾU THÔNG TIN HỘ GIA ĐÌNH</div><div class="p-subtitle">(${esc(loaiTen(h.loai))}${h.namCongNhan && !BH('namCongNhan') ? ', năm ' + h.namCongNhan : ''})</div>
+    <div class="p-title">PHIẾU THÔNG TIN HỘ GIA ĐÌNH</div><div class="p-subtitle">(${esc(loaiAll(h).map(loaiTen).join(' + '))}${h.namCongNhan && !BH('namCongNhan') ? ', năm ' + h.namCongNhan : ''})</div>
     <div>${esc(BL('chuHo'))}: <b>${esc(h.chuHo)}</b> — ${esc(BL('maHo'))}: <b>${esc(h.maHo)}</b></div>
     <div>${esc(BL('diaChi'))}: ${BH('diaChi') ? '' : esc(h.diaChi) + (h.diaChi ? ', ' : '')}${esc(h.ap)}, xã ${esc(C.tenXa)}${C.tinh ? ', ' + esc(C.tinh) : ''}</div>
     <div>${BH('dienThoai') ? '' : `${esc(BL('dienThoai'))}: ${esc(h.dienThoai) || dots} — `}Tọa độ: ${hasLoc(h) ? h.lat.toFixed(6) + ', ' + h.lng.toFixed(6) : 'chưa xác định'}</div>
     ${BH('phuTrach') ? '' : `<div>${esc(BL('phuTrach'))}: ${esc(h.phuTrach) || dots}</div>`}
-    ${kvLines(fieldsIn('chung', h.loai))}${kvLines(fieldsIn('vitri', h.loai))}
+    ${kvLines(fieldsIn('chung', h))}${kvLines(fieldsIn('vitri', h))}
     ${body}
     <div class="p-sign"><div><b>Đại diện hộ gia đình</b><br><i>(Ký, ghi rõ họ tên)</i></div><div><i>${esc(C.tenXa)}, ngày ${new Date().getDate()} tháng ${new Date().getMonth() + 1} năm ${YEAR}</i><br><b>Người lập phiếu</b><br><i>(Ký, ghi rõ họ tên)</i></div></div>`;
   setTimeout(() => window.print(), 50);
@@ -2928,6 +2990,88 @@ async function saveSettings() {
     S.srv = r.config; S.config = mergeConfig(S.srv); S.rev = null; saveCache();
   }
   renderAll(); toast('Đã lưu cài đặt.', 'ok');
+}
+
+/* =========================================================
+   DIỆN KÈM THEO: chuyển phân loại riêng thành diện kèm theo, gộp hộ bị nhập trùng
+   ========================================================= */
+/* Phân loại riêng có tên giống “bức xúc nhà ở” — gợi ý quản trị viên chuyển thành diện kèm theo */
+function kemHintKey() {
+  const later = PREFS.kemHint || {};
+  return Object.keys(LOAI).find(k => !isKem(k) && !LOAI_GOC[k] && !LOAI[k].an && /nha o|buc xuc/.test(norm(LOAI[k].ten)) && !(later[k] && Date.now() - later[k] < 7 * 864e5)) || '';
+}
+async function makeKem(k) {
+  const x = LOAI[k]; if (!x) return;
+  if (SE.dirty) { toast('Đang có thay đổi Cấu trúc chưa lưu — lưu hoặc hủy trước.', 'err'); return; }
+  const ok = await confirmDlg('Chuyển thành diện kèm theo', `<p>Khi thêm/sửa hộ sẽ có ô đánh dấu <b>${esc(x.ten)}</b> ngay dưới ô phân loại. Hộ vừa nghèo (hoặc cận nghèo…) vừa ${esc(loaiNgan(k).toLowerCase())} chỉ cần nhập <b>1 lần</b>; thống kê đếm đúng số hộ.</p><p>Các hộ đang thuộc “${esc(x.ten)}” giữ nguyên. Nếu có hộ đã bị nhập 2 lần, ứng dụng sẽ liệt kê để gộp lại.</p>`, 'Chuyển');
+  if (!ok) return;
+  const sc = clone(SCHEMA()), it = sc.loai.find(l => l.k === k); if (!it) return; it.kem = true;
+  if (!sc.loai.some(l => !l.an && !l.kem)) { toast('Cần giữ ít nhất một phân loại chính.', 'err'); return; }
+  const r = await withBusy('Đang lưu cấu trúc…', () => api('config', { config: { schema: normSchema(sc) } }));
+  if (!r.config || !isObj(r.config.schema)) { toast('Máy chủ chưa lưu được cấu trúc.', 'err'); return; }
+  S.srv = r.config; S.config = mergeConfig(S.srv); S.rev = null;
+  S.households = S.households.map(sanitizeHH); saveCache(); if (SE.s) SE.s = clone(SCHEMA());
+  renderAll();
+  if (!isKem(k)) { await dialog('Máy chủ chưa hỗ trợ', '<p>Máy chủ dữ liệu bỏ mất đánh dấu “Diện kèm theo”. Cần cập nhật mã máy chủ (Google Apps Script).</p>', [{ label: 'Đã hiểu', cls: 'btn-navy' }]); return; }
+  toast(`Đã chuyển “${x.ten}” thành diện kèm theo.`, 'ok');
+  if (dupPairs().length) setTimeout(() => openMerge(), 400);
+}
+const chuCCCD = h => { const c0 = h.thanhVien.find(m => norm(m.quanHe) === 'chu ho') || h.thanhVien[0]; return c0 && c0.cccd ? String(c0.cccd).replace(/\D/g, '') : ''; };
+/* Cặp hộ bị nhập trùng: m = hộ có phân loại chính, d = hộ chỉ thuộc diện kèm theo; cùng tên chủ hộ, cùng ấp, CCCD chủ hộ (nếu có) không khác nhau */
+function dupPairs() {
+  if (!kemKeys().length) return [];
+  const mains = S.households.filter(h => chinhOf(h)), used = new Set(), out = [];
+  for (const d of S.households) {
+    if (chinhOf(d) || !kemOf(d).length) continue;
+    const n = norm(d.chuHo), cc = chuCCCD(d); if (!n) continue;
+    const m = mains.find(x => !used.has(x.id) && norm(x.chuHo) === n && (x.ap || '') === (d.ap || '') && (!cc || !chuCCCD(x) || chuCCCD(x) === cc));
+    if (m) { used.add(m.id); out.push({ m, d }); }
+  }
+  return out;
+}
+/* Gộp hộ d vào hộ m: m mang thêm diện kèm theo của d; thông tin còn thiếu lấy từ d */
+function mergeHH(m, d) {
+  const x = clone(m), uniq = a => [...new Set(a)];
+  x.ext = Object.assign({}, d.ext, m.ext); x.ext[KEM_X] = uniq([...kemOf(m), ...kemOf(d)]);
+  for (const k of ['diaChi', 'dienThoai', 'phuTrach']) if (!x[k] && d[k]) x[k] = d[k];
+  if (x.namCongNhan == null) x.namCongNhan = d.namCongNhan;
+  if (x.thuNhap == null) x.thuNhap = d.thuNhap;
+  if (!hasLoc(x) && hasLoc(d)) { x.lat = d.lat; x.lng = d.lng; }
+  x.thieuHut = uniq([...m.thieuHut, ...d.thieuHut]); x.nguyenNhan = uniq([...m.nguyenNhan, ...d.nguyenNhan]); x.nhuCau = uniq([...m.nhuCau, ...d.nhuCau]);
+  const tvN = new Set(m.thanhVien.map(t => norm(t.hoTen))); x.thanhVien = [...m.thanhVien, ...d.thanhVien.filter(t => !tvN.has(norm(t.hoTen)))];
+  const htK = t => [t.ngay, norm(t.noiDung), t.giaTri].join('|'), htS = new Set(m.hoTro.map(htK)); x.hoTro = [...m.hoTro, ...d.hoTro.filter(t => !htS.has(htK(t)))];
+  x.ghiChu = [m.ghiChu, d.ghiChu && d.ghiChu !== m.ghiChu ? d.ghiChu : '', `Đã gộp hộ nhập trùng${d.maHo ? ' mã ' + d.maHo : ''} (${loaiTen(d.loai)}) ngày ${new Date().toLocaleDateString('vi-VN')}.`].filter(Boolean).join('\n');
+  x.updatedAt = Date.now(); x.updatedBy = curName(); x.updatedById = curId();
+  return sanitizeHH(x);
+}
+async function doMerge(pairs) {
+  if (!pairs.length) return;
+  if (OUT.length) await sync({ quiet: true });
+  const pend = pendIds(); if (pairs.some(p => pend.has(p.m.id) || pend.has(p.d.id))) { toast('Còn hộ chưa gửi lên máy chủ — bấm Đồng bộ ngay rồi gộp lại.', 'err'); return; }
+  const res = await sendBulk(pairs.map(p => mergeHH(p.m, p.d)), pairs.map(p => p.d.id), `Gộp ${pairs.length} hộ nhập trùng`);
+  ui.selId = null; renderAll(); if (ui.view === 'detail') showView('list');
+  toast(`Đã gộp ${pairs.length} cặp hộ trùng${res.del ? ` (xóa ${res.del} bản trùng)` : ''}.`, 'ok');
+}
+async function openMerge() {
+  const pairs = dupPairs();
+  if (!pairs.length) { await dialog('Gộp hộ bị nhập trùng', `<p>Không thấy cặp hộ nào cùng tên chủ hộ, cùng ${esc(apl())} mà một bản chỉ là diện kèm theo.</p><p class="muted small">Hộ trùng nhưng tên gõ khác: mở hộ đó, bấm <b>Gộp vào hộ chính…</b>.</p>`, [{ label: 'Đóng', cls: 'btn-navy' }]); return; }
+  const row = (p, i) => `<label class="chk mrg"><input type="checkbox" name="p${i}" checked><span><b>${esc(p.m.chuHo)}</b> · ${esc(p.m.ap || 'Chưa rõ ' + apl())}<br>${loaiBadges(p.m)} <span class="muted small">${esc(p.m.maHo || 'chưa có mã')}</span> &nbsp;+&nbsp; ${loaiBadges(p.d)} <span class="muted small">${esc(p.d.maHo || 'chưa có mã')} → gộp vào</span></span></label>`;
+  const r = await formDialog('Gộp hộ bị nhập trùng', () => `<p>Mỗi cặp dưới đây cùng <b>tên chủ hộ</b> và cùng <b>${esc(apl())}</b>. Bấm gộp: hộ có phân loại chính được đánh dấu thêm diện kèm theo; thành viên, lượt hỗ trợ, vị trí còn thiếu được lấy từ bản trùng, rồi xóa bản trùng.</p><div class="mrg-list">${pairs.map(row).join('')}</div><p class="muted small">Bỏ đánh dấu cặp nào không phải cùng một hộ. Bản trùng vẫn còn trong Google Trang tính với trạng thái “Đã xóa”.</p>`, 'Gộp các cặp đã chọn', x => pairs.some((p, i) => x['p' + i]) ? '' : 'Chưa chọn cặp nào.', { wide: true });
+  if (!r) return;
+  await doMerge(pairs.filter((p, i) => r['p' + i]));
+}
+async function mergePick(id) {
+  const d = byId(id); if (!d) return;
+  const nd = norm(d.chuHo), last = nd.split(' ').pop();
+  const cand = S.households.filter(h => h.id !== d.id && chinhOf(h)).map(h => { const n = norm(h.chuHo); return { h, sc: (n === nd ? 4 : 0) + ((h.ap || '') === (d.ap || '') ? 2 : 0) + (n.split(' ').pop() === last ? 1 : 0) }; })
+    .sort((a, b) => b.sc - a.sc || a.h.chuHo.localeCompare(b.h.chuHo, 'vi')).slice(0, 300);
+  if (!cand.length) { toast('Chưa có hộ nào thuộc phân loại chính để gộp vào.', 'err'); return; }
+  const r = await formDialog(`Gộp “${d.chuHo}” vào hộ chính`, () => `<p>Chọn hộ (nghèo, cận nghèo…) mà hộ này bị nhập trùng. Sau khi gộp, hộ được chọn mang thêm ${kemOf(d).map(k => `<b>${esc(loaiTen(k))}</b>`).join(', ') || 'phân loại của hộ này'}; bản này bị xóa (vẫn còn trong Google Trang tính với trạng thái “Đã xóa”).</p>
+    <label class="f"><span>Hộ chính</span><select name="to">${cand.map(c => `<option value="${esc(c.h.id)}">${esc(c.h.chuHo)} · ${esc(c.h.ap || 'Chưa rõ ' + apl())} · ${esc(loaiTen(c.h.loai))}${c.h.maHo ? ' · ' + esc(c.h.maHo) : ''}</option>`).join('')}</select></label>`, 'Gộp', x => x.to ? '' : 'Chọn hộ chính.');
+  if (!r) return;
+  const m = byId(r.to); if (!m) return;
+  if (!(await confirmDlg('Xác nhận gộp', `Gộp <b>${esc(d.chuHo)}</b> (${esc(loaiTen(d.loai))}) vào <b>${esc(m.chuHo)}</b> (${esc(loaiTen(m.loai))}, ${esc(m.ap || '')})?`, 'Gộp'))) return;
+  await doMerge([{ m, d }]);
 }
 
 /* =========================================================
@@ -2992,12 +3136,12 @@ const SE_VIEW = {
     </fieldset>`;
   },
   loai: () => {
-    const a = SE.s.loai, cnt = k => S.households.filter(h => h.loai === k).length;
-    return `<p class="se-note" style="margin:0 0 10px">Đổi tên, đổi màu ghim, thêm phân loại mới. Phân loại <b>ẩn</b> không còn để chọn khi thêm/sửa hộ (hộ cũ vẫn giữ nguyên). <b>Đối tượng chính sách</b>: được tính vào thống kê thiếu hụt, người cao tuổi, trẻ em, BHYT…</p>
+    const a = SE.s.loai, cnt = k => S.households.filter(h => inLoai(h, k)).length, cnt0 = k => S.households.filter(h => h.loai === k).length;
+    return `<p class="se-note" style="margin:0 0 10px">Đổi tên, đổi màu ghim, thêm phân loại mới. Phân loại <b>ẩn</b> không còn để chọn khi thêm/sửa hộ (hộ cũ vẫn giữ nguyên). <b>Đối tượng chính sách</b>: được tính vào thống kê thiếu hụt, người cao tuổi, trẻ em, BHYT… <b>Diện kèm theo</b>: hộ vừa thuộc phân loại chính (nghèo, cận nghèo…) vừa thuộc diện này — ví dụ <i>Hộ bức xúc về nhà ở</i> — khi nhập chỉ cần đánh dấu thêm, không phải nhập 2 hộ.</p>
     ${a.map((x, i) => `<div class="se-card ${x.an ? 'off' : ''}">
       <div class="se-row"><input type="color" data-se="loai.${i}.mau" value="${x.mau}" title="Màu ghim trên bản đồ"><input data-se="loai.${i}.ten" value="${esc(x.ten)}" class="grow" aria-label="Tên phân loại"><span class="tag" title="Số hộ đang thuộc phân loại này">${cnt(x.k)} hộ</span><div class="se-btns">${seUD('loai', i, i, a.length)}</div></div>
-      <div class="row gap wrap mt8 small">${seChk(`loai.${i}.dt`, x.dt, 'Đối tượng chính sách')}${seChk(`loai.${i}.an`, x.an, 'Ẩn khi thêm/sửa hộ')}<span class="grow"></span>
-        ${cnt(x.k) ? `<button type="button" class="btn btn-sm" data-act="se-loai-move" data-k="${esc(x.k)}">Chuyển hộ sang phân loại khác…</button>` : ''}${LOAI_GOC[x.k] ? '' : `<button type="button" class="btn btn-sm btn-danger" data-act="se-loai-del" data-i="${i}">Xóa</button>`}</div>
+      <div class="row gap wrap mt8 small">${seChk(`loai.${i}.dt`, x.dt, 'Đối tượng chính sách')}${seChk(`loai.${i}.kem`, x.kem, 'Diện kèm theo (chọn cùng phân loại khác)')}${seChk(`loai.${i}.an`, x.an, 'Ẩn khi thêm/sửa hộ')}<span class="grow"></span>
+        ${cnt0(x.k) ? `<button type="button" class="btn btn-sm" data-act="se-loai-move" data-k="${esc(x.k)}">Chuyển hộ sang phân loại khác…</button>` : ''}${LOAI_GOC[x.k] ? '' : `<button type="button" class="btn btn-sm btn-danger" data-act="se-loai-del" data-i="${i}">Xóa</button>`}</div>
     </div>`).join('')}
     <button type="button" class="btn se-add" data-act="se-loai-add">${I('plus', 15)} Thêm phân loại hộ</button>
     <p class="se-note mt12">Mẹo cuối năm: bấm <b>Chuyển hộ sang phân loại khác…</b> để chuyển cả loạt, ví dụ các hộ “mới thoát nghèo” năm trước sang “thoát nghèo năm trước”.</p>`;
@@ -3121,7 +3265,7 @@ async function seLoaiMove(k) {
 }
 async function seSave() {
   const s = normSchema(SE.s);
-  if (!s.loai.some(x => !x.an)) throw new Error('Cần ít nhất một phân loại hộ không bị ẩn.');
+  if (!s.loai.some(x => !x.an && !x.kem)) throw new Error('Cần ít nhất một phân loại chính (không phải diện kèm theo) và không bị ẩn.');
   const size = JSON.stringify(s).length; if (size > 45000) throw new Error('Cấu trúc quá lớn để lưu (' + fmt(size) + ' ký tự). Hãy rút bớt danh mục hoặc thông tin ấp.');
   const r = await withBusy('Đang lưu cấu trúc…', () => api('config', { config: { schema: s } }));
   if (!r.config || !isObj(r.config.schema)) { await dialog('Máy chủ chưa hỗ trợ', '<p>Máy chủ dữ liệu <b>chưa lưu được cấu trúc</b>. Cần cập nhật mã máy chủ (Google Apps Script) lên phiên bản mới, Triển khai lại, rồi bấm Lưu cấu trúc lần nữa.</p><p class="muted small">Bản nháp vẫn còn trên màn hình này cho tới khi bạn bấm Hủy thay đổi.</p>', [{ label: 'Đã hiểu', cls: 'btn-navy' }]); return; }
@@ -3129,7 +3273,9 @@ async function seSave() {
   S.households = S.households.map(sanitizeHH); saveCache();
   SE.dirty = false; SE.first = false; SE.s = clone(SCHEMA());
   renderAll(); renderSchema();
+  if (s.loai.some(x => x.kem) && !kemKeys().length) { await dialog('Máy chủ chưa lưu “diện kèm theo”', '<p>Máy chủ dữ liệu đã lưu cấu trúc nhưng <b>bỏ mất</b> đánh dấu “Diện kèm theo”. Cần cập nhật mã máy chủ (Google Apps Script).</p>', [{ label: 'Đã hiểu', cls: 'btn-navy' }]); return; }
   toast('Đã lưu cấu trúc. Máy của cán bộ tự cập nhật khi mở ứng dụng hoặc đồng bộ.', 'ok');
+  if (dupPairs().length) setTimeout(() => openMerge(), 500);
 }
 async function seAct(act, el) {
   const d = el.dataset, s = SE.s;
@@ -3140,10 +3286,10 @@ async function seAct(act, el) {
     case 'se-undo': { if (SE.dirty && !(await confirmDlg('Hủy thay đổi?', 'Các thay đổi cấu trúc chưa lưu sẽ bị bỏ.', 'Hủy thay đổi', true))) break; SE.s = clone(SCHEMA()); SE.dirty = false; SE.first = false; applyTheme(SCHEMA().ui, S.config.tenXa); renderSchema(); break; }
     case 'se-move': seMove(d.kind, +d.i, +d.d); break;
     case 'se-loai-add': {
-      const r = await formDialog('Thêm phân loại hộ', v => `<label class="f"><span>Tên phân loại <em>*</em></span><input name="ten" value="${esc((v && v.ten) || '')}" placeholder="Ví dụ: Hộ thoát nghèo năm trước"></label><label class="f"><span>Màu ghim trên bản đồ</span><input type="color" name="mau" value="${(v && v.mau) || '#00838f'}"></label><label class="chk"><input type="checkbox" name="dt" ${v && v.dt ? 'checked' : ''}> Đối tượng chính sách (tính vào thống kê thiếu hụt, đối tượng)</label>`, 'Thêm',
+      const r = await formDialog('Thêm phân loại hộ', v => `<label class="f"><span>Tên phân loại <em>*</em></span><input name="ten" value="${esc((v && v.ten) || '')}" placeholder="Ví dụ: Hộ thoát nghèo năm trước"></label><label class="f"><span>Màu ghim trên bản đồ</span><input type="color" name="mau" value="${(v && v.mau) || '#00838f'}"></label><label class="chk"><input type="checkbox" name="dt" ${v && v.dt ? 'checked' : ''}> Đối tượng chính sách (tính vào thống kê thiếu hụt, đối tượng)</label><label class="chk"><input type="checkbox" name="kem" ${v && v.kem ? 'checked' : ''}> Diện kèm theo — hộ vừa thuộc phân loại chính vừa thuộc diện này (ví dụ: Hộ bức xúc về nhà ở)</label>`, 'Thêm',
         x => !String(x.ten).trim() ? 'Nhập tên phân loại.' : s.loai.some(l => norm(l.ten) === norm(x.ten)) ? 'Đã có phân loại trùng tên.' : '');
       if (!r) break;
-      s.loai.push({ k: newKey('l', s.loai.map(x => x.k)), ten: String(r.ten).trim(), mau: okColor(r.mau, '#00838f'), dt: !!r.dt, an: false }); seMark(); renderSchema(); break; }
+      s.loai.push({ k: newKey('l', s.loai.map(x => x.k)), ten: String(r.ten).trim(), mau: okColor(r.mau, '#00838f'), dt: !!r.dt, an: false, kem: !!r.kem }); seMark(); renderSchema(); break; }
     case 'se-loai-del': {
       const x = s.loai[+d.i]; if (!x) break; const n = S.households.filter(h => h.loai === x.k).length;
       if (n) { await dialog('Chưa xóa được', `<p>Đang có <b>${n} hộ</b> thuộc “${esc(x.ten)}”. Hãy bấm <b>Chuyển hộ sang phân loại khác…</b> trước, hoặc đánh dấu <b>Ẩn</b>.</p>`, [{ label: 'Đã hiểu', cls: 'btn-navy' }]); break; }
@@ -3457,8 +3603,12 @@ async function onAct(act, el, e) {
     case 'toggle-big': document.body.classList.toggle('map-big'); setTimeout(() => map.invalidateSize(), 230); break;
     /* dữ liệu */
     case 'sync-now': await sync({ quiet: false, force: true }); if (net.online) toast(OUT.length ? `Còn ${OUT.length} hộ chưa gửi được.` : 'Dữ liệu đã được cập nhật.', OUT.length ? 'err' : 'ok'); if (ui.view === 'data') renderData(); break;
-    case 'export-xlsx': exportXLSX(S.households); break;
+    case 'export-xlsx': exportXLSX(ui.view === 'stats' ? statList() : S.households); break;
     case 'export-xlsx-filter': exportXLSX(filtered()); break;
+    case 'merge-dups': if (isAdmin()) await openMerge(); break;
+    case 'merge-pick': if (isAdmin()) await mergePick(id); break;
+    case 'kem-convert': if (isAdmin()) await makeKem(el.dataset.k); break;
+    case 'kem-later': PREFS.kemHint = Object.assign({}, PREFS.kemHint, { [el.dataset.k]: Date.now() }); savePrefs(); renderBanners(); break;
     case 'template': if (isAdmin()) await exportTemplate(); break;
     case 'pick-json': $('#fileJson').click(); break;
     case 'import-xlsx': if (isAdmin()) $('#fileXlsx').click(); break;
@@ -3522,6 +3672,7 @@ document.addEventListener('click', e => {
 $('#q').addEventListener('input', e => { ui.f.q = e.target.value; clearTimeout(ui._qt); ui._qt = setTimeout(() => { if (ui.view !== 'list') showView('list'); renderList(); }, 140); });
 $('#fAp').addEventListener('change', e => { ui.f.ap = e.target.value; renderList(); });
 $('#fNoLoc').addEventListener('change', e => { ui.f.noLoc = e.target.checked; renderList(); });
+$('#stScope').addEventListener('change', e => { ui.stAp = e.target.value; renderStats(); $('#stats').scrollTop = 0; });
 $('#editForm').addEventListener('input', e => {
   const t = e.target;
   if (t.name === 'chuHo' && draft) { const first = $('#tvList .tv input[data-tv=hoTen]'); const qh = $('#tvList .tv input[data-tv=quanHe]'); if (first && qh && norm(qh.value) === 'chu ho' && (first.value === '' || first.value === (draft._lastChu || ''))) first.value = t.value; draft._lastChu = t.value; }
@@ -3536,7 +3687,7 @@ $('#editForm').addEventListener('change', e => {
     if (lat != null && lng != null) setEditLoc(lat, lng, { pan: true });
   }
   if (t.dataset.th !== undefined || t.name === 'loai') updateSuggest();
-  if (t.name === 'loai' && draft && SCHEMA().f.some(f => f.loai.length)) rerenderEdit();   /* hiện/ẩn trường chỉ áp dụng cho một số phân loại */
+  if ((t.name === 'loai' || t.dataset.kem !== undefined) && draft && SCHEMA().f.some(f => f.loai.length)) rerenderEdit();   /* hiện/ẩn trường chỉ áp dụng cho một số phân loại */
 });
 $('#editForm').addEventListener('submit', e => e.preventDefault());
 $('#fExt').addEventListener('change', e => { const s = e.target.closest('select[data-loc]'); if (!s) return; ui.f.x[s.dataset.loc] = s.value; renderList(); });
