@@ -1,7 +1,7 @@
 /* Bản đồ số hộ nghèo — service worker
    Có mạng: luôn lấy bản mới nhất của ứng dụng. Mất mạng: mở từ bộ nhớ đệm.
    Dữ liệu hộ nằm trên Google Trang tính, không đi qua bộ nhớ đệm này. */
-const CACHE = 'ho-ngheo-v4';
+const CACHE = 'ho-ngheo-v5';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));

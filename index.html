@@ -1276,7 +1276,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.26g';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.26h';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -2169,6 +2169,7 @@ function renderLegend(list) { $('#legend').innerHTML = loaiShown().map(k => { co
 function renderBanners() {
   if (!ME) return;
   let h = '';
+  if (ui.updV && ui.updV !== APPVER) h += `<div class="banner info"><div>Đã có <b>phiên bản mới</b> của ứng dụng (${esc(ui.updV)}).</div><button class="btn btn-sm btn-navy" data-act="app-update">Cập nhật ngay</button></div>`;
   if (!storageOk) h += `<div class="banner warn">${I('x')}<div>Bộ nhớ trình duyệt đầy hoặc bị chặn — dữ liệu chưa gửi có thể mất khi đóng ứng dụng.</div></div>`;
   if (OUT.length) h += `<div class="banner warn"><div><b>${OUT.length} hộ</b> đã lưu trên máy nhưng <b>chưa gửi</b> lên máy chủ${net.online ? '' : ' (đang mất mạng)'}. Ứng dụng sẽ tự gửi khi có mạng.</div><button class="btn btn-sm" data-act="sync-now">Gửi ngay</button></div>`;
   else if (!net.online) h += `<div class="banner info"><div>Đang mất kết nối — bạn đang xem dữ liệu lưu trên máy${S.loadedAt ? ` (cập nhật ${dt(S.loadedAt)})` : ''}.</div><button class="btn btn-sm" data-act="sync-now">Thử lại</button></div>`;
@@ -3086,7 +3087,7 @@ function renderSettings() {
     <fieldset><legend>Điện thoại</legend>
       <p class="hint" style="margin-top:0">${isStandalone() ? 'Đang chạy dạng ứng dụng đã cài.' : 'Cài ứng dụng lên màn hình chính để mở nhanh và định vị GPS tại nhà dân.'}</p>
       <button type="button" class="btn btn-sm" data-act="install">📱 ${ad ? 'Hướng dẫn cài / link gửi cán bộ' : 'Hướng dẫn cài lên điện thoại'}</button>
-      <p class="muted small" style="margin:10px 0 0">Phiên bản ${APPVER} · Máy chủ dữ liệu: ${API ? (net.online ? 'đã kết nối' : 'mất kết nối') : 'chưa kết nối'}</p>
+      <p class="muted small" style="margin:10px 0 0">Phiên bản ${APPVER} <button type="button" class="linkbtn" data-act="app-check">Kiểm tra cập nhật</button> · Máy chủ dữ liệu: ${API ? (net.online ? 'đã kết nối' : 'mất kết nối') : 'chưa kết nối'}</p>
     </fieldset>`;
 }
 async function saveSettings() {
@@ -3698,6 +3699,31 @@ function applyRoleUI() {
   $('#tabAccounts').hidden = !isAdmin(); $('#tabSchema').hidden = !isAdmin();
   $('#userChip .av').textContent = initials(curName()); $('#userChip .nm').textContent = curName(); $('#userChip .role').textContent = ROLE[curRole()] || '';
 }
+/* ---------- Tự cập nhật phiên bản mới ----------
+   Ứng dụng cài trên điện thoại thường chạy ngầm, không tự tải lại. Khi mở lại / định kỳ, hỏi version.json:
+   có bản mới thì tự tải lại (nếu đang nhập dở hoặc còn hộ chờ gửi thì hiện nút "Cập nhật ngay"). */
+let updChecking = false, updLast = 0;
+async function checkUpdate(force) {
+  if (!WEB || updChecking || (!force && Date.now() - updLast < 60000)) return;
+  updChecking = true; updLast = Date.now();
+  try {
+    const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return;
+    const j = await r.json(), v = j && String(j.v || '');
+    if (!v || v === APPVER) { ui.updV = ''; if (force) toast(`Ứng dụng đang là phiên bản mới nhất (${APPVER}).`, 'ok'); return; }
+    let tried = ''; try { tried = sessionStorage.getItem('updTry') || ''; } catch (e) {}
+    const busyNow = ui.view === 'edit' || !$('#dlg').hidden || OUT.length || net.syncing || net.flushing;
+    if (busyNow || (tried === v && !force)) { ui.updV = v; renderBanners(); return; }
+    try { sessionStorage.setItem('updTry', v); } catch (e) {}
+    await doReload();
+  } catch (e) {} finally { updChecking = false; }
+}
+async function doReload() {
+  if (ui.view === 'edit') { toast('Lưu hoặc hủy hộ đang nhập trước khi cập nhật.', 'err'); return; }
+  if (OUT.length) { await sync({ quiet: true }); if (OUT.length) { toast('Còn hộ chưa gửi lên máy chủ — gửi xong mới cập nhật.', 'err'); return; } }
+  toast('Đang tải phiên bản mới…');
+  try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) await reg.update(); } catch (e) {}
+  setTimeout(() => location.reload(), 300);
+}
 function startApp() {
   document.body.classList.remove('locked'); $('#gate').innerHTML = '';
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {}
@@ -3706,6 +3732,7 @@ function startApp() {
   setTimeout(() => map.invalidateSize(), 60);
   ui.selId = null; ui.f.ap = ''; showView('list'); renderAll();
   if (S.households.some(hasLoc)) setTimeout(fitAll, 250);
+  setTimeout(() => checkUpdate(), 5000);
 }
 
 /* =========================================================
@@ -3784,6 +3811,8 @@ async function onAct(act, el, e) {
     case 'kem-convert': if (isAdmin()) await makeKem(el.dataset.k); break;
     case 'kem-create': if (isAdmin()) await addKemCat(el.dataset.ten, el.dataset.mau); break;
     case 'ht-chot': if (isAdmin()) await chotNam(); break;
+    case 'app-update': await doReload(); break;
+    case 'app-check': await checkUpdate(true); break;
     case 'ht-unchot': if (isAdmin()) await boChot(); break;
     case 'kem-later': PREFS.kemHint = Object.assign({}, PREFS.kemHint, { [el.dataset.k]: Date.now() }); savePrefs(); renderBanners(); break;
     case 'template': if (isAdmin()) await exportTemplate(); break;
@@ -3896,7 +3925,8 @@ setInterval(() => { if (ME && !remembered() && ui.view !== 'edit' && Date.now() 
 /* Tự đồng bộ: khi có mạng trở lại, khi mở lại ứng dụng, và định kỳ 2 phút */
 addEventListener('online', () => { if (ME) sync({ quiet: true }); });
 addEventListener('offline', () => { net.online = false; syncUI(); renderBanners(); });
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ME && Date.now() - net.lastTry > 20000) sync({ quiet: true }); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ME && Date.now() - net.lastTry > 20000) sync({ quiet: true }); if (document.visibilityState === 'visible') checkUpdate(); });
+setInterval(() => { if (document.visibilityState === 'visible') checkUpdate(); }, 10 * 60 * 1000);
 setInterval(() => { if (ME && document.visibilityState === 'visible' && ui.view !== 'edit') sync({ quiet: true }); }, 120000);
 setInterval(() => { if (ME && TOKEN && OUT.length && !net.syncing && !net.flushing && navigator.onLine !== false && Date.now() - net.lastTry > 12000) sync({ quiet: true }); }, 15000);
 addEventListener('beforeinstallprompt', () => setTimeout(refreshInstallCTA, 0));
