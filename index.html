@@ -757,6 +757,12 @@ textarea{resize:vertical}
 .tk-card .tk-sub .tk-l{padding-left:16px;font-size:13.5px}
 .tk-card .tk-sub .tk-n{font-size:17px;min-width:50px}
 .tk-nk{font-size:12px;color:var(--muted);text-align:right;margin-top:2px}
+.tk-head{font-size:13.5px;color:var(--muted);margin:0 0 10px}
+.tk-head b{color:var(--ink)}
+.tk-group{grid-column:1/-1;border-width:2px;border-color:var(--c);border-top-width:5px}
+.tk-card .tk-sub2 .tk-l{padding-left:34px;font-size:12.5px;color:var(--muted)}
+.tk-card .tk-sub2 .tk-n{font-size:15px;min-width:44px;padding:1px 6px}
+.tk-hint{border-style:dashed;border-color:#9aa5b4;font-size:13.5px;padding:10px 12px;background:#f8f9fb}
 .kdot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--c);margin-right:2px;flex:none}
 .kem-box{background:#fbf7ee;border:1px dashed var(--gold);border-radius:9px;padding:8px 10px}
 .kem-box small{color:var(--muted);font-weight:400}
@@ -1263,7 +1269,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.26d';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.26e';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -1327,6 +1333,7 @@ const kemOf = h => { const a = (h && h.ext && Array.isArray(h.ext[KEM_X])) ? h.e
 const chinhOf = h => isKem(h.loai) ? '' : h.loai;
 const inLoai = (h, k) => isKem(k) ? kemOf(h).includes(k) : h.loai === k;
 const loaiAll = h => { const c = chinhOf(h); return c ? [c, ...kemOf(h)] : kemOf(h); };
+const isNhomKem = k => isKem(k) && /chinh sach|nguoi co cong/.test(norm(loaiTen(k)));
 const loaiBadges = h => loaiAll(h).map(k => { const v = loaiOf(k); return `<span class="badge" style="--c:${v.mau}">${esc(v.ten)}</span>`; }).join(' ');
 const DIM = { vl: 'Việc làm', yt: 'Y tế', gd: 'Giáo dục', no: 'Nhà ở', nc: { '2026': 'Nước sinh hoạt và vệ sinh', '2027': 'Nước sinh hoạt, vệ sinh và môi trường' }, tt: 'Thông tin' };
 const CHI_SO = [
@@ -2146,7 +2153,7 @@ function renderBanners() {
   else if (!net.online) h += `<div class="banner info"><div>Đang mất kết nối — bạn đang xem dữ liệu lưu trên máy${S.loadedAt ? ` (cập nhật ${dt(S.loadedAt)})` : ''}.</div><button class="btn btn-sm" data-act="sync-now">Thử lại</button></div>`;
   if (isAdmin()) {
     const kh = kemHintKey();
-    if (kh) h += `<div class="banner info"><div>Phân loại <b>“${esc(loaiTen(kh))}”</b> đang tách riêng, nên một hộ vừa nghèo vừa ${esc(loaiNgan(kh).toLowerCase())} phải nhập thành 2 hộ. Chuyển thành <b>diện kèm theo</b> để chỉ cần đánh dấu thêm?</div><div class="row gap" style="margin-left:auto;flex:none"><button class="btn btn-sm btn-navy" data-act="kem-convert" data-k="${esc(kh)}">Chuyển</button><button class="btn btn-sm" data-act="kem-later" data-k="${esc(kh)}">Để sau</button></div></div>`;
+    if (kh) h += `<div class="banner info"><div>Phân loại <b>“${esc(loaiTen(kh))}”</b> đang tách riêng, nên một hộ vừa nghèo vừa thuộc “${esc(loaiTen(kh))}” phải nhập thành 2 hộ. Chuyển thành <b>diện kèm theo</b> để chỉ cần đánh dấu thêm?</div><div class="row gap" style="margin-left:auto;flex:none"><button class="btn btn-sm btn-navy" data-act="kem-convert" data-k="${esc(kh)}">Chuyển</button><button class="btn btn-sm" data-act="kem-later" data-k="${esc(kh)}">Để sau</button></div></div>`;
     const dn = dupPairs().length;
     if (dn) h += `<div class="banner warn"><div>Có <b>${dn}</b> hộ có thể bị <b>nhập trùng</b> (một bản phân loại chính, một bản chỉ là diện kèm theo).</div><button class="btn btn-sm" data-act="merge-dups">Xem và gộp</button></div>`;
   }
@@ -2472,22 +2479,34 @@ function renderStats() {
   /* Diện kèm theo: chú thích + số hộ chia theo phân loại chính */
   const kc = cats.filter(isKem);
   const kemHTML = !kc.length ? '' : `<p class="muted small" style="margin:6px 0 0">${kc.map(k => `<b>${esc(loaiNgan(k))}</b>`).join(', ')}: diện <b>kèm theo</b> — một hộ có thể vừa thuộc phân loại chính vừa thuộc diện này, nên cột <b>Tổng hộ</b> chỉ tính mỗi hộ 1 lần.</p>`;
-  /* Khung thống kê chính: tổng hợp + từng phân loại chính (trong đó số hộ thuộc diện kèm theo, ví dụ bức xúc nhà ở) */
+  /* Khung thống kê chính (theo mẫu của quản trị viên):
+     - Hộ nghèo / Cận nghèo / Hộ khó khăn: số hộ, trong đó số hộ thuộc diện kèm theo (bức xúc nhà ở…)
+     - Gia đình chính sách (diện kèm theo dạng nhóm): số hộ, trong đó là hộ nghèo, cận nghèo, khó khăn, bức xúc nhà ở, vừa nghèo vừa bức xúc… */
   const so = k => { const t = loaiTen(k); return 'Số ' + t.charAt(0).toLowerCase() + t.slice(1); };
-  const soNgan = k => { const t = loaiNgan(k); return 'Số ' + t.charAt(0).toLowerCase() + t.slice(1); };
+  const lc = k => loaiNgan(k).toLowerCase(), soNgan = k => 'Số ' + lc(k);
   const nIn = (arr, k) => arr.filter(h => inLoai(h, k)).length;
-  const box = (k, n, cls) => `<div class="tk-row ${cls || ''}" style="--c:${loaiOf(k).mau}"><span class="tk-l"><i class="kdot"></i>${esc(cls === 'tk-sub' ? soNgan(k) : so(k))}</span><b class="tk-n">${fmt(n)}</b></div>`;
-  /* Khung riêng cho hộ nghèo, cận nghèo, khó khăn (theo mẫu); các phân loại khác chỉ nằm trong khung tổng hợp */
+  const row = (k, n, cls, label) => `<div class="tk-row ${cls || ''}" style="--c:${loaiOf(k).mau}"><span class="tk-l"><i class="kdot"></i>${esc(label || so(k))}</span><b class="tk-n">${fmt(n)}</b></div>`;
   const cardK = cats.filter(k => { if (isKem(k)) return false; const t = norm(loaiTen(k)); return (['ngheo', 'canngheo', 'khokhan'].includes(k) || (/ngheo|kho khan/.test(t) && !/thoat/.test(t))) && (!LOAI[k] || !LOAI[k].an || S.households.some(h => h.loai === k)); });
-  const kemOnly = kc.map(k => ({ k, arr: all.filter(h => !cardK.includes(chinhOf(h)) && inLoai(h, k)) })).filter(x => x.arr.length);
-  const ngoai = cardK.map(k => loaiNgan(k).toLowerCase()).join(', ');
-  const tkHTML = `<div class="tk-box">
-      <div class="tk-title">${one ? `Tổng hợp ${esc(apName(ui.stAp))}` : 'Tổng hợp cả xã'}<span>${fmt(all.length)} hộ · ${fmt(nk(all))} nhân khẩu</span></div>
-      ${cats.map(k => box(k, nIn(all, k))).join('')}
-      <div class="tk-foot">Đã định vị trên bản đồ: <b>${fmt(all.filter(hasLoc).length)}/${fmt(all.length)}</b> hộ</div></div>
+  const groupK = kc.filter(isNhomKem), subK = kc.filter(k => !isNhomKem(k));
+  const ngoai = cardK.map(lc).join(', ');
+  const mainCard = k => { const arr = all.filter(h => h.loai === k);
+    return `<div class="tk-card" style="--c:${loaiOf(k).mau}">${row(k, arr.length, 'tk-main')}${subK.map(x => row(x, nIn(arr, x), 'tk-sub', soNgan(x))).join('')}<div class="tk-nk">${fmt(nk(arr))} nhân khẩu</div></div>`; };
+  const groupCard = g => { const arr = all.filter(h => inLoai(h, g)), other = arr.filter(h => !cardK.includes(chinhOf(h)));
+    return `<div class="tk-card tk-group" style="--c:${loaiOf(g).mau}">${row(g, arr.length, 'tk-main')}
+      ${cardK.map(k => { const a = arr.filter(h => h.loai === k); return row(k, a.length, 'tk-sub', `Là ${loaiTen(k).toLowerCase()}`) + subK.map(x => row(x, nIn(a, x), 'tk-sub2', `Vừa ${lc(k)} vừa ${lc(x)}`)).join(''); }).join('')}
+      ${subK.map(x => row(x, nIn(arr, x), 'tk-sub', `Là hộ ${lc(x)}`)).join('')}
+      ${row(g, other.length, 'tk-sub', `Không thuộc ${ngoai || 'các diện trên'}`)}
+      <div class="tk-nk">${fmt(nk(arr))} nhân khẩu</div></div>`; };
+  const kemOnly = subK.map(k => ({ k, arr: all.filter(h => !cardK.includes(chinhOf(h)) && inLoai(h, k)) })).filter(x => x.arr.length);
+  const gMain = Object.keys(LOAI).find(k => !isKem(k) && /chinh sach|nguoi co cong/.test(norm(loaiTen(k))) && (!LOAI[k].an || S.households.some(h => h.loai === k)));
+  const gHint = !isAdmin() || groupK.length ? '' : gMain
+    ? `<div class="tk-card tk-group tk-hint"><b>${esc(loaiTen(gMain))}</b> đang là phân loại riêng, nên chưa biết hộ chính sách nào là hộ nghèo, cận nghèo hay bức xúc nhà ở. Chuyển thành <b>diện kèm theo</b>: khi nhập hộ chỉ cần đánh dấu thêm ô “${esc(loaiTen(gMain))}”.<div class="mt8"><button class="btn btn-sm btn-navy" data-act="kem-convert" data-k="${esc(gMain)}">Chuyển thành diện kèm theo</button></div></div>`
+    : `<div class="tk-card tk-group tk-hint">Chưa có diện <b>Gia đình chính sách</b>. Tạo diện này để khi nhập hộ đánh dấu thêm ô “Gia đình chính sách” (hộ vẫn giữ phân loại nghèo, cận nghèo…), rồi thống kê xem hộ chính sách nào là hộ nghèo, cận nghèo, bức xúc nhà ở.<div class="mt8"><button class="btn btn-sm btn-navy" data-act="kem-create" data-ten="Gia đình chính sách" data-mau="#1565c0">Tạo diện “Gia đình chính sách”</button></div></div>`;
+  const tkHTML = `<div class="tk-head">${one ? esc(apName(ui.stAp)) : 'Cả xã'}: <b>${fmt(all.length)}</b> hộ · <b>${fmt(nk(all))}</b> nhân khẩu · đã định vị <b>${fmt(all.filter(hasLoc).length)}/${fmt(all.length)}</b> hộ</div>
     <div class="tk-cards">
-      ${cardK.map(k => { const arr = all.filter(h => h.loai === k); return `<div class="tk-card" style="--c:${loaiOf(k).mau}">${box(k, arr.length, 'tk-main')}${kc.map(x => box(x, nIn(arr, x), 'tk-sub')).join('')}<div class="tk-nk">${fmt(nk(arr))} nhân khẩu</div></div>`; }).join('')}
-      ${kemOnly.map(x => `<div class="tk-card" style="--c:${loaiOf(x.k).mau}"><div class="tk-row tk-main"><span class="tk-l"><i class="kdot"></i>Chỉ ${esc(loaiNgan(x.k).toLowerCase())}</span><b class="tk-n">${fmt(x.arr.length)}</b></div><div class="tk-nk" style="text-align:left">Hộ ${esc(loaiNgan(x.k).toLowerCase())} không thuộc ${esc(ngoai || 'các diện trên')} · ${fmt(nk(x.arr))} nhân khẩu</div></div>`).join('')}
+      ${cardK.map(mainCard).join('')}
+      ${groupK.map(groupCard).join('')}${gHint}
+      ${kemOnly.map(x => `<div class="tk-card" style="--c:${loaiOf(x.k).mau}">${row(x.k, x.arr.length, 'tk-main', `Chỉ ${lc(x.k)}`)}<div class="tk-nk" style="text-align:left">Hộ ${esc(lc(x.k))} không thuộc ${esc(ngoai || 'các diện trên')} · ${fmt(nk(x.arr))} nhân khẩu</div></div>`).join('')}
     </div>`;
   const dupN = isAdmin() ? dupPairs().length : 0;
   $('#stats').innerHTML = `
@@ -3050,12 +3069,29 @@ async function saveSettings() {
 /* Phân loại riêng có tên giống “bức xúc nhà ở” — gợi ý quản trị viên chuyển thành diện kèm theo */
 function kemHintKey() {
   const later = PREFS.kemHint || {};
-  return Object.keys(LOAI).find(k => !isKem(k) && !LOAI_GOC[k] && !LOAI[k].an && /nha o|buc xuc/.test(norm(LOAI[k].ten)) && !(later[k] && Date.now() - later[k] < 7 * 864e5)) || '';
+  return Object.keys(LOAI).find(k => !isKem(k) && !LOAI_GOC[k] && !LOAI[k].an && /nha o|buc xuc|chinh sach|nguoi co cong/.test(norm(LOAI[k].ten)) && !(later[k] && Date.now() - later[k] < 7 * 864e5)) || '';
+}
+async function quickSchema(sc, okMsg) {
+  if (!sc.loai.some(l => !l.an && !l.kem)) { toast('Cần giữ ít nhất một phân loại chính.', 'err'); return false; }
+  const r = await withBusy('Đang lưu cấu trúc…', () => api('config', { config: { schema: normSchema(sc) } }));
+  if (!r.config || !isObj(r.config.schema)) { toast('Máy chủ chưa lưu được cấu trúc.', 'err'); return false; }
+  S.srv = r.config; S.config = mergeConfig(S.srv); S.rev = null;
+  S.households = S.households.map(sanitizeHH); saveCache(); if (SE.s) SE.s = clone(SCHEMA());
+  renderAll(); if (okMsg) toast(okMsg, 'ok'); return true;
+}
+async function addKemCat(ten, mau) {
+  if (SE.dirty) { toast('Đang có thay đổi Cấu trúc chưa lưu — lưu hoặc hủy trước.', 'err'); return; }
+  const sc = clone(SCHEMA());
+  if (sc.loai.some(l => norm(l.ten) === norm(ten))) { toast(`Đã có phân loại “${ten}”.`, 'err'); return; }
+  const ok = await confirmDlg(`Tạo diện “${ten}”`, `<p>Khi thêm/sửa hộ sẽ có thêm ô đánh dấu <b>${esc(ten)}</b> (dưới ô Phân loại). Hộ vẫn giữ phân loại nghèo, cận nghèo… — chỉ đánh dấu thêm, không nhập thành hộ mới.</p><p>Trang Thống kê sẽ có khung <b>${esc(ten)}</b>: trong đó bao nhiêu hộ nghèo, cận nghèo, khó khăn, bức xúc nhà ở.</p>`, 'Tạo');
+  if (!ok) return;
+  sc.loai.push({ k: newKey('l', sc.loai.map(x => x.k)), ten, mau: okColor(mau, '#1565c0'), dt: false, an: false, kem: true });
+  await quickSchema(sc, `Đã tạo diện “${ten}”.`);
 }
 async function makeKem(k) {
   const x = LOAI[k]; if (!x) return;
   if (SE.dirty) { toast('Đang có thay đổi Cấu trúc chưa lưu — lưu hoặc hủy trước.', 'err'); return; }
-  const ok = await confirmDlg('Chuyển thành diện kèm theo', `<p>Khi thêm/sửa hộ sẽ có ô đánh dấu <b>${esc(x.ten)}</b> ngay dưới ô phân loại. Hộ vừa nghèo (hoặc cận nghèo…) vừa ${esc(loaiNgan(k).toLowerCase())} chỉ cần nhập <b>1 lần</b>; thống kê đếm đúng số hộ.</p><p>Các hộ đang thuộc “${esc(x.ten)}” giữ nguyên. Nếu có hộ đã bị nhập 2 lần, ứng dụng sẽ liệt kê để gộp lại.</p>`, 'Chuyển');
+  const ok = await confirmDlg('Chuyển thành diện kèm theo', `<p>Khi thêm/sửa hộ sẽ có ô đánh dấu <b>${esc(x.ten)}</b> ngay dưới ô phân loại. Hộ vừa nghèo (hoặc cận nghèo…) vừa thuộc “${esc(x.ten)}” chỉ cần nhập <b>1 lần</b>; thống kê đếm đúng số hộ.</p><p>Các hộ đang thuộc “${esc(x.ten)}” giữ nguyên. Nếu có hộ đã bị nhập 2 lần, ứng dụng sẽ liệt kê để gộp lại.</p>`, 'Chuyển');
   if (!ok) return;
   const sc = clone(SCHEMA()), it = sc.loai.find(l => l.k === k); if (!it) return; it.kem = true;
   if (!sc.loai.some(l => !l.an && !l.kem)) { toast('Cần giữ ít nhất một phân loại chính.', 'err'); return; }
@@ -3660,6 +3696,7 @@ async function onAct(act, el, e) {
     case 'merge-dups': if (isAdmin()) await openMerge(); break;
     case 'merge-pick': if (isAdmin()) await mergePick(id); break;
     case 'kem-convert': if (isAdmin()) await makeKem(el.dataset.k); break;
+    case 'kem-create': if (isAdmin()) await addKemCat(el.dataset.ten, el.dataset.mau); break;
     case 'kem-later': PREFS.kemHint = Object.assign({}, PREFS.kemHint, { [el.dataset.k]: Date.now() }); savePrefs(); renderBanners(); break;
     case 'template': if (isAdmin()) await exportTemplate(); break;
     case 'pick-json': $('#fileJson').click(); break;
