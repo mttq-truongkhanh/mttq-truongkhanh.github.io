@@ -758,6 +758,9 @@ textarea{resize:vertical}
 .tk-card .tk-sub .tk-n{font-size:17px;min-width:50px}
 .tk-nk{font-size:12px;color:var(--muted);text-align:right;margin-top:2px}
 .tk-head{font-size:13.5px;color:var(--muted);margin:0 0 10px}
+.tk-n.tk-money{min-width:0;white-space:nowrap;font-size:17px}
+.tk-card .tk-main .tk-n.tk-money{font-size:19px}
+.tk-card .tk-sub .tk-n.tk-money{font-size:15px}
 .tk-head b{color:var(--ink)}
 .tk-group{grid-column:1/-1;border-width:2px;border-color:var(--c);border-top-width:5px}
 .tk-card .tk-sub2 .tk-l{padding-left:34px;font-size:12.5px;color:var(--muted)}
@@ -1269,7 +1272,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.26e';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.26f';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -1377,7 +1380,20 @@ const I = (n, s = 17) => `<svg class="ic" width="${s}" height="${s}" viewBox="0 
    ========================================================= */
 const blankHH = () => ({ id: uid(), maHo: '', chuHo: '', ap: '', diaChi: '', dienThoai: '', loai: 'ngheo', namCongNhan: YEAR, lat: null, lng: null, thuNhap: null, thieuHut: [], nguyenNhan: [], nhuCau: [], phuTrach: '', thanhVien: [], hoTro: [], ghiChu: '', ext: {}, sample: false, createdAt: Date.now(), updatedAt: Date.now(), createdBy: '', createdById: '', updatedBy: '', updatedById: '' });
 const blankTV = () => ({ hoTen: '', namSinh: null, gioiTinh: '', quanHe: '', danToc: '', cccd: '', ngheNghiep: '', khuyetTat: false, bhyt: true, ghiChu: '', ext: {} });
-const blankHT = () => ({ ngay: new Date().toISOString().slice(0, 10), noiDung: '', donVi: '', giaTri: null });
+const blankHT = () => ({ ngay: new Date().toISOString().slice(0, 10), hinhThuc: '', noiDung: '', donVi: '', giaTri: null });
+/* Hình thức hỗ trợ: [mã, tên, màu]. Lượt hỗ trợ nhập trước khi có ô Hình thức: đoán theo nội dung */
+const HT_LOAI = [['qua', 'Tặng quà', '#c2185b'], ['tien', 'Tặng tiền', '#2e7d32'], ['nha', 'Xây nhà', '#a3191c'], ['cau', 'Xây cầu', '#1565c0'], ['khac', 'Công trình khác', '#6d4c41']];
+const htTen = k => (HT_LOAI.find(x => x[0] === k) || [0, 'Chưa chọn hình thức'])[1];
+function htDoan(noiDung) {
+  const t = ' ' + norm(noiDung).replace(/[^a-z0-9]+/g, ' ').trim() + ' '; if (!t.trim()) return '';
+  if (/ cau (duong|giao thong|nong thon|be tong|treo|go|sat|dan sinh)? /.test(t) || / xay cau | cay cau /.test(t)) return 'cau';
+  if (/ nha | dai doan ket | mai am | ddk /.test(t)) return 'nha';
+  if (/ cong trinh | duong | gieng | nuoc sach | ve sinh | be nuoc | cong thoat /.test(t)) return 'khac';
+  if (/ qua | hien vat | gao | nhu yeu pham | chan | man | ao am | xe dap | con giong | cay giong | phuong tien /.test(t)) return 'qua';
+  if (/ tien | hoc bong | tro cap /.test(t)) return 'tien';
+  return '';
+}
+const htOf = x => HT_LOAI.some(l => l[0] === x.hinhThuc) ? x.hinhThuc : htDoan(x.noiDung);
 const blankSync = () => ({ changed: {}, base: {}, lastSentAt: null, packageAt: null });
 function toNum(v) { if (v == null || v === '') return null; if (typeof v === 'number') return Number.isFinite(v) ? v : null; const n = Number(String(v).trim().replace(/\s/g, '').replace(',', '.')); return Number.isFinite(n) ? n : null; }
 function toMoney(v) { if (v == null || v === '') return null; if (typeof v === 'number') return Number.isFinite(v) ? v : null; let s = String(v).trim().replace(/\s|đ|vnd|đồng/gi, ''); if (/^\d{1,3}([.,]\d{3})+$/.test(s)) s = s.replace(/[.,]/g, ''); else s = s.replace(',', '.'); const n = Number(s); return Number.isFinite(n) ? n : null; }
@@ -1417,6 +1433,7 @@ function sanitizeTV(o) {
 function sanitizeHT(o) {
   o = o || {}; const x = blankHT();
   x.ngay = toDateStr(o.ngay); x.noiDung = String(o.noiDung ?? '').trim(); x.donVi = String(o.donVi ?? '').trim(); x.giaTri = toMoney(o.giaTri);
+  { const v = String(o.hinhThuc ?? '').trim(), l = HT_LOAI.find(l => l[0] === v || (v && norm(l[1]) === norm(v))); x.hinhThuc = l ? l[0] : ''; }
   return x;
 }
 function sanitizeHH(o) {
@@ -1805,10 +1822,10 @@ let srvWarned = false;
 function checkServerKeeps(sent, got) {
   if (srvWarned || !got) return;
   const nx = o => o && isObj(o.ext) ? Object.keys(o.ext).length : 0;
-  const lostExt = nx(sent) && !nx(got), lostTv = (sent.thanhVien || []).some(m => nx(m)) && !(got.thanhVien || []).some(m => nx(m)), lostLoai = got.loai && sent.loai !== got.loai, lostKem = !!(sent.ext && sent.ext[KEM_X]) && !(got.ext && got.ext[KEM_X]);
-  if (!lostExt && !lostTv && !lostLoai && !lostKem) return;
+  const lostExt = nx(sent) && !nx(got), lostTv = (sent.thanhVien || []).some(m => nx(m)) && !(got.thanhVien || []).some(m => nx(m)), lostLoai = got.loai && sent.loai !== got.loai, lostKem = !!(sent.ext && sent.ext[KEM_X]) && !(got.ext && got.ext[KEM_X]), lostHt = (sent.hoTro || []).some(x => x.hinhThuc) && !(got.hoTro || []).some(x => x.hinhThuc);
+  if (!lostExt && !lostTv && !lostLoai && !lostKem && !lostHt) return;
   srvWarned = true;
-  setTimeout(() => dialog('Máy chủ chưa lưu đủ thông tin', `<p>Hộ <b>${esc(sent.chuHo)}</b> đã lưu, nhưng máy chủ dữ liệu ${lostLoai ? `đổi phân loại thành “${esc(loaiTen(got.loai))}”` : lostKem && !lostExt ? 'bỏ mất phần “diện kèm theo” (ví dụ bức xúc về nhà ở)' : 'bỏ mất các trường thông tin bổ sung'}.</p><p>Nguyên nhân: mã máy chủ (Google Apps Script) <b>chưa được cập nhật</b> lên phiên bản hỗ trợ “Cấu trúc ứng dụng”.</p><p class="muted small">${isAdmin() ? 'Quản trị viên: dán mã máy chủ mới vào Apps Script và Triển khai lại (giữ nguyên địa chỉ /exec), rồi sửa lại hộ này.' : 'Vui lòng báo quản trị viên.'}</p>`, [{ label: 'Đã hiểu', cls: 'btn-navy' }]), 400);
+  setTimeout(() => dialog('Máy chủ chưa lưu đủ thông tin', `<p>Hộ <b>${esc(sent.chuHo)}</b> đã lưu, nhưng máy chủ dữ liệu ${lostLoai ? `đổi phân loại thành “${esc(loaiTen(got.loai))}”` : lostKem && !lostExt ? 'bỏ mất phần “diện kèm theo” (ví dụ bức xúc về nhà ở)' : lostHt && !lostExt ? 'bỏ mất ô “Hình thức” của lượt hỗ trợ (ứng dụng tạm đoán theo nội dung)' : 'bỏ mất các trường thông tin bổ sung'}.</p><p>Nguyên nhân: mã máy chủ (Google Apps Script) <b>chưa được cập nhật</b> lên phiên bản hỗ trợ “Cấu trúc ứng dụng”.</p><p class="muted small">${isAdmin() ? 'Quản trị viên: dán mã máy chủ mới vào Apps Script và Triển khai lại (giữ nguyên địa chỉ /exec), rồi sửa lại hộ này.' : 'Vui lòng báo quản trị viên.'}</p>`, [{ label: 'Đã hiểu', cls: 'btn-navy' }]), 400);
 }
 let syncWaiters = [];
 async function sync(opt) {
@@ -2228,7 +2245,7 @@ const SEC_DETAIL = {
   hotro: (h, kv) => {
     const tong = h.hoTro.reduce((s, x) => s + (x.giaTri || 0), 0);
     return `<div class="sec">${esc(SECT('hotro'))}</div>
-      ${h.hoTro.length ? `<table class="tbl"><thead><tr><th>Ngày</th><th>Nội dung</th><th class="num">Giá trị (đ)</th></tr></thead><tbody>${h.hoTro.slice().sort((a, b) => String(b.ngay).localeCompare(String(a.ngay))).map(x => `<tr><td>${dateVN(x.ngay)}</td><td>${esc(x.noiDung)}${x.donVi ? `<div class="sub2">${esc(x.donVi)}</div>` : ''}</td><td class="num">${fmt(x.giaTri)}</td></tr>`).join('')}</tbody><tfoot><tr><td colspan="2">Tổng cộng</td><td class="num">${fmt(tong)}</td></tr></tfoot></table>` : '<p class="muted">Chưa ghi nhận.</p>'}${kv ? `<dl class="kv mt8">${kv}</dl>` : ''}`;
+      ${h.hoTro.length ? `<table class="tbl"><thead><tr><th>Ngày</th><th>Nội dung</th><th class="num">Giá trị (đ)</th></tr></thead><tbody>${h.hoTro.slice().sort((a, b) => String(b.ngay).localeCompare(String(a.ngay))).map(x => `<tr><td>${dateVN(x.ngay)}</td><td>${esc(x.noiDung)}<div class="sub2">${htOf(x) ? `<b>${esc(htTen(htOf(x)))}</b>` : ''}${htOf(x) && x.donVi ? ' · ' : ''}${esc(x.donVi)}</div></td><td class="num">${fmt(x.giaTri)}</td></tr>`).join('')}</tbody><tfoot><tr><td colspan="2">Tổng cộng</td><td class="num">${fmt(tong)}</td></tr></tfoot></table>` : '<p class="muted">Chưa ghi nhận.</p>'}${kv ? `<dl class="kv mt8">${kv}</dl>` : ''}`;
   },
   apinfo: h => { const kv = h.ap ? apInfoKV(h.ap) : ''; return kv ? `<div class="sec">${esc(SECT('apinfo'))} — ${esc(h.ap)}</div><dl class="kv">${kv}</dl>` : ''; },
   ghichu: (h, kv) => h.ghiChu || kv ? `<div class="sec">${esc(SECT('ghichu'))}</div>${h.ghiChu ? `<p style="white-space:pre-wrap;margin:0">${esc(h.ghiChu)}</p>` : ''}${kv ? `<dl class="kv mt8">${kv}</dl>` : ''}` : ''
@@ -2268,10 +2285,11 @@ function tvRow(m, i) {
 function htRow(x, i) {
   return `<div class="ht"><div class="tv-head"><span>Lượt hỗ trợ ${i + 1}</span><button type="button" class="icon-btn" data-act="ht-del" data-i="${i}" title="Bớt">${I('x', 15)}</button></div>
     <div class="grid2">
+      <label class="f"><span>Hình thức</span><select data-ht="hinhThuc"><option value="">— Chọn —</option>${HT_LOAI.map(([k, t]) => `<option value="${k}" ${htOf(x) === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
       <label class="f"><span>Ngày</span><input data-ht="ngay" type="date" value="${esc(x.ngay)}"></label>
-      <label class="f"><span>Giá trị (đồng)</span><input data-ht="giaTri" type="number" min="0" step="1000" value="${x.giaTri ?? ''}"></label>
       <label class="f span2"><span>Nội dung hỗ trợ</span><input data-ht="noiDung" list="dlHoTro" value="${esc(x.noiDung)}"></label>
-      <label class="f span2"><span>Đơn vị / nguồn hỗ trợ</span><input data-ht="donVi" list="dlPhuTrach" value="${esc(x.donVi)}"></label>
+      <label class="f"><span>Giá trị (đồng)</span><input data-ht="giaTri" type="number" min="0" step="1000" value="${x.giaTri ?? ''}"></label>
+      <label class="f"><span>Đơn vị / nguồn hỗ trợ</span><input data-ht="donVi" list="dlPhuTrach" value="${esc(x.donVi)}"></label>
     </div></div>`;
 }
 function renderEdit() {
@@ -2502,10 +2520,18 @@ function renderStats() {
   const gHint = !isAdmin() || groupK.length ? '' : gMain
     ? `<div class="tk-card tk-group tk-hint"><b>${esc(loaiTen(gMain))}</b> đang là phân loại riêng, nên chưa biết hộ chính sách nào là hộ nghèo, cận nghèo hay bức xúc nhà ở. Chuyển thành <b>diện kèm theo</b>: khi nhập hộ chỉ cần đánh dấu thêm ô “${esc(loaiTen(gMain))}”.<div class="mt8"><button class="btn btn-sm btn-navy" data-act="kem-convert" data-k="${esc(gMain)}">Chuyển thành diện kèm theo</button></div></div>`
     : `<div class="tk-card tk-group tk-hint">Chưa có diện <b>Gia đình chính sách</b>. Tạo diện này để khi nhập hộ đánh dấu thêm ô “Gia đình chính sách” (hộ vẫn giữ phân loại nghèo, cận nghèo…), rồi thống kê xem hộ chính sách nào là hộ nghèo, cận nghèo, bức xúc nhà ở.<div class="mt8"><button class="btn btn-sm btn-navy" data-act="kem-create" data-ten="Gia đình chính sách" data-mau="#1565c0">Tạo diện “Gia đình chính sách”</button></div></div>`;
+  const htAll = all.flatMap(h => h.hoTro), htSum = a => a.reduce((t, x) => t + (x.giaTri || 0), 0);
+  const mrow = (label, c, a, cls) => `<div class="tk-row ${cls}" style="--c:${c}"><span class="tk-l"><i class="kdot"></i>${esc(label)} <small>${fmt(a.length)} lượt</small></span><b class="tk-n tk-money">${fmt(htSum(a))} đ</b></div>`;
+  const htUn = htAll.filter(x => !htOf(x));
+  const htCard = SECH('hotro') ? '' : `<div class="tk-card tk-group" style="--c:#b8860b">${mrow('Tổng số tiền hỗ trợ', '#b8860b', htAll, 'tk-main')}
+      ${HT_LOAI.map(([k, t, c]) => mrow(t, c, htAll.filter(x => htOf(x) === k), 'tk-sub')).join('')}
+      ${htUn.length ? mrow('Chưa chọn hình thức', '#90a4ae', htUn, 'tk-sub') : ''}
+      <div class="tk-nk">${fmt(all.filter(h => h.hoTro.length).length)} hộ đã được hỗ trợ${htUn.length && can('edit') ? ' · lượt “chưa chọn hình thức”: mở hộ → Sửa → chọn ô Hình thức' : ''}</div></div>`;
   const tkHTML = `<div class="tk-head">${one ? esc(apName(ui.stAp)) : 'Cả xã'}: <b>${fmt(all.length)}</b> hộ · <b>${fmt(nk(all))}</b> nhân khẩu · đã định vị <b>${fmt(all.filter(hasLoc).length)}/${fmt(all.length)}</b> hộ</div>
     <div class="tk-cards">
       ${cardK.map(mainCard).join('')}
       ${groupK.map(groupCard).join('')}${gHint}
+      ${htCard}
       ${kemOnly.map(x => `<div class="tk-card" style="--c:${loaiOf(x.k).mau}">${row(x.k, x.arr.length, 'tk-main', `Chỉ ${lc(x.k)}`)}<div class="tk-nk" style="text-align:left">Hộ ${esc(lc(x.k))} không thuộc ${esc(ngoai || 'các diện trên')} · ${fmt(nk(x.arr))} nhân khẩu</div></div>`).join('')}
     </div>`;
   const dupN = isAdmin() ? dupPairs().length : 0;
@@ -2814,10 +2840,10 @@ function colsTv() {
   c.push(['Ghi chú', 'ghiChu', 24]);
   return c;
 }
-const COLS_HT = [['STT','stt',6],['Mã hộ','maHo',11],['Chủ hộ','chuHo',22],['Ấp','ap',14],['Ngày','ngay',12],['Nội dung hỗ trợ','noiDung',30],['Đơn vị hỗ trợ','donVi',24],['Giá trị (đồng)','giaTri',15]];
+const COLS_HT = [['STT','stt',6],['Mã hộ','maHo',11],['Chủ hộ','chuHo',22],['Ấp','ap',14],['Ngày','ngay',12],['Hình thức','hinhThuc',16],['Nội dung hỗ trợ','noiDung',30],['Đơn vị hỗ trợ','donVi',24],['Giá trị (đồng)','giaTri',15]];
 const MAP_HO = { 'ma ho':'maHo','chu ho':'chuHo','ho ten chu ho':'chuHo','ten chu ho':'chuHo','ap':'ap','dia chi':'diaChi','phan loai':'loai','loai ho':'loai','nam cong nhan':'namCongNhan','dien thoai':'dienThoai','so dien thoai':'dienThoai','thu nhap':'thuNhap','cac chi so thieu hut':'thieuHut','chi so thieu hut':'thieuHut','nguyen nhan':'nguyenNhan','nhu cau':'nhuCau','doan the':'phuTrach','phu trach':'phuTrach','nguoi phu trach':'phuTrach','vi do':'lat','kinh do':'lng','ghi chu':'ghiChu' };
 const MAP_TV = { 'ma ho':'maHo','ho va ten':'hoTen','ho ten':'hoTen','nam sinh':'namSinh','ngay sinh':'namSinh','gioi tinh':'gioiTinh','quan he':'quanHe','dan toc':'danToc','so cccd':'cccd','cccd':'cccd','so dinh danh':'cccd','nghe nghiep':'ngheNghiep','khuyet tat':'khuyetTat','co bhyt':'bhyt','bhyt':'bhyt','ghi chu':'ghiChu' };
-const MAP_HT = { 'ma ho':'maHo','ngay':'ngay','noi dung':'noiDung','don vi':'donVi','gia tri':'giaTri' };
+const MAP_HT = { 'ma ho':'maHo','ngay':'ngay','hinh thuc':'hinhThuc','noi dung':'noiDung','don vi':'donVi','gia tri':'giaTri' };
 const hdrKey = h => norm(h).replace(/[^a-z0-9]+/g, ' ').trim();
 /* Bảng đối chiếu tiêu đề cột khi nhập Excel: tên gốc + tên đã đổi + trường bổ sung */
 function mapHo() {
@@ -2869,7 +2895,7 @@ async function buildWorkbook(list, { template = false } = {}) {
   list.forEach((h, i) => {
     const r = ws1.addRow(hoRow(h, i)); const lc = r.getCell('link'); if (lc.value && lc.value.hyperlink) lc.font = { color: { argb: 'FF1D4EA8' }, underline: true };
     h.thanhVien.forEach(m => { const r2 = ws2.addRow(tvRowX(h, m, ++i2)); if (hasCol(cT, 'cccd')) r2.getCell('cccd').numFmt = '@'; });
-    h.hoTro.forEach(x => ws3.addRow({ stt: ++i3, maHo: h.maHo, chuHo: h.chuHo, ap: h.ap, ngay: dateVN(x.ngay), noiDung: x.noiDung, donVi: x.donVi, giaTri: x.giaTri }));
+    h.hoTro.forEach(x => ws3.addRow({ stt: ++i3, maHo: h.maHo, chuHo: h.chuHo, ap: h.ap, ngay: dateVN(x.ngay), hinhThuc: htOf(x) ? htTen(htOf(x)) : '', noiDung: x.noiDung, donVi: x.donVi, giaTri: x.giaTri }));
   });
   if (hasCol(cH, 'thuNhap')) ws1.getColumn('thuNhap').numFmt = '#,##0';
   ws3.getColumn('giaTri').numFmt = '#,##0'; if (hasCol(cT, 'cccd')) ws2.getColumn('cccd').numFmt = '@';
@@ -3001,7 +3027,7 @@ function printHH(h) {
       ${a || b ? `<div>${a ? `Thu nhập bình quân: ${h.thuNhap != null ? fmt(h.thuNhap * 1000) + ' đồng/người/tháng' : dots}. ` : ''}${b ? `Số chỉ số thiếu hụt: ${th.length}/${chiSoCur().length}${th.length ? ' (' + th.map(id => esc(chiSoTen(id))).join('; ') + ')' : ''}.` : ''}</div>` : ''}${kvLines(fx)}`; },
     nguyennhan: fx => `${H(SECT('nguyennhan'))}<div>${esc(h.nguyenNhan.join('; ')) || '—'}.</div>${kvLines(fx)}`,
     nhucau: fx => `${H(SECT('nhucau'))}<div>${esc(h.nhuCau.join('; ')) || '—'}.</div>${kvLines(fx)}`,
-    hotro: fx => `${H(SECT('hotro'))}${h.hoTro.length ? `<table class="p-tbl"><thead><tr><th>Ngày</th><th>Nội dung</th><th>Đơn vị hỗ trợ</th><th>Giá trị (đồng)</th></tr></thead><tbody>${h.hoTro.map(x => `<tr><td>${dateVN(x.ngay)}</td><td>${esc(x.noiDung)}</td><td>${esc(x.donVi)}</td><td style="text-align:right">${fmt(x.giaTri)}</td></tr>`).join('')}</tbody></table>` : '<div>Chưa ghi nhận.</div>'}${kvLines(fx)}`,
+    hotro: fx => `${H(SECT('hotro'))}${h.hoTro.length ? `<table class="p-tbl"><thead><tr><th>Ngày</th><th>Nội dung</th><th>Đơn vị hỗ trợ</th><th>Giá trị (đồng)</th></tr></thead><tbody>${h.hoTro.map(x => `<tr><td>${dateVN(x.ngay)}</td><td>${esc(x.noiDung)}${htOf(x) ? ` (${esc(htTen(htOf(x)))})` : ''}</td><td>${esc(x.donVi)}</td><td style="text-align:right">${fmt(x.giaTri)}</td></tr>`).join('')}</tbody></table>` : '<div>Chưa ghi nhận.</div>'}${kvLines(fx)}`,
     apinfo: () => { const v = h.ap && s.apInfo[h.ap]; const ls = v ? s.apF.filter(f => !isEmptyVal(v[f.k])).map(f => `<div>${esc(f.ten)}: ${esc(fText(f, v[f.k]))}</div>`).join('') : ''; return ls ? `${H(`${SECT('apinfo')} (${h.ap})`)}${ls}` : ''; },
     ghichu: fx => h.ghiChu || fx.some(f => pf(f) && !isEmptyVal(h.ext[f.k])) ? `${H(SECT('ghichu'))}${h.ghiChu ? `<div style="white-space:pre-wrap">${esc(h.ghiChu)}</div>` : ''}${kvLines(fx)}` : ''
   };
@@ -3775,6 +3801,7 @@ $('#editForm').addEventListener('change', e => {
     const lat = toNum($('#eLat').value), lng = toNum($('#eLng').value);
     if (lat != null && lng != null) setEditLoc(lat, lng, { pan: true });
   }
+  if (t.dataset.ht === 'noiDung') { const sel = t.closest('.ht') && t.closest('.ht').querySelector('select[data-ht=hinhThuc]'), g = htDoan(t.value); if (sel && !sel.value && g) sel.value = g; }
   if (t.dataset.th !== undefined || t.name === 'loai') updateSuggest();
   if ((t.name === 'loai' || t.dataset.kem !== undefined) && draft && SCHEMA().f.some(f => f.loai.length)) rerenderEdit();   /* hiện/ẩn trường chỉ áp dụng cho một số phân loại */
 });
