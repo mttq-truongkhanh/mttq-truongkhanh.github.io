@@ -1247,7 +1247,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.26';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.26b';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -1756,10 +1756,12 @@ async function flushOut() {
   if (net.flushing || !OUT.length || !TOKEN) return 0;
   net.flushing = true; let sent = 0;
   try {
+    let busyTry = 0;
     while (OUT.length) {
       const o = OUT[0]; let r;
       try { r = await api('save', { h: o.h, base: o.base }); }
       catch (e) {
+        if ((e.code === 'busy' || e.code === 'server') && busyTry < 3) { busyTry++; await new Promise(res => setTimeout(res, 1500 * busyTry)); continue; }
         if (e.net || e.code === 'busy' || e.code === 'server' || e.code === 'auth' || e.code === 'noapi') { if (e.net) net.online = false; net.lastErr = e.message; break; }
         OUT.shift(); saveOut();
         if (e.code === 'conflict') { await onConflict(o, e.data.h); continue; }
@@ -1767,7 +1769,7 @@ async function flushOut() {
         await dialog('Không lưu được lên máy chủ', `<p>Hộ <b>${esc(o.h.chuHo)}</b>: ${esc(e.message)}</p><p class="muted small">Phần sửa của hộ này trên máy được bỏ; dữ liệu sẽ được tải lại từ máy chủ.</p>`, [{ label: 'Đã hiểu', cls: 'btn-navy' }]);
         continue;
       }
-      OUT.shift(); saveOut(); net.online = true; sent++;
+      OUT.shift(); saveOut(); net.online = true; sent++; busyTry = 0;
       checkServerKeeps(o.h, r.h);
       replaceLocal(sanitizeHH(r.h)); S.rev = null;
       if (r.note) toast(`${r.h.chuHo}: ${r.note} ${r.h.maHo}.`);
@@ -1792,13 +1794,15 @@ async function sync(opt) {
   if (net.syncing) return new Promise(res => syncWaiters.push(res));
   net.syncing = true; net.lastTry = Date.now(); syncUI();
   try {
-    const sent = await flushOut();
+    let sent = await flushOut();
     if (sent && opt.toastSent !== false) toast(OUT.length ? `Đã gửi ${sent} hộ; còn ${OUT.length} hộ chờ gửi.` : `Đã lưu lên máy chủ${sent > 1 ? ` (${sent} hộ)` : ''}.`, 'ok');
     const r = await api('load', { rev: opt.force ? undefined : (S.rev || undefined) });
     net.online = true; net.lastErr = '';
     if (r.token) setSession(r.token, remembered());
     applyMe(r.me);
     if (!r.same) applyServer(r);
+    /* Hộ được lưu trong lúc đang tải dữ liệu về: gửi luôn, không để nằm chờ tới lần đồng bộ sau */
+    for (let i = 0; i < 5 && OUT.length && TOKEN; i++) { const more = await flushOut(); if (!more) break; sent += more; }
     S.loadedAt = Date.now(); saveCache();
     if (!r.same || sent) { if (ui.view !== 'edit') renderAll(); else renderBanners(); }
   } catch (e) {
@@ -2347,13 +2351,14 @@ function setEditLoc(lat, lng, { pan = false } = {}) {
 function startPick() { ui.pick = true; $('#mapWrap').classList.add('picking'); document.body.classList.add('map-big'); setTimeout(() => map.invalidateSize(), 230); }
 function stopPick() { ui.pick = false; $('#mapWrap').classList.remove('picking'); document.body.classList.remove('map-big'); setTimeout(() => map.invalidateSize(), 230); }
 async function gpsFill() {
-  const info = $('#gpsInfo'); if (info) info.textContent = 'Đang lấy tọa độ GPS… (có thể mất 5–20 giây)';
+  const info = $('#gpsInfo'), id0 = draft && draft.id; if (info) info.textContent = 'Đang lấy tọa độ GPS… (có thể mất 5–20 giây)';
   try {
     const c = await getGPS(); showMe(c);
+    if (!draft || draft.id !== id0) return;   /* đã lưu/thoát hộ đó trong lúc chờ GPS */
     setEditLoc(c.latitude, c.longitude, { pan: true });
     const i2 = $('#gpsInfo'); if (i2) i2.innerHTML = `Đã lấy vị trí GPS, sai số khoảng <b>±${Math.round(c.accuracy)} m</b>.${c.accuracy > 30 ? ' Sai số lớn — nên kéo ghim cho khớp mái nhà trên ảnh vệ tinh.' : ''}`;
     toast(`Đã lấy vị trí (±${Math.round(c.accuracy)} m)`, 'ok');
-  } catch (e) { const i2 = $('#gpsInfo'); if (i2) i2.textContent = e.message; toast(e.message, 'err'); }
+  } catch (e) { if (!draft || draft.id !== id0) return; const i2 = $('#gpsInfo'); if (i2) i2.textContent = e.message; toast(e.message, 'err'); }
 }
 async function saveEdit() {
   collectForm();
@@ -2379,7 +2384,7 @@ async function saveEdit() {
   replaceLocal(clean); queueSave(clean, isNew ? 0 : d._base); saveCache();
   leaveEdit(); renderList(); openDetail(clean.id, { fly: true });
   await sync({ quiet: true, toastSent: false });
-  if (OUT.some(o => o.h.id === clean.id)) toast('Đã lưu trên máy. Chưa gửi được lên máy chủ — ứng dụng sẽ tự gửi khi có mạng.', 'err');
+  if (OUT.some(o => o.h.id === clean.id)) toast(net.online && navigator.onLine !== false ? 'Đã lưu trên máy, đang chờ gửi lên máy chủ — ứng dụng tự gửi lại sau ít giây, bạn cứ nhập hộ tiếp.' : 'Đã lưu trên máy. Đang mất mạng — ứng dụng sẽ tự gửi khi có mạng.', 'err');
   else { const h = byId(clean.id); toast(`Đã lưu lên máy chủ${h && h.maHo && isNew ? ` — mã hộ ${h.maHo}` : ''}.`, 'ok'); if (ui.view === 'detail' && ui.selId === clean.id) renderDetail(); }
 }
 const draftChanged = () => JSON.stringify(collectForm(true)) !== draftSnap;
@@ -3720,6 +3725,7 @@ addEventListener('online', () => { if (ME) sync({ quiet: true }); });
 addEventListener('offline', () => { net.online = false; syncUI(); renderBanners(); });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ME && Date.now() - net.lastTry > 20000) sync({ quiet: true }); });
 setInterval(() => { if (ME && document.visibilityState === 'visible' && ui.view !== 'edit') sync({ quiet: true }); }, 120000);
+setInterval(() => { if (ME && TOKEN && OUT.length && !net.syncing && !net.flushing && navigator.onLine !== false && Date.now() - net.lastTry > 12000) sync({ quiet: true }); }, 15000);
 addEventListener('beforeinstallprompt', () => setTimeout(refreshInstallCTA, 0));
 
 /* =========================================================
