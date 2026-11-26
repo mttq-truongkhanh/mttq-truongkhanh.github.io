@@ -815,6 +815,20 @@ textarea{resize:vertical}
 .tbl{width:100%;border-collapse:collapse;font-size:13px}
 .tbl th{text-align:left;font-weight:600;color:var(--muted);font-size:12px;padding:6px 6px;border-bottom:1px solid var(--line);background:var(--soft)}
 .tbl td{padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.ap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin:10px 0}
+.ap-card{border:1px solid var(--line);border-radius:12px;background:#fff;padding:8px 12px 6px}
+.ap-card.ap-xa{border:2px solid var(--navy);background:#f5f8fd;margin:4px 0 0}
+.ap-card.ap-odd{border:2px dashed var(--warn)}
+.ap-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 10px;padding-bottom:6px;border-bottom:1px solid var(--line);font-size:15px;color:var(--navy)}
+.ap-h span{font-size:13px;color:var(--muted)}
+.ap-h span b{color:var(--ink);font-size:14px}
+.ap-t{width:100%;border-collapse:collapse;font-size:13.5px}
+.ap-t th{font-size:11.5px;color:var(--muted);font-weight:600;text-align:right;padding:5px 0 2px}
+.ap-t td{padding:5px 0;border-bottom:1px dashed var(--line)}
+.ap-t tr:last-child td{border-bottom:0}
+.ap-t td.num{text-align:right;font-weight:700;width:76px;font-variant-numeric:tabular-nums;color:var(--c,var(--ink))}
+.ap-l{display:inline-flex;align-items:center;gap:6px}
+.ap-warn{font-size:12.5px;color:var(--warn);margin:6px 0 4px}
 .tbl tr.tot-row td{font-weight:700;color:var(--navy);background:#eef2f8;border-bottom:2px solid var(--navy)}
 .tbl td.num,.tbl th.num{text-align:right;font-variant-numeric:tabular-nums}
 .tbl tfoot td{font-weight:700;background:var(--soft)}
@@ -1277,7 +1291,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.26i';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.26j';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -2543,6 +2557,15 @@ function renderStats() {
       ${htUn.length ? mrow('Chưa chọn hình thức', '#90a4ae', htUn, 'tk-sub') : ''}
       <div class="tk-nk">${fmt(all.filter(h => h.hoTro.some(htOpen)).length)} hộ được hỗ trợ${namMo ? ` từ 01/01/${namMo}` : ''}${htUn.length && can('edit') ? ' · lượt “chưa chọn hình thức”: mở hộ → Sửa → chọn ô Hình thức' : ''}</div>
       ${yHTML}</div>`;
+  /* Theo ấp: mỗi ấp một khung — tổng hộ, nhân khẩu; trong đó hộ nghèo, cận nghèo, khó khăn, bức xúc nhà ở (số hộ + nhân khẩu) */
+  const apCats = [...cardK, ...subK], apList0 = S.config.apList || [];
+  const apCard = (name, arr, cls, extra) => `<div class="ap-card ${cls || ''}"><div class="ap-h"><b>${esc(name)}</b><span><b>${fmt(arr.length)}</b> hộ · <b>${fmt(nk(arr))}</b> nhân khẩu</span></div>
+      <table class="ap-t"><thead><tr><th></th><th>Số hộ</th><th>Nhân khẩu</th></tr></thead><tbody>${apCats.map(k => { const a = arr.filter(h => inLoai(h, k)); return `<tr style="--c:${loaiOf(k).mau}"><td><span class="ap-l"><i class="kdot"></i>${esc(loaiTen(k))}</span></td><td class="num">${fmt(a.length)}</td><td class="num">${fmt(nk(a))}</td></tr>`; }).join('')}</tbody></table>${extra || ''}</div>`;
+  const apHas = aps.filter(a => all.some(h => (h.ap || '') === a)), apEmpty = one ? [] : aps.filter(a => a && !all.some(h => h.ap === a) && (isAdmin() || inScope(a)));
+  const apHTML = `${one ? '' : apCard(xaTong(), all, 'ap-xa')}
+    <div class="ap-grid">${apHas.map(a => { const arr = all.filter(h => (h.ap || '') === a), odd = !a || !apList0.includes(a);
+      return apCard(apName(a), arr, odd ? 'ap-odd' : '', odd ? `<div class="ap-warn">${!a ? `Các hộ này chưa chọn ${esc(apl())}.` : `Tên ${esc(apl())} này không có trong danh sách ${esc(apl())} (mục Cài đặt) — có thể là tên cũ.`}${isAdmin() && apList0.length ? `<div class="mt8"><button type="button" class="btn btn-sm btn-navy" data-act="ap-move" data-ap="${esc(a)}">Chuyển ${fmt(arr.length)} hộ sang ${esc(apl())}…</button></div>` : ''}</div>` : ''); }).join('')}</div>
+    ${apEmpty.length ? `<p class="muted small" style="margin:0 0 8px">Chưa có hộ: ${apEmpty.map(esc).join(', ')}.</p>` : ''}`;
   const tkHTML = `<div class="tk-head">${one ? esc(apName(ui.stAp)) : 'Cả xã'}: <b>${fmt(all.length)}</b> hộ · <b>${fmt(nk(all))}</b> nhân khẩu · đã định vị <b>${fmt(all.filter(hasLoc).length)}/${fmt(all.length)}</b> hộ</div>
     <div class="tk-cards">
       ${cardK.map(mainCard).join('')}
@@ -2557,8 +2580,7 @@ function renderStats() {
     ${!isAdmin() && myAps().length ? `<p class="hint" style="margin-top:0">Số liệu trong phạm vi được giao: <b>${esc(scopeText(myAps()))}</b>.</p>` : ''}
     ${tkHTML}
     <div class="sec">${one ? `Tổng hợp ${esc(apName(ui.stAp))}` : `Theo ${esc(apl())}`}</div>
-    <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>${esc(apL())}</th><th class="num">Tổng hộ</th>${cats.map(k => `<th class="num">${esc(loaiNgan(k))}</th>`).join('')}<th class="num">Nhân khẩu</th><th class="num">Đã định vị</th></tr></thead>
-    <tbody>${one ? '' : `<tr class="tot-row"><td>${esc(xaTong())}</td><td class="num">${fmt(tot.n)}</td>${tot.c.map(x => `<td class="num">${fmt(x)}</td>`).join('')}<td class="num">${fmt(tot.nk)}</td><td class="num">${fmt(tot.dv)}</td></tr>`}${rows.map(r => `<tr><td>${esc(r.a)}</td><td class="num"><b>${r.n}</b></td>${r.c.map(x => `<td class="num">${x}</td>`).join('')}<td class="num">${fmt(r.nk)}</td><td class="num">${r.dv}</td></tr>`).join('')}</tbody></table></div>
+    ${apHTML}
     ${kemHTML}
     ${dtK.length ? `<div class="sec">Đối tượng trong hộ ${esc(dtTen)}</div>
     <div class="kpis">
@@ -2928,11 +2950,12 @@ async function buildWorkbook(list, { template = false } = {}) {
      '• Tên các chỉ số thiếu hụt hợp lệ: ' + CHI_SO.map(c => c.ten).join('; ')].forEach((t, i) => { const c = g.getCell(i + 1, 1); c.value = t; c.alignment = { wrapText: true }; c.font = { name: 'Times New Roman', size: 12, bold: i === 0 }; });
   } else {
     const cats = [...new Set([...Object.keys(LOAI).filter(k => !LOAI[k].an), ...list.map(h => h.loai)])];
-    const ws4 = wb.addWorksheet('ThongKe'); ws4.columns = [[apL(), 18], ['Tổng số hộ', 10], ...cats.map(k => [loaiTen(k), 12]), ['Nhân khẩu', 10], ['Đã định vị', 10]].map(([h, w]) => ({ header: h, width: w }));
-    const aps = [...new Set([...apOrder(), ...list.map(h => h.ap || '')])], t = new Array(cats.length + 3).fill(0), rx = [];
-    aps.forEach(a => { const arr = list.filter(h => (h.ap || '') === a); if (!arr.length) return; const v = [arr.length, ...cats.map(k => arr.filter(h => inLoai(h, k)).length), arr.reduce((s, h) => s + h.thanhVien.length, 0), arr.filter(hasLoc).length]; v.forEach((x, i) => t[i] += x); rx.push([a || `Chưa rõ ${apl()}`, ...v]); });
+    const nkA = arr => arr.reduce((s, h) => s + h.thanhVien.length, 0);
+    const ws4 = wb.addWorksheet('ThongKe'); ws4.columns = [[apL(), 18], ['Tổng số hộ', 10], ['Tổng nhân khẩu', 11], ...cats.flatMap(k => [[`${loaiTen(k)} (số hộ)`, 12], [`${loaiTen(k)} (nhân khẩu)`, 12]]), ['Đã định vị', 10]].map(([h, w]) => ({ header: h, width: w }));
+    const aps = [...new Set([...apOrder(), ...list.map(h => h.ap || '')])], t = new Array(cats.length * 2 + 3).fill(0), rx = [];
+    aps.forEach(a => { const arr = list.filter(h => (h.ap || '') === a); if (!arr.length) return; const v = [arr.length, nkA(arr), ...cats.flatMap(k => { const b = arr.filter(h => inLoai(h, k)); return [b.length, nkA(b)]; }), arr.filter(hasLoc).length]; v.forEach((x, i) => t[i] += x); rx.push([a || `Chưa rõ ${apl()}`, ...v]); });
     const tr = ws4.addRow([xaTong(), ...t]); rx.forEach(r => ws4.addRow(r));
-    styleSheet(ws4, cats.length + 4, false); tr.font = { bold: true, name: 'Times New Roman', size: 12 };
+    styleSheet(ws4, cats.length * 2 + 4, false); tr.font = { bold: true, name: 'Times New Roman', size: 12 };
     /* Thông tin ấp: Ban công tác Mặt trận, chi hội trưởng */
     const sA = SCHEMA(), apsInfo = apOrder().filter(a => apInfoKV(a));
     if (sA.apF.length && apsInfo.length) {
@@ -3166,6 +3189,29 @@ async function boChot() {
   if (!ok) return;
   const sc = clone(SCHEMA()); sc.ui.chotHT = a.filter(r => (r.at || 0) !== at);
   await quickSchema(sc, 'Đã hủy lần chốt gần nhất.');
+}
+async function apMove(from) {
+  const src = S.households.filter(h => (h.ap || '') === from); if (!src.length) return;
+  const opts = (S.config.apList || []).filter(a => a !== from); if (!opts.length) { toast('Chưa có danh sách ấp — nhập trong mục Cài đặt.', 'err'); return; }
+  const bare = x => norm(x).replace(/^\d+\s*[.)-]?\s*/, '').replace(/^ap\s+/, '');
+  const guess = opts.find(a => bare(a) === bare(from)) || '';
+  const r = await formDialog(`Chuyển hộ của “${from || 'Chưa rõ ' + apl()}”`, v => `<p>Có <b>${src.length}</b> hộ đang ghi ${esc(apl())} “<b>${esc(from || 'chưa chọn')}</b>”. Chuyển tất cả sang:</p>
+    <label class="f"><span>${esc(apL())}</span><select name="to"><option value="">— Chọn —</option>${opts.map(a => `<option ${a === ((v && v.to) || guess) ? 'selected' : ''}>${esc(a)}</option>`).join('')}</select></label>`, 'Chuyển', x => x.to ? '' : `Chọn ${apl()}.`);
+  if (!r) return;
+  if (OUT.length) await sync({ quiet: true });
+  const now = Date.now(), up = src.map(h => Object.assign(clone(h), { ap: r.to, updatedAt: now, updatedBy: curName(), updatedById: curId() }));
+  const res = await sendBulk(up, [], `Chuyển ${up.length} hộ: ${from || 'chưa rõ ấp'} → ${r.to}`);
+  renderAll(); toast(`Đã chuyển ${res.upd + res.add} hộ sang ${r.to}.`, 'ok');
+  /* tài khoản cán bộ được giao tên ấp cũ: đổi luôn sang ấp mới để cán bộ vẫn thấy các hộ này */
+  if (!from) return;
+  try {
+    await loadAccounts();
+    const us = (USERS || []).filter(u => (u.aps || []).includes(from));
+    if (us.length && await confirmDlg('Sửa phạm vi tài khoản', `<p>Có <b>${us.length}</b> tài khoản cán bộ đang được giao “${esc(from)}”: ${us.map(u => esc(u.name)).join(', ')}.</p><p>Đổi phạm vi các tài khoản này sang “<b>${esc(r.to)}</b>” để cán bộ vẫn thấy và nhập được các hộ vừa chuyển?</p>`, 'Đổi phạm vi')) {
+      await withBusy('Đang sửa tài khoản…', async () => { for (const u of us) await api('userSave', { user: { u: u.u, name: u.name, chucVu: u.chucVu, role: u.role, perms: u.perms, aps: [...new Set(u.aps.map(a => a === from ? r.to : a))], locked: !!u.locked } }); });
+      USERS = null; toast(`Đã đổi phạm vi ${us.length} tài khoản sang ${r.to}.`, 'ok');
+    }
+  } catch (e) { toast('Chưa sửa được tài khoản: ' + e.message, 'err'); }
 }
 async function addKemCat(ten, mau) {
   if (SE.dirty) { toast('Đang có thay đổi Cấu trúc chưa lưu — lưu hoặc hủy trước.', 'err'); return; }
@@ -3813,6 +3859,7 @@ async function onAct(act, el, e) {
     case 'kem-create': if (isAdmin()) await addKemCat(el.dataset.ten, el.dataset.mau); break;
     case 'ht-chot': if (isAdmin()) await chotNam(); break;
     case 'app-update': await doReload(); break;
+    case 'ap-move': if (isAdmin()) await apMove(el.dataset.ap || ''); break;
     case 'app-check': await checkUpdate(true); break;
     case 'ht-unchot': if (isAdmin()) await boChot(); break;
     case 'kem-later': PREFS.kemHint = Object.assign({}, PREFS.kemHint, { [el.dataset.k]: Date.now() }); savePrefs(); renderBanners(); break;
