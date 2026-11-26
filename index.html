@@ -741,6 +741,22 @@ textarea{resize:vertical}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #d6dbe2;background:#fff;border-radius:999px;padding:4px 10px;font-size:12.5px;cursor:pointer}
 .chip .dot{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.tk-box{border:2px solid var(--navy);border-radius:12px;padding:10px 14px 8px;background:#fff;margin:0 0 12px}
+.tk-title{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 10px;font-weight:700;font-size:15px;color:var(--navy);padding-bottom:6px;margin-bottom:4px;border-bottom:1px solid var(--line)}
+.tk-title span{font-weight:500;font-size:12.5px;color:var(--muted)}
+.tk-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0}
+.tk-row+.tk-row{border-top:1px dashed var(--line)}
+.tk-l{display:flex;align-items:center;gap:7px;font-size:14px;min-width:0}
+.tk-l small{color:var(--muted);font-weight:400}
+.tk-n{flex:none;min-width:58px;text-align:center;font-size:19px;line-height:1.25;padding:3px 8px;border:2px solid var(--c,var(--navy));border-radius:8px;color:var(--c,var(--navy));background:#fff;font-variant-numeric:tabular-nums}
+.tk-foot{font-size:12.5px;color:var(--muted);padding-top:6px;margin-top:2px;border-top:1px solid var(--line)}
+.tk-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin:0 0 6px}
+.tk-card{border:1px solid var(--line);border-top:4px solid var(--c);border-radius:12px;padding:6px 12px 8px;background:#fff}
+.tk-card .tk-main .tk-l{font-weight:700;font-size:15px}
+.tk-card .tk-main .tk-n{font-size:22px;background:var(--c);color:#fff;border-color:var(--c)}
+.tk-card .tk-sub .tk-l{padding-left:16px;font-size:13.5px}
+.tk-card .tk-sub .tk-n{font-size:17px;min-width:50px}
+.tk-nk{font-size:12px;color:var(--muted);text-align:right;margin-top:2px}
 .kdot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--c);margin-right:2px;flex:none}
 .kem-box{background:#fbf7ee;border:1px dashed var(--gold);border-radius:9px;padding:8px 10px}
 .kem-box small{color:var(--muted);font-weight:400}
@@ -1247,7 +1263,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.26c';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.26d';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -2455,19 +2471,30 @@ function renderStats() {
   const apRows = s.apF.length ? aps.filter(a => a && apInfoKV(a)) : [];
   /* Diện kèm theo: chú thích + số hộ chia theo phân loại chính */
   const kc = cats.filter(isKem);
-  const kemHTML = !kc.length ? '' : `<p class="muted small" style="margin:6px 0 0">${kc.map(k => `<b>${esc(loaiNgan(k))}</b>`).join(', ')}: diện <b>kèm theo</b> — một hộ có thể vừa thuộc phân loại chính vừa thuộc diện này, nên cột <b>Tổng hộ</b> chỉ tính mỗi hộ 1 lần.</p>` +
-    kc.map(k => { const arr = all.filter(h => inLoai(h, k)); if (!arr.length) return ''; const by = {}; arr.forEach(h => { const c = chinhOf(h); by[c] = (by[c] || 0) + 1; });
-      const items = Object.entries(by).sort((a, b) => b[1] - a[1]).map(([c, n]) => [c ? loaiTen(c) : `Chỉ thuộc diện ${loaiNgan(k).toLowerCase()}`, n]);
-      return `<div class="sec">${esc(loaiTen(k))}: ${arr.length} hộ, trong đó</div>${bars(items, loaiOf(k).mau)}`; }).join('');
+  const kemHTML = !kc.length ? '' : `<p class="muted small" style="margin:6px 0 0">${kc.map(k => `<b>${esc(loaiNgan(k))}</b>`).join(', ')}: diện <b>kèm theo</b> — một hộ có thể vừa thuộc phân loại chính vừa thuộc diện này, nên cột <b>Tổng hộ</b> chỉ tính mỗi hộ 1 lần.</p>`;
+  /* Khung thống kê chính: tổng hợp + từng phân loại chính (trong đó số hộ thuộc diện kèm theo, ví dụ bức xúc nhà ở) */
+  const so = k => { const t = loaiTen(k); return 'Số ' + t.charAt(0).toLowerCase() + t.slice(1); };
+  const soNgan = k => { const t = loaiNgan(k); return 'Số ' + t.charAt(0).toLowerCase() + t.slice(1); };
+  const nIn = (arr, k) => arr.filter(h => inLoai(h, k)).length;
+  const box = (k, n, cls) => `<div class="tk-row ${cls || ''}" style="--c:${loaiOf(k).mau}"><span class="tk-l"><i class="kdot"></i>${esc(cls === 'tk-sub' ? soNgan(k) : so(k))}</span><b class="tk-n">${fmt(n)}</b></div>`;
+  /* Khung riêng cho hộ nghèo, cận nghèo, khó khăn (theo mẫu); các phân loại khác chỉ nằm trong khung tổng hợp */
+  const cardK = cats.filter(k => { if (isKem(k)) return false; const t = norm(loaiTen(k)); return (['ngheo', 'canngheo', 'khokhan'].includes(k) || (/ngheo|kho khan/.test(t) && !/thoat/.test(t))) && (!LOAI[k] || !LOAI[k].an || S.households.some(h => h.loai === k)); });
+  const kemOnly = kc.map(k => ({ k, arr: all.filter(h => !cardK.includes(chinhOf(h)) && inLoai(h, k)) })).filter(x => x.arr.length);
+  const ngoai = cardK.map(k => loaiNgan(k).toLowerCase()).join(', ');
+  const tkHTML = `<div class="tk-box">
+      <div class="tk-title">${one ? `Tổng hợp ${esc(apName(ui.stAp))}` : 'Tổng hợp cả xã'}<span>${fmt(all.length)} hộ · ${fmt(nk(all))} nhân khẩu</span></div>
+      ${cats.map(k => box(k, nIn(all, k))).join('')}
+      <div class="tk-foot">Đã định vị trên bản đồ: <b>${fmt(all.filter(hasLoc).length)}/${fmt(all.length)}</b> hộ</div></div>
+    <div class="tk-cards">
+      ${cardK.map(k => { const arr = all.filter(h => h.loai === k); return `<div class="tk-card" style="--c:${loaiOf(k).mau}">${box(k, arr.length, 'tk-main')}${kc.map(x => box(x, nIn(arr, x), 'tk-sub')).join('')}<div class="tk-nk">${fmt(nk(arr))} nhân khẩu</div></div>`; }).join('')}
+      ${kemOnly.map(x => `<div class="tk-card" style="--c:${loaiOf(x.k).mau}"><div class="tk-row tk-main"><span class="tk-l"><i class="kdot"></i>Chỉ ${esc(loaiNgan(x.k).toLowerCase())}</span><b class="tk-n">${fmt(x.arr.length)}</b></div><div class="tk-nk" style="text-align:left">Hộ ${esc(loaiNgan(x.k).toLowerCase())} không thuộc ${esc(ngoai || 'các diện trên')} · ${fmt(nk(x.arr))} nhân khẩu</div></div>`).join('')}
+    </div>`;
   const dupN = isAdmin() ? dupPairs().length : 0;
   $('#stats').innerHTML = `
     ${dupN ? `<div class="banner warn" style="margin:0 0 10px"><div>Có <b>${dupN}</b> hộ có thể bị <b>nhập trùng</b> (cùng tên chủ hộ, cùng ${esc(apl())}: một bản phân loại chính, một bản chỉ là diện kèm theo) — số liệu đang bị đếm 2 lần.</div><button class="btn btn-sm" data-act="merge-dups">Xem và gộp</button></div>` : ''}
     ${one ? `<p class="hint" style="margin-top:0">Đang xem số liệu riêng <b>${esc(apName(ui.stAp))}</b>. Chọn <b>Cả xã</b> ở ô phía trên để xem toàn xã.</p>` : ''}
     ${!isAdmin() && myAps().length ? `<p class="hint" style="margin-top:0">Số liệu trong phạm vi được giao: <b>${esc(scopeText(myAps()))}</b>.</p>` : ''}
-    <div class="kpis">
-      ${cats.map((k, i) => { const arr = all.filter(h => inLoai(h, k)); return `<div class="kpi" style="--c:${loaiOf(k).mau}"><div class="v">${fmt(arr.length)}</div><div class="l">${esc(loaiTen(k))}${arr.length ? ` · ${fmt(nk(arr))} nhân khẩu` : ''}</div></div>`; }).join('')}
-      <div class="kpi"><div class="v">${fmt(tot.dv)}<span style="font-size:15px;color:var(--muted)">/${fmt(tot.n)}</span></div><div class="l">Hộ đã định vị trên bản đồ</div></div>
-    </div>
+    ${tkHTML}
     <div class="sec">${one ? `Tổng hợp ${esc(apName(ui.stAp))}` : `Theo ${esc(apl())}`}</div>
     <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>${esc(apL())}</th><th class="num">Tổng hộ</th>${cats.map(k => `<th class="num">${esc(loaiNgan(k))}</th>`).join('')}<th class="num">Nhân khẩu</th><th class="num">Đã định vị</th></tr></thead>
     <tbody>${rows.map(r => `<tr><td>${esc(r.a)}</td><td class="num"><b>${r.n}</b></td>${r.c.map(x => `<td class="num">${x}</td>`).join('')}<td class="num">${fmt(r.nk)}</td><td class="num">${r.dv}</td></tr>`).join('')}</tbody>
