@@ -758,6 +758,10 @@ textarea{resize:vertical}
 .tk-card .tk-sub .tk-n{font-size:17px;min-width:50px}
 .tk-nk{font-size:12px;color:var(--muted);text-align:right;margin-top:2px}
 .tk-head{font-size:13.5px;color:var(--muted);margin:0 0 10px}
+.tk-ysec{margin:10px 0 2px;padding-top:8px;border-top:2px solid var(--line);font-weight:700;font-size:13.5px;color:#6d4c41;text-transform:uppercase;letter-spacing:.02em}
+.tk-card .tk-year .tk-l{font-size:14px;font-weight:600}
+.tk-card .tk-year .tk-n{--c:#6d4c41;font-size:16px}
+.tk-yd{font-size:12px;color:var(--muted);padding:0 0 4px 17px;margin-top:-2px}
 .tk-n.tk-money{min-width:0;white-space:nowrap;font-size:17px}
 .tk-card .tk-main .tk-n.tk-money{font-size:19px}
 .tk-card .tk-sub .tk-n.tk-money{font-size:15px}
@@ -1272,7 +1276,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.26f';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.26g';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -2520,13 +2524,22 @@ function renderStats() {
   const gHint = !isAdmin() || groupK.length ? '' : gMain
     ? `<div class="tk-card tk-group tk-hint"><b>${esc(loaiTen(gMain))}</b> đang là phân loại riêng, nên chưa biết hộ chính sách nào là hộ nghèo, cận nghèo hay bức xúc nhà ở. Chuyển thành <b>diện kèm theo</b>: khi nhập hộ chỉ cần đánh dấu thêm ô “${esc(loaiTen(gMain))}”.<div class="mt8"><button class="btn btn-sm btn-navy" data-act="kem-convert" data-k="${esc(gMain)}">Chuyển thành diện kèm theo</button></div></div>`
     : `<div class="tk-card tk-group tk-hint">Chưa có diện <b>Gia đình chính sách</b>. Tạo diện này để khi nhập hộ đánh dấu thêm ô “Gia đình chính sách” (hộ vẫn giữ phân loại nghèo, cận nghèo…), rồi thống kê xem hộ chính sách nào là hộ nghèo, cận nghèo, bức xúc nhà ở.<div class="mt8"><button class="btn btn-sm btn-navy" data-act="kem-create" data-ten="Gia đình chính sách" data-mau="#1565c0">Tạo diện “Gia đình chính sách”</button></div></div>`;
-  const htAll = all.flatMap(h => h.hoTro), htSum = a => a.reduce((t, x) => t + (x.giaTri || 0), 0);
+  const htAll = all.flatMap(h => h.hoTro).filter(htOpen), htSum = a => a.reduce((t, x) => t + (x.giaTri || 0), 0);
+  const cDen = chotDen(), namMo = cDen ? +cDen.slice(0, 4) + 1 : 0, chs = chotList(), apK = one ? (ui.stAp || '') : null;
+  const fmtTr = v => v >= 1e6 ? (Math.round(v / 1e5) / 10).toLocaleString('vi-VN') + ' tr' : fmt(v) + ' đ';
+  const yRow = r => { const v = apK == null ? r : ((r.ap || {})[apK] || { tong: 0, luot: 0, ht: {} }), ht = v.ht || {};
+    const live = all.reduce((t, h) => t + h.hoTro.filter(x => String(x.ngay || '').slice(0, 4) === String(r.nam)).reduce((u, x) => u + (x.giaTri || 0), 0), 0);
+    const ds = [...HT_LOAI.filter(([k]) => ht[k]).map(([k, t]) => `${t} ${fmtTr(ht[k])}`), ...(ht[''] ? [`Chưa chọn ${fmtTr(ht[''])}`] : [])];
+    return `<div class="tk-row tk-year"><span class="tk-l"><i class="kdot" style="--c:#8d6e63"></i>Năm ${r.nam} <small>${fmt(v.luot || 0)} lượt</small></span><b class="tk-n tk-money">${fmt(v.tong || 0)} đ</b></div>${ds.length || live !== (v.tong || 0) ? `<div class="tk-yd">${esc(ds.join(' · '))}${live !== (v.tong || 0) && apK == null ? `${ds.length ? '<br>' : ''}Hiện có ${fmt(live)} đ (có lượt nhập/sửa sau khi chốt)` : ''}</div>` : ''}`; };
+  const yHTML = `<div class="tk-ysec">Số tiền hỗ trợ các năm đã chốt</div>${chs.length ? chs.slice(0, 4).map(yRow).join('') : `<p class="muted small" style="margin:4px 0">Chưa chốt năm nào. Cuối năm, quản trị viên bấm <b>Chốt năm</b>: số tiền ở trên được đưa xuống đây, các dòng ở trên tính lại từ đầu.</p>`}
+      ${isAdmin() ? `<div class="row gap wrap mt8"><button type="button" class="btn btn-sm btn-navy" data-act="ht-chot">${I('lock', 14)} Chốt năm</button>${chs.length ? '<button type="button" class="btn btn-sm btn-ghost" data-act="ht-unchot">Hủy lần chốt gần nhất</button>' : ''}</div>` : ''}`;
   const mrow = (label, c, a, cls) => `<div class="tk-row ${cls}" style="--c:${c}"><span class="tk-l"><i class="kdot"></i>${esc(label)} <small>${fmt(a.length)} lượt</small></span><b class="tk-n tk-money">${fmt(htSum(a))} đ</b></div>`;
   const htUn = htAll.filter(x => !htOf(x));
-  const htCard = SECH('hotro') ? '' : `<div class="tk-card tk-group" style="--c:#b8860b">${mrow('Tổng số tiền hỗ trợ', '#b8860b', htAll, 'tk-main')}
+  const htCard = SECH('hotro') ? '' : `<div class="tk-card tk-group" style="--c:#b8860b">${mrow(`Tổng số tiền hỗ trợ${namMo ? ' năm ' + namMo : ''}`, '#b8860b', htAll, 'tk-main')}
       ${HT_LOAI.map(([k, t, c]) => mrow(t, c, htAll.filter(x => htOf(x) === k), 'tk-sub')).join('')}
       ${htUn.length ? mrow('Chưa chọn hình thức', '#90a4ae', htUn, 'tk-sub') : ''}
-      <div class="tk-nk">${fmt(all.filter(h => h.hoTro.length).length)} hộ đã được hỗ trợ${htUn.length && can('edit') ? ' · lượt “chưa chọn hình thức”: mở hộ → Sửa → chọn ô Hình thức' : ''}</div></div>`;
+      <div class="tk-nk">${fmt(all.filter(h => h.hoTro.some(htOpen)).length)} hộ được hỗ trợ${namMo ? ` từ 01/01/${namMo}` : ''}${htUn.length && can('edit') ? ' · lượt “chưa chọn hình thức”: mở hộ → Sửa → chọn ô Hình thức' : ''}</div>
+      ${yHTML}</div>`;
   const tkHTML = `<div class="tk-head">${one ? esc(apName(ui.stAp)) : 'Cả xã'}: <b>${fmt(all.length)}</b> hộ · <b>${fmt(nk(all))}</b> nhân khẩu · đã định vị <b>${fmt(all.filter(hasLoc).length)}/${fmt(all.length)}</b> hộ</div>
     <div class="tk-cards">
       ${cardK.map(mainCard).join('')}
@@ -3104,6 +3117,53 @@ async function quickSchema(sc, okMsg) {
   S.srv = r.config; S.config = mergeConfig(S.srv); S.rev = null;
   S.households = S.households.map(sanitizeHH); saveCache(); if (SE.s) SE.s = clone(SCHEMA());
   renderAll(); if (okMsg) toast(okMsg, 'ok'); return true;
+}
+/* ---------- Chốt số tiền hỗ trợ theo năm ----------
+   Lưu trong cấu trúc (schema.ui.chotHT): tối đa 4 năm gần nhất, mỗi năm: tổng tiền, số lượt, theo hình thức, theo ấp.
+   Khung "Tổng số tiền hỗ trợ" chỉ tính các lượt có ngày sau ngày chốt cuối cùng. Lượt hỗ trợ trong từng hộ không bị xóa. */
+const chotList = () => { const a = SCHEMA().ui.chotHT; return Array.isArray(a) ? a.filter(r => r && +r.nam).sort((x, y) => y.nam - x.nam) : []; };
+const chotDen = () => { const a = chotList(); return a.length ? a.map(r => r.den || r.nam + '-12-31').sort().pop() : ''; };
+const htOpen = x => { const c = chotDen(); return !c || !x.ngay || String(x.ngay) > c; };
+function chotTinh(y) {
+  const c = chotDen(), den = `${y}-12-31`, rows = {}; let noDate = 0;
+  for (const h of S.households) for (const x of h.hoTro) {
+    const d = String(x.ngay || ''); if (!d) { noDate++; continue; } if (d > den || (c && d <= c)) continue;
+    const ny = +d.slice(0, 4); if (!ny) continue;
+    const r = rows[ny] = rows[ny] || { nam: ny, tong: 0, luot: 0, ht: {}, ap: {} }, v = x.giaTri || 0, k = htOf(x) || '';
+    r.tong += v; r.luot++; r.ht[k] = (r.ht[k] || 0) + v;
+    const a = r.ap[h.ap || ''] = r.ap[h.ap || ''] || { tong: 0, luot: 0, ht: {} }; a.tong += v; a.luot++; a.ht[k] = (a.ht[k] || 0) + v;
+  }
+  const yrs = Object.keys(rows).map(Number), from = c ? +c.slice(0, 4) + 1 : Math.max(y - 3, Math.min(y, ...yrs));
+  const out = []; for (let n = y; n >= from; n--) out.push(Object.assign(rows[n] || { nam: n, tong: 0, luot: 0, ht: {}, ap: {} }, { den: `${n}-12-31` }));
+  return { out, older: yrs.filter(n => n < from), noDate };
+}
+async function chotNam() {
+  if (SE.dirty) { toast('Đang có thay đổi Cấu trúc chưa lưu — lưu hoặc hủy trước.', 'err'); return; }
+  const c = chotDen(), y0 = c ? +c.slice(0, 4) + 1 : 0, now = new Date(), cy = now.getFullYear();
+  if (y0 > cy) { toast(`Đã chốt đến hết năm ${y0 - 1}. Sang năm ${y0} mới chốt tiếp được.`, 'err'); return; }
+  const years = []; for (let n = cy; n >= (y0 || cy - 3); n--) years.push(n);
+  let def = now.getMonth() >= 9 ? cy : cy - 1; if (!years.includes(def)) def = years[years.length - 1];
+  const r1 = await formDialog('Chốt số tiền hỗ trợ', () => `<p>Chốt số liệu hỗ trợ <b>đến hết ngày 31/12</b> của năm:</p><label class="f"><span>Năm chốt</span><select name="y">${years.map(n => `<option ${n === def ? 'selected' : ''}>${n}</option>`).join('')}</select></label>${c ? `<p class="muted small">Lần chốt trước: đến hết năm ${y0 - 1}.</p>` : ''}`, 'Tiếp tục', () => '');
+  if (!r1) return;
+  const y = +r1.y, t = chotTinh(y), keep = [...t.out, ...chotList()].sort((a, b) => b.nam - a.nam), drop = keep.slice(4).map(r => r.nam);
+  const ok = await confirmDlg(`Chốt năm ${y}`, `<p>Số tiền hỗ trợ đến hết <b>31/12/${y}</b> (cả xã):</p>
+    <table class="tbl"><tbody>${t.out.map(r => `<tr><td>Năm ${r.nam}</td><td class="num"><b>${fmt(r.tong)} đ</b></td><td class="num">${fmt(r.luot)} lượt</td></tr>`).join('')}</tbody></table>
+    <p>Sau khi chốt: các số tiền này được đưa xuống bảng <b>các năm đã chốt</b>; khung trên tính lại từ đầu (từ 01/01/${y + 1}).${drop.length ? ` Bảng chỉ giữ 4 năm gần nhất nên <b>năm ${drop.join(', ')}</b> bị bỏ khỏi bảng.` : ''}</p>
+    <p class="muted small">Các lượt hỗ trợ vẫn lưu nguyên trong từng hộ (xem ở trang chi tiết hộ, file Excel).${t.noDate ? ` Có ${t.noDate} lượt chưa ghi ngày — không tính vào năm chốt, vẫn nằm ở khung trên.` : ''}${t.older.length ? ` Lượt hỗ trợ trước năm ${t.out[t.out.length - 1].nam} không đưa vào bảng.` : ''}</p>`, 'Chốt');
+  if (!ok) return;
+  const at = Date.now(), sc = clone(SCHEMA());
+  sc.ui.chotHT = keep.slice(0, 4).map(r => r.at ? r : Object.assign({}, r, { at, by: curName() }));
+  await quickSchema(sc, `Đã chốt số tiền hỗ trợ đến hết năm ${y}.`);
+  if (!chotList().some(r => r.nam === y)) await dialog('Máy chủ chưa lưu được', '<p>Máy chủ dữ liệu chưa lưu được số liệu chốt năm. Cần cập nhật mã máy chủ (Google Apps Script).</p>', [{ label: 'Đã hiểu', cls: 'btn-navy' }]);
+}
+async function boChot() {
+  if (SE.dirty) { toast('Đang có thay đổi Cấu trúc chưa lưu — lưu hoặc hủy trước.', 'err'); return; }
+  const a = chotList(); if (!a.length) return;
+  const at = Math.max(...a.map(r => r.at || 0)), rm = a.filter(r => (r.at || 0) === at);
+  const ok = await confirmDlg('Hủy lần chốt gần nhất', `<p>Hủy chốt <b>năm ${rm.map(r => r.nam).join(', ')}</b>? Số tiền các năm này quay lại khung trên để chốt lại.</p><p class="muted small">Năm đã bị bỏ khỏi bảng ở lần chốt đó không hiện lại.</p>`, 'Hủy chốt', true);
+  if (!ok) return;
+  const sc = clone(SCHEMA()); sc.ui.chotHT = a.filter(r => (r.at || 0) !== at);
+  await quickSchema(sc, 'Đã hủy lần chốt gần nhất.');
 }
 async function addKemCat(ten, mau) {
   if (SE.dirty) { toast('Đang có thay đổi Cấu trúc chưa lưu — lưu hoặc hủy trước.', 'err'); return; }
@@ -3723,6 +3783,8 @@ async function onAct(act, el, e) {
     case 'merge-pick': if (isAdmin()) await mergePick(id); break;
     case 'kem-convert': if (isAdmin()) await makeKem(el.dataset.k); break;
     case 'kem-create': if (isAdmin()) await addKemCat(el.dataset.ten, el.dataset.mau); break;
+    case 'ht-chot': if (isAdmin()) await chotNam(); break;
+    case 'ht-unchot': if (isAdmin()) await boChot(); break;
     case 'kem-later': PREFS.kemHint = Object.assign({}, PREFS.kemHint, { [el.dataset.k]: Date.now() }); savePrefs(); renderBanners(); break;
     case 'template': if (isAdmin()) await exportTemplate(); break;
     case 'pick-json': $('#fileJson').click(); break;
