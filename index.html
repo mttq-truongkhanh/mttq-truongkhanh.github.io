@@ -845,6 +845,15 @@ textarea{resize:vertical}
 .ds-sel label{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:13.5px}
 .ds-go{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;border:0;border-radius:999px;background:#0d0d0d;color:#fff;font:inherit;font-weight:700;font-size:15px;cursor:pointer}
 .ds-h{font-size:17px;margin:22px 0 10px;letter-spacing:.01em;color:var(--ink)}
+button.ds-tile{font:inherit;color:inherit;text-align:left;cursor:pointer;width:100%}
+button.ds-tile:hover{border-color:var(--c);background:#fbfcfe}
+.ds-tl .ic:last-child:not(:first-child){margin-left:auto;color:#9aa5b4}
+#lfBar{display:flex;align-items:center;gap:8px;margin:0 0 10px;padding:0 0 10px;border-bottom:1px solid var(--line)}
+#lfBar[hidden]{display:none}
+.lf-t{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.3}
+.lf-t b{font-size:15px}
+.lf-t small{color:var(--muted);font-size:12.5px}
+@media (min-width:861px){ #lfBar .lf-map{display:none} }
 .ds-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .ds-tile{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .ds-tl{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px}
@@ -1041,7 +1050,7 @@ code{background:var(--soft);padding:1px 5px;border-radius:5px;font-size:12.5px;w
   .pick-banner{top:auto;bottom:10px;left:10px;right:10px;transform:none;max-width:none}
   .pick-banner span{flex:1}
   body[data-view=schema] #mapWrap{display:none}
-  body.q-focus #mapWrap{display:none}
+  body.q-focus #mapWrap,body.list-full #mapWrap{display:none}
   body.q-focus #addBtns,body.q-focus #banners,body.q-focus #fMoreBtn,body.q-focus #fExt{display:none!important}
 }
 @media (max-width:520px){
@@ -1144,8 +1153,8 @@ input[type=color]{cursor:pointer}
     </div>
   </div>
   <nav class="tabs" aria-label="Chức năng">
-    <button class="tab active" data-tab="list"><i data-ic="list"></i><span class="lbl">Danh sách hộ</span></button>
-    <button class="tab" data-tab="stats"><i data-ic="chart"></i><span class="lbl">Thống kê</span></button>
+    <button class="tab active" data-tab="stats"><i data-ic="chart"></i><span class="lbl">Thống kê</span></button>
+    <button class="tab" data-tab="list"><i data-ic="list"></i><span class="lbl">Danh sách hộ</span></button>
     <button class="tab" data-tab="data"><i data-ic="db"></i><span class="lbl">Dữ liệu</span></button>
     <button class="tab" data-tab="accounts" id="tabAccounts" hidden><i data-ic="users"></i><span class="lbl">Tài khoản</span></button>
     <button class="tab" data-tab="schema" id="tabSchema" hidden><i data-ic="layers"></i><span class="lbl">Cấu trúc</span></button>
@@ -1158,6 +1167,7 @@ input[type=color]{cursor:pointer}
   <aside id="panel">
     <section class="view active" id="v-list">
       <div class="view-head">
+        <div id="lfBar" hidden></div>
         <div class="search"><i data-ic="search"></i><input id="q" type="search" placeholder="Tìm chủ hộ, thành viên, mã hộ, địa chỉ, CCCD…" autocomplete="off"></div>
         <div class="row gap mt8">
           <select id="fAp" class="grow" aria-label="Lọc theo ấp"></select>
@@ -1368,7 +1378,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.27d';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.27e';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -2176,19 +2186,23 @@ let navIgnore = false;
 const navKeep = () => { try { history.pushState({ hn: 'sub' }, ''); } catch (e) {} };
 function navSync(v) {
   try {
-    const sub = !!(history.state && history.state.hn === 'sub');
-    if (v === 'list') { if (sub && !navIgnore) { navIgnore = true; history.back(); } }
+    const sub = !!(history.state && history.state.hn === 'sub'), base = v === 'stats' || (v === 'list' && !ui.fromStats);
+    if (base) { if (sub && !navIgnore) { navIgnore = true; history.back(); } }
     else if (!sub && !navIgnore) navKeep();
   } catch (e) {}
 }
 addEventListener('popstate', () => {
-  if (navIgnore) { navIgnore = false; if (ME && ui.view !== 'list') navKeep(); return; }
+  if (navIgnore) { navIgnore = false; if (ME && !(ui.view === 'stats' || (ui.view === 'list' && !ui.fromStats))) navKeep(); return; }
   if (!ME) return;
   if (!$('#dlg').hidden) { navKeep(); return; }                 /* đang mở hộp thoại: giữ nguyên */
   if (ui.pick) { navKeep(); stopPick(); return; }               /* đang chọn vị trí trên bản đồ */
   if (ui.view === 'edit') { navKeep(); cancelEdit(); return; }  /* đang nhập/sửa hộ: hỏi trước khi bỏ */
-  if (ui.view !== 'list') { ui.selId = null; highlight(null); showView('list'); renderList(); }
+  if (ui.view === 'list' && ui.fromStats) { leaveListFull(); showView('stats'); renderStats(); return; }
+  if (ui.view === 'detail') { ui.selId = null; highlight(null); showView('list'); renderList(); return; }
+  if (ui.view !== 'list' && ui.view !== 'stats') { showView('stats'); renderStats(); }
 });
+/* Danh sách mở từ ô số liệu ở Thống kê (cả trang, có nút quay lại Thống kê) */
+function leaveListFull() { ui.fromStats = false; document.body.classList.remove('list-full'); ui.f.loai = new Set(); ui.f.ap = ''; setTimeout(() => map.invalidateSize(), 80); }
 function showView(v) {
   navSync(v);
   ui.view = v; document.body.dataset.view = v;
@@ -2308,6 +2322,9 @@ function renderList() {
   if (!html && S.households.length) html = emptyHelp();
   $('#list').innerHTML = html || `<div class="empty">${S.households.length ? 'Không có hộ nào khớp bộ lọc.' : isAdmin() ? 'Chưa có hộ nào. Bấm <b>Thêm hộ</b>, hoặc vào mục <b>Dữ liệu</b> để nhập từ Excel / chuyển dữ liệu phiên bản cũ.' : can('add') ? 'Chưa có hộ nào trong phạm vi được giao. Bấm <b>Thêm hộ</b> để nhập.' : 'Chưa có hộ nào trong phạm vi được giao.'}</div>`;
   const nk = list.reduce((s, h) => s + h.thanhVien.length, 0), noLoc = list.filter(h => !hasLoc(h)).length;
+  { const lb = $('#lfBar'); lb.hidden = !ui.fromStats;
+    if (ui.fromStats) { const ten = ui.f.loai.size ? [...ui.f.loai].map(loaiTen).join(', ') : 'Tất cả hộ', noi = ui.f.ap ? (ui.f.ap === '__none' ? 'Chưa rõ ' + apl() : ui.f.ap) : (!isAdmin() && myAps().length ? 'Phạm vi được giao' : 'Toàn xã');
+      lb.innerHTML = `<button type="button" class="btn btn-sm btn-ghost" data-act="lf-back">${I('back', 15)}Thống kê</button><div class="lf-t"><b>Danh sách ${esc(ten.charAt(0).toLowerCase() + ten.slice(1))}</b><small>${esc(noi)} · ${fmt(list.length)} hộ · ${fmt(nk)} nhân khẩu</small></div><button type="button" class="btn btn-sm lf-map" data-act="lf-map">${I('map', 15)}${document.body.classList.contains('list-full') ? 'Xem bản đồ' : 'Ẩn bản đồ'}</button>`; } }
   $('#listFoot').innerHTML = `<span>Hiển thị ${list.length}/${S.households.length} hộ · ${fmt(nk)} nhân khẩu · ${noLoc} hộ chưa định vị</span><button class="linkbtn sync-btn" data-act="sync-now" title="Tải số liệu mới nhất">⟳ <span id="syncInfo"></span></button>`; syncUI();
   refreshMarkers(list); renderLegend(list); renderBanners();
 }
@@ -2636,18 +2653,21 @@ function dienKeys() {
   };
 }
 const nkOf = arr => arr.reduce((t, h) => t + h.thanhVien.length, 0);
-function dsTiles(arr) {
-  const D = dienKeys(), one = (label, ic, c, ks) => {
+function dsTiles(arr, apKey) {
+  const D = dienKeys(), apA = apKey === undefined ? '' : ` data-ap="${esc(apKey === '' ? '__none' : apKey)}"`;
+  const btn = (dien, label, ic, c, body) => `<button type="button" class="ds-tile" style="--c:${c}" data-act="st-tile" data-dien="${dien}"${apA} title="Xem danh sách ${esc(label.toLowerCase())}"><div class="ds-tl">${I(ic, 18)}<span>${label}</span>${I('chevron', 16)}</div>${body}</button>`;
+  const one = (dien, label, ic, c) => {
+    const ks = D[dien];
     if (!ks.length) return `<div class="ds-tile" style="--c:${c}"><div class="ds-tl">${I(ic, 18)}<span>${label}</span></div><div class="ds-tv">—</div><div class="ds-ts">Chưa có diện này</div></div>`;
     const a = arr.filter(h => ks.some(k => inLoai(h, k)));
-    return `<div class="ds-tile" style="--c:${c}"><div class="ds-tl">${I(ic, 18)}<span>${label}</span></div><div class="ds-tv">${fmt(a.length)}</div><div class="ds-ts">${fmt(nkOf(a))} nhân khẩu</div></div>`;
+    return btn(dien, label, ic, c, `<div class="ds-tv">${fmt(a.length)}</div><div class="ds-ts">${fmt(nkOf(a))} nhân khẩu</div>`);
   };
   return `<div class="ds-tiles">
-    <div class="ds-tile" style="--c:#1d4ed8"><div class="ds-tl">${I('home', 18)}<span>Tổng số hộ</span></div><div class="ds-tv">${fmt(arr.length)}</div></div>
-    <div class="ds-tile" style="--c:#1d4ed8"><div class="ds-tl">${I('users', 18)}<span>Tổng nhân khẩu</span></div><div class="ds-tv">${fmt(nkOf(arr))}</div></div>
-    ${one('Hộ nghèo', 'homeplus', '#dc2626', D.ngheo)}${one('Hộ cận nghèo', 'home', '#d97706', D.canngheo)}
-    ${one('Hộ khó khăn', 'heart', '#15803d', D.khokhan)}${one('Hộ chính sách', 'shieldok', '#7c3aed', D.chinhsach)}
-    ${one('Hộ bức xúc nhà ở', 'home', '#0e7490', D.bucxuc)}</div>`;
+    ${btn('', 'Tổng số hộ', 'home', '#1d4ed8', `<div class="ds-tv">${fmt(arr.length)}</div>`)}
+    ${btn('', 'Tổng nhân khẩu', 'users', '#1d4ed8', `<div class="ds-tv">${fmt(nkOf(arr))}</div>`)}
+    ${one('ngheo', 'Hộ nghèo', 'homeplus', '#dc2626')}${one('canngheo', 'Hộ cận nghèo', 'home', '#d97706')}
+    ${one('khokhan', 'Hộ khó khăn', 'heart', '#15803d')}${one('chinhsach', 'Hộ chính sách', 'shieldok', '#7c3aed')}
+    ${one('bucxuc', 'Hộ bức xúc nhà ở', 'home', '#0e7490')}</div>`;
 }
 const htSumOf = a => a.reduce((t, x) => t + (x.giaTri || 0), 0);
 const htNamLabel = () => { const c = chotDen(); return c ? 'năm ' + (+c.slice(0, 4) + 1) : ''; };
@@ -2689,7 +2709,7 @@ function renderStats() {
   const secI = `<h3 class="ds-h" id="dsI">I. TỔNG QUAN AN SINH ${scoped ? '— ' + esc(scopeText(myAps()).toUpperCase()) : 'TOÀN XÃ'}</h3>
     ${dupN ? `<div class="banner warn" style="margin:0 0 10px"><div>Có <b>${dupN}</b> hộ có thể bị <b>nhập trùng</b> — số liệu đang bị đếm 2 lần.</div><button class="btn btn-sm" data-act="merge-dups">Xem và gộp</button></div>` : ''}
     ${dsTiles(all)}
-    <p class="ds-note">Số liệu tổng hợp ${scoped ? 'trong phạm vi được giao' : 'toàn xã'}, tự động cộng từ dữ liệu các ${esc(apl())}; loại trừ hộ trùng lặp (một hộ thuộc nhiều diện chỉ tính 1 lần vào tổng số hộ). Đã định vị trên bản đồ: ${fmt(all.filter(hasLoc).length)}/${fmt(all.length)} hộ.</p>${gHint}
+    <p class="ds-note">Bấm vào ô số liệu để xem danh sách hộ. Số liệu tổng hợp ${scoped ? 'trong phạm vi được giao' : 'toàn xã'}, tự động cộng từ dữ liệu các ${esc(apl())}; loại trừ hộ trùng lặp (một hộ thuộc nhiều diện chỉ tính 1 lần vào tổng số hộ). Đã định vị trên bản đồ: ${fmt(all.filter(hasLoc).length)}/${fmt(all.length)} hộ.</p>${gHint}
     <details class="ds-more"><summary>Xem chi tiết từng diện: trong đó bức xúc nhà ở, gia đình chính sách…</summary>
       <div class="tk-cards">${cardK.map(mainCard).join('')}${groupK.map(groupCard).join('')}
       ${kemOnly.map(x => `<div class="tk-card" style="--c:${loaiOf(x.k).mau}">${row(x.k, x.arr.length, 'tk-main', `Chỉ ${lc(x.k)}`)}<div class="tk-nk" style="text-align:left">Hộ ${esc(lc(x.k))} không thuộc ${esc(ngoai || 'các diện trên')} · ${fmt(nk(x.arr))} nhân khẩu</div></div>`).join('')}</div></details>`;
@@ -2718,7 +2738,7 @@ function renderStats() {
   const apd = sel == null ? '' : `<div class="ds-apd" id="dsApd">
       <div class="ds-apdh"><h3>CHI TIẾT ${esc(apName(sel).toUpperCase())}</h3><span class="ds-badge">Giao diện quản lý cấp ${esc(apl())}</span></div>
       ${odd ? `<div class="ap-warn">${!sel ? `Các hộ này chưa chọn ${esc(apl())}.` : `Tên ${esc(apl())} này không có trong danh sách ${esc(apl())} (mục Cài đặt) — có thể là tên cũ.`}${isAdmin() && apList0.length ? ` <button type="button" class="btn btn-sm btn-navy" data-act="ap-move" data-ap="${esc(sel)}">Chuyển ${fmt(selArr.length)} hộ sang ${esc(apl())}…</button>` : ''}</div>` : ''}
-      <h4>1. Thống kê hộ dân</h4>${dsTiles(selArr)}
+      <h4>1. Thống kê hộ dân</h4>${dsTiles(selArr, sel)}
       ${SECH('hotro') ? '' : `<h4>2. Nguồn lực vận động${namL ? ' ' + namL : ''}</h4>
       <table class="tbl ds-t"><thead><tr><th>Nội dung</th><th class="num">Số lượng</th><th class="num">Kinh phí (đồng)</th></tr></thead><tbody>
         ${HT_LOAI.map(([k, t, c, u]) => { const x = selHT.filter(y => htOf(y) === k); return `<tr><td>${t}</td><td class="num">${fmt(x.length)} ${u}</td><td class="num">${fmt(htSumOf(x))}</td></tr>`; }).join('')}
@@ -3143,7 +3163,7 @@ async function buildWorkbook(list, { template = false } = {}) {
   } else {
     const cats = [...new Set([...Object.keys(LOAI).filter(k => !LOAI[k].an), ...list.map(h => h.loai)])];
     const nkA = arr => arr.reduce((s, h) => s + h.thanhVien.length, 0);
-    const ws4 = wb.addWorksheet('ThongKe'); ws4.columns = [[apL(), 18], ['Tổng số hộ', 10], ['Tổng nhân khẩu', 11], ...cats.flatMap(k => [[`${loaiTen(k)} (số hộ)`, 12], [`${loaiTen(k)} (nhân khẩu)`, 12]]), ['Đã định vị', 10]].map(([h, w]) => ({ header: h, width: w }));
+    const ws4 = wb.addWorksheet('ThongKe'); ws4.orderNo = -1; ws4.columns = [[apL(), 18], ['Tổng số hộ', 10], ['Tổng nhân khẩu', 11], ...cats.flatMap(k => [[`${loaiTen(k)} (số hộ)`, 12], [`${loaiTen(k)} (nhân khẩu)`, 12]]), ['Đã định vị', 10]].map(([h, w]) => ({ header: h, width: w }));
     const aps = [...new Set([...apOrder(), ...list.map(h => h.ap || '')])], t = new Array(cats.length * 2 + 3).fill(0), rx = [];
     aps.forEach(a => { const arr = list.filter(h => (h.ap || '') === a); if (!arr.length) return; const v = [arr.length, nkA(arr), ...cats.flatMap(k => { const b = arr.filter(h => inLoai(h, k)); return [b.length, nkA(b)]; }), arr.filter(hasLoc).length]; v.forEach((x, i) => t[i] += x); rx.push([a || `Chưa rõ ${apl()}`, ...v]); });
     const tr = ws4.addRow([xaTong(), ...t]); rx.forEach(r => ws4.addRow(r));
@@ -3969,7 +3989,7 @@ function startApp() {
   applyRoleUI(); lastAct = Date.now();
   if (!started) { started = true; setBase(S.config.base); map.setView(S.config.center, S.config.zoom); }
   setTimeout(() => map.invalidateSize(), 60);
-  ui.selId = null; ui.f.ap = ''; showView('list'); renderAll();
+  ui.selId = null; ui.f.ap = ''; ui.fromStats = false; document.body.classList.remove('list-full'); showView('stats'); renderAll();
   if (S.households.some(hasLoc)) setTimeout(fitAll, 250);
   setTimeout(() => checkUpdate(), 5000);
 }
@@ -4007,7 +4027,7 @@ async function onAct(act, el, e) {
     case 'new-gps': enterEdit(null, { gps: true }); break;
     case 'edit': enterEdit(byId(id)); break;
     case 'edit-gps': enterEdit(byId(id), { gps: true }); break;
-    case 'fly': { const h = byId(id); if (h && hasLoc(h)) { map.flyTo([h.lat, h.lng], 18, { duration: .6 }); setTimeout(() => markers.get(id)?.openPopup(), 650); } break; }
+    case 'fly': { document.body.classList.remove('list-full'); map.invalidateSize(); const h = byId(id); if (h && hasLoc(h)) { map.flyTo([h.lat, h.lng], 18, { duration: .6 }); setTimeout(() => markers.get(id)?.openPopup(), 650); } break; }
     case 'delete': {
       if (!can('delete')) { toast('Chỉ quản trị viên được xóa hộ.', 'err'); break; }
       const h = byId(id); if (!h) break;
@@ -4052,6 +4072,15 @@ async function onAct(act, el, e) {
     case 'ht-chot': if (isAdmin()) await chotNam(); break;
     case 'app-update': await doReload(); break;
     case 'ap-move': if (isAdmin()) await apMove(el.dataset.ap || ''); break;
+    case 'st-tile': {
+      const D = dienKeys(), dk = el.dataset.dien || '', ap = el.dataset.ap;
+      ui.f.q = ''; $('#q').value = ''; ui.f.loai = new Set(dk ? (D[dk] || []) : []); ui.f.noLoc = false; if ($('#fNoLoc')) $('#fNoLoc').checked = false; ui.f.x = {}; ui.f.ap = ap == null ? '' : ap;
+      ui.fromStats = true; ui.selId = null; document.body.classList.add('list-full'); showView('list'); renderAll();
+      setTimeout(() => { const vb = $('#list').parentElement; if (vb) vb.scrollTop = 0; }, 0);
+      break;
+    }
+    case 'lf-back': leaveListFull(); showView('stats'); renderStats(); break;
+    case 'lf-map': document.body.classList.toggle('list-full'); setTimeout(() => map.invalidateSize(), 80); renderList(); break;
     case 'f-more': ui.fMore = !ui.fMore; renderExtFilters(); break;
     case 'f-clear': ui.f.ap = ''; ui.f.loai = new Set(); ui.f.noLoc = false; ui.f.x = {}; if ($('#fNoLoc')) $('#fNoLoc').checked = false; renderList(); break;
     case 'st-ap': ui.stApSel = el.dataset.ap || ''; renderStats(); setTimeout(() => { const d = $('#dsApd'); if (d) d.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30); break;
@@ -4114,6 +4143,7 @@ document.addEventListener('click', e => {
     const t = tab.dataset.tab; if (ui.view === 'edit') { toast('Hãy Lưu hoặc Hủy việc đang sửa trước.', 'err'); return; }
     if (ui.view === 'schema' && SE.dirty && !SE.first && t !== 'schema') { toast('Hãy Lưu cấu trúc hoặc Hủy thay đổi trước.', 'err'); return; }
     if ((t === 'accounts' || t === 'schema') && !isAdmin()) return;
+    if (ui.fromStats) leaveListFull();
     if (t === 'list') { showView(ui.selId && byId(ui.selId) ? 'detail' : 'list'); if (ui.view === 'list') renderList(); }
     else { showView(t); if (t === 'stats') renderStats(); if (t === 'data') renderData(); if (t === 'settings') renderSettings(); if (t === 'accounts') { USERS = null; renderAccounts(); } if (t === 'schema') seOpen(); }
     return;
