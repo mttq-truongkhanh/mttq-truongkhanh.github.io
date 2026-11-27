@@ -789,6 +789,7 @@ textarea{resize:vertical}
 .ht-tong{border-bottom:0;border-top:2px solid var(--navy);margin-top:2px}
 .ht-tong .ht-n{font-weight:700}
 .ht-tong .ht-v{color:var(--red);font-size:17px}
+.ht-tt .ht-tong:first-child{border-top:0;margin-top:0;padding:4px 0}
 .mrg-list{max-height:52vh;overflow:auto;border:1px solid var(--line);border-radius:9px;padding:4px 8px}
 .mrg-list .chk{align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--line)}
 .mrg-list .chk:last-child{border-bottom:0}
@@ -1067,6 +1068,9 @@ code{background:var(--soft);padding:1px 5px;border-radius:5px;font-size:12.5px;w
   .pick-banner span{flex:1}
   body[data-view=schema] #mapWrap{display:none}
   body.q-focus #mapWrap,body.list-full #mapWrap{display:none}
+  body[data-view=stats] #mapWrap,body[data-view=stats] #v-stats>.view-head{display:none}
+  .banner{flex-wrap:wrap}
+  .banner>div:first-child{flex:1 1 240px}
   body[data-view=edit] #mapWrap{height:24vh;min-height:140px}
   body[data-view=edit].map-big #mapWrap{height:76vh}
   body[data-view=edit].e-focus:not(.map-big) #mapWrap{display:none}
@@ -1400,7 +1404,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.27g';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.27h';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -2182,6 +2186,8 @@ function refreshMarkers(list) {
 function updateLabels() { map.getContainer().classList.toggle('labels-on', S.config.labels && map.getZoom() >= 16); $('#btnLabels').classList.toggle('on', !!S.config.labels); }
 function highlight(id) { for (const [hid, m] of markers) { const h = byId(hid); if (!h) continue; const sel = hid === id; m.setIcon(pinIcon(h, sel)); m.setZIndexOffset(sel ? 1000 : 0); } }
 function fitAll() {
+  if (!map.getContainer().offsetHeight) { ui.fitLater = true; return; }
+  ui.fitLater = false;
   const pts = filtered().filter(hasLoc).map(h => [h.lat, h.lng]);
   if (pts.length === 1) map.setView(pts[0], 17);
   else if (pts.length) map.fitBounds(pts, { padding: [40, 40], maxZoom: 17 });
@@ -2375,8 +2381,8 @@ function renderBanners() {
     const dn = dupPairs().length;
     if (dn) h += `<div class="banner warn"><div>Có <b>${dn}</b> hộ có thể bị <b>nhập trùng</b> (một bản phân loại chính, một bản chỉ là diện kèm theo).</div><button class="btn btn-sm" data-act="merge-dups">Xem và gộp</button></div>`;
   }
-  if (isAdmin() && (oldLocal() || (readLegacy() || { households: [] }).households.length)) h += `<div class="banner info"><div>Máy này còn <b>dữ liệu nhập ở phiên bản cũ</b>. Chuyển lên Google Trang tính để mọi người cùng dùng.</div><button class="btn btn-sm" data-act="${oldLocal() ? 'migrate-local' : 'migrate-legacy'}">Chuyển</button></div>`;
-  $('#banners').innerHTML = h; const b2 = $('#bannersSt'); if (b2) b2.innerHTML = h;
+  let leg = ''; if (isAdmin() && (oldLocal() || (readLegacy() || { households: [] }).households.length)) leg = `<div class="banner info"><div>Máy này còn <b>dữ liệu nhập ở phiên bản cũ</b>. Chuyển lên Google Trang tính để mọi người cùng dùng.</div><button class="btn btn-sm" data-act="${oldLocal() ? 'migrate-local' : 'migrate-legacy'}">Chuyển</button></div>`;
+  $('#banners').innerHTML = h + leg; const b2 = $('#bannersSt'); if (b2) b2.innerHTML = h;
 }
 
 /* ---------- Chi tiết hộ ---------- */
@@ -2446,7 +2452,7 @@ const SEC_DETAIL = {
   hotro: (h, kv) => {
     return `<div class="sec">${esc(SECT('hotro'))}</div>
       ${h.hoTro.length ? htTomTat(h.hoTro, false) : ''}
-      ${h.hoTro.length ? `<table class="tbl"><thead><tr><th>Ngày</th><th>Nội dung</th><th class="num">Giá trị (đ)</th></tr></thead><tbody>${h.hoTro.slice().sort((a, b) => String(b.ngay).localeCompare(String(a.ngay))).map(x => `<tr><td>${dateVN(x.ngay)}</td><td>${esc(x.noiDung)}<div class="sub2">${htOf(x) ? `<b>${esc(htTen(htOf(x)))}</b>` : ''}${htOf(x) && x.donVi ? ' · ' : ''}${esc(x.donVi)}</div></td><td class="num">${fmt(x.giaTri)}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Chưa ghi nhận.</p>'}${kv ? `<dl class="kv mt8">${kv}</dl>` : ''}`;
+      ${h.hoTro.length ? `<table class="tbl"><thead><tr><th>Ngày</th><th>Nội dung</th><th class="num">Trị giá (đ)</th></tr></thead><tbody>${h.hoTro.slice().sort((a, b) => String(b.ngay).localeCompare(String(a.ngay))).map(x => `<tr><td>${dateVN(x.ngay)}</td><td>${esc(x.noiDung)}${x.donVi ? `<div class="sub2">${esc(x.donVi)}</div>` : ''}</td><td class="num">${fmt(x.giaTri)}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Chưa ghi nhận.</p>'}${kv ? `<dl class="kv mt8">${kv}</dl>` : ''}`;
   },
   apinfo: h => { const kv = h.ap ? apInfoKV(h.ap) : ''; return kv ? `<div class="sec">${esc(SECT('apinfo'))} — ${esc(h.ap)}</div><dl class="kv">${kv}</dl>` : ''; },
   ghichu: (h, kv) => h.ghiChu || kv ? `<div class="sec">${esc(SECT('ghichu'))}</div>${h.ghiChu ? `<p style="white-space:pre-wrap;margin:0">${esc(h.ghiChu)}</p>` : ''}${kv ? `<dl class="kv mt8">${kv}</dl>` : ''}` : ''
@@ -2491,17 +2497,8 @@ function htSo(list) {
   return { qua: g(['qua']), tien: g(['tien']), sua: g(['suanha']), moi: g(['nha']), nha: g(['suanha', 'nha']), khac: { a: kh, n: kh.length, t: kh.reduce((s, x) => s + (+x.giaTri || 0), 0) }, tong: list.reduce((s, x) => s + (+x.giaTri || 0), 0) };
 }
 function htTomTat(list, edit) {
-  const o = htSo(list);
-  const add = (k, t) => edit ? `<button type="button" class="btn btn-sm" data-act="ht-add" data-hinh="${k}">${I('plus', 14)}${t}</button>` : '';
-  const row = (ten, g, sub, btns) => `<div class="ht-r"><div class="ht-n">${ten}<small>${g.n ? `${fmt(g.n)} lần${sub ? ' · ' + sub : ''}` : 'Chưa có'}</small></div><b class="ht-v${g.n ? '' : ' muted'}">${fmt(g.t)} đ</b>${btns ? `<div class="ht-b">${btns}</div>` : ''}</div>`;
-  const khT = [...new Set(o.khac.a.map(x => htOf(x) ? htTen(htOf(x)) : 'chưa chọn hình thức'))].join(', ');
-  return `<div class="ht-tt"${edit ? ' id="htTT"' : ''}><div class="ht-th">Chi tiết hỗ trợ</div>
-    ${row('Tặng quà (gạo và nhu yếu phẩm)', o.qua, '', add('qua', 'Thêm'))}
-    ${row('Tặng tiền', o.tien, '', add('tien', 'Thêm'))}
-    ${row('Hỗ trợ sửa chữa nhà, xây mới', o.nha, [o.sua.n ? fmt(o.sua.n) + ' sửa chữa' : '', o.moi.n ? fmt(o.moi.n) + ' xây mới' : ''].filter(Boolean).join(', '), add('suanha', 'Sửa chữa') + add('nha', 'Xây mới'))}
-    ${o.khac.n ? row('Hỗ trợ khác', o.khac, esc(khT), '') : ''}
-    <div class="ht-r ht-tong"><div class="ht-n">Tổng số tiền đã được hỗ trợ</div><b class="ht-v">${fmt(o.tong)} đ</b></div>
-    ${edit ? '<p class="hint" style="margin:6px 0 0">Số lần và số tiền được tự động cộng từ các lượt hỗ trợ bên dưới. Bấm “Thêm” ở từng mục rồi nhập số tiền.</p>' : ''}</div>`;
+  const tong = list.reduce((t, x) => t + (+x.giaTri || 0), 0);
+  return `<div class="ht-tt"${edit ? ' id="htTT"' : ''}><div class="ht-r ht-tong"><div class="ht-n">Tổng số tiền đã được hỗ trợ<small>${fmt(list.length)} lượt hỗ trợ${edit ? ' — tự cộng từ các lượt bên dưới' : ''}</small></div><b class="ht-v">${fmt(tong)} đ</b></div></div>`;
 }
 const hashStr = t => { let x = 0; for (let i = 0; i < t.length; i++) x = (x * 31 + t.charCodeAt(i)) | 0; return x; };
 function updHtTT() {
@@ -2596,12 +2593,12 @@ async function nhaMigDlg() {
 }
 function htRow(x, i) {
   return `<div class="ht"><div class="tv-head"><span>Lượt hỗ trợ ${i + 1}</span><button type="button" class="icon-btn" data-act="ht-del" data-i="${i}" title="Bớt">${I('x', 15)}</button></div>
+    <input type="hidden" data-ht="hinhThuc" value="${esc(x.hinhThuc || '')}">
     <div class="grid2">
-      <label class="f"><span>Hình thức</span><select data-ht="hinhThuc"><option value="">— Chọn —</option>${HT_LOAI.map(([k, t]) => `<option value="${k}" ${htOf(x) === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+      <label class="f span2"><span>Nội dung hỗ trợ</span><textarea data-ht="noiDung" rows="2" placeholder="Ghi nội dung hỗ trợ, ví dụ: tặng gạo và nhu yếu phẩm; hỗ trợ sửa mái nhà…">${esc(x.noiDung)}</textarea></label>
       <label class="f"><span>Ngày</span><input data-ht="ngay" type="date" value="${esc(x.ngay)}"></label>
-      <label class="f span2"><span>Nội dung hỗ trợ</span><input data-ht="noiDung" list="dlHoTro" value="${esc(x.noiDung)}"></label>
-      <label class="f"><span>Giá trị (đồng)</span><input data-ht="giaTri" type="number" min="0" step="1000" value="${x.giaTri ?? ''}"></label>
-      <label class="f"><span>Đơn vị / nguồn hỗ trợ</span><input data-ht="donVi" list="dlPhuTrach" value="${esc(x.donVi)}"></label>
+      <label class="f"><span>Trị giá (đồng)</span><input data-ht="giaTri" type="number" min="0" step="1000" inputmode="numeric" value="${x.giaTri ?? ''}"></label>
+      <label class="f span2"><span>Đơn vị / nguồn hỗ trợ</span><input data-ht="donVi" list="dlPhuTrach" value="${esc(x.donVi)}"></label>
     </div></div>`;
 }
 function renderEdit() {
@@ -3422,7 +3419,7 @@ function printHH(h) {
       ${a || b ? `<div>${a ? `Thu nhập bình quân: ${h.thuNhap != null ? fmt(h.thuNhap * 1000) + ' đồng/người/tháng' : dots}. ` : ''}${b ? `Số chỉ số thiếu hụt: ${th.length}/${chiSoCur().length}${th.length ? ' (' + th.map(id => esc(chiSoTen(id))).join('; ') + ')' : ''}.` : ''}</div>` : ''}${kvLines(fx)}`; },
     nguyennhan: fx => `${H(SECT('nguyennhan'))}<div>${esc(h.nguyenNhan.join('; ')) || '—'}.</div>${kvLines(fx)}`,
     nhucau: fx => `${H(SECT('nhucau'))}<div>${esc(h.nhuCau.join('; ')) || '—'}.</div>${kvLines(fx)}`,
-    hotro: fx => `${H(SECT('hotro'))}${h.hoTro.length ? (o => `<div>Tổng số tiền đã được hỗ trợ: <b>${fmt(o.tong)} đồng</b> — tặng quà (gạo, nhu yếu phẩm): ${fmt(o.qua.t)} đ; tặng tiền: ${fmt(o.tien.t)} đ; sửa chữa nhà, xây mới: ${fmt(o.nha.n)} lần, ${fmt(o.nha.t)} đ${o.khac.n ? `; hỗ trợ khác: ${fmt(o.khac.t)} đ` : ''}.</div>`)(htSo(h.hoTro)) : ''}${h.hoTro.length ? `<table class="p-tbl"><thead><tr><th>Ngày</th><th>Nội dung</th><th>Đơn vị hỗ trợ</th><th>Giá trị (đồng)</th></tr></thead><tbody>${h.hoTro.map(x => `<tr><td>${dateVN(x.ngay)}</td><td>${esc(x.noiDung)}${htOf(x) ? ` (${esc(htTen(htOf(x)))})` : ''}</td><td>${esc(x.donVi)}</td><td style="text-align:right">${fmt(x.giaTri)}</td></tr>`).join('')}</tbody></table>` : '<div>Chưa ghi nhận.</div>'}${kvLines(fx)}`,
+    hotro: fx => `${H(SECT('hotro'))}${h.hoTro.length ? `<div>Tổng số tiền đã được hỗ trợ: <b>${fmt(htSo(h.hoTro).tong)} đồng</b> (${fmt(h.hoTro.length)} lượt).</div>` : ''}${h.hoTro.length ? `<table class="p-tbl"><thead><tr><th>Ngày</th><th>Nội dung</th><th>Đơn vị / nguồn hỗ trợ</th><th>Trị giá (đồng)</th></tr></thead><tbody>${h.hoTro.map(x => `<tr><td>${dateVN(x.ngay)}</td><td>${esc(x.noiDung)}</td><td>${esc(x.donVi)}</td><td style="text-align:right">${fmt(x.giaTri)}</td></tr>`).join('')}</tbody></table>` : '<div>Chưa ghi nhận.</div>'}${kvLines(fx)}`,
     apinfo: () => { const v = h.ap && s.apInfo[h.ap]; const ls = v ? s.apF.filter(f => !isEmptyVal(v[f.k])).map(f => `<div>${esc(f.ten)}: ${esc(fText(f, v[f.k]))}</div>`).join('') : ''; return ls ? `${H(`${SECT('apinfo')} (${h.ap})`)}${ls}` : ''; },
     ghichu: fx => h.ghiChu || fx.some(f => pf(f) && !isEmptyVal(h.ext[f.k])) ? `${H(SECT('ghichu'))}${h.ghiChu ? `<div style="white-space:pre-wrap">${esc(h.ghiChu)}</div>` : ''}${kvLines(fx)}` : ''
   };
@@ -4324,6 +4321,7 @@ $('#editForm').addEventListener('input', e => {
   const t = e.target;
   if (t.name === 'chuHo' && draft) { const first = $('#tvList .tv input[data-tv=hoTen]'); const qh = $('#tvList .tv input[data-tv=quanHe]'); if (first && qh && norm(qh.value) === 'chu ho' && (first.value === '' || first.value === (draft._lastChu || ''))) first.value = t.value; draft._lastChu = t.value; }
   if (t.name === 'thuNhap' || t.dataset.th !== undefined || t.name === 'loai') updateSuggest();
+  if (t.dataset.ht === 'noiDung') { const hid = t.closest('.ht') && t.closest('.ht').querySelector('[data-ht=hinhThuc]'); if (hid) hid.value = ''; }
   if (t.dataset.ht !== undefined) updHtTT();
 });
 $('#editForm').addEventListener('change', e => {
@@ -4335,12 +4333,12 @@ $('#editForm').addEventListener('change', e => {
     if (lat != null && lng != null) setEditLoc(lat, lng, { pan: true });
   }
   if (t.dataset.anhpick !== undefined) { anhChon(t); return; }
-  if (t.dataset.ht === 'noiDung') { const sel = t.closest('.ht') && t.closest('.ht').querySelector('select[data-ht=hinhThuc]'), g = htDoan(t.value); if (sel && !sel.value && g) sel.value = g; }
   if (t.dataset.ht !== undefined) updHtTT();
   if (t.dataset.th !== undefined || t.name === 'loai') updateSuggest();
   if ((t.name === 'loai' || t.dataset.kem !== undefined) && draft && SCHEMA().f.some(f => f.loai.length)) rerenderEdit();   /* hiện/ẩn trường chỉ áp dụng cho một số phân loại */
 });
 $('#editForm').addEventListener('submit', e => e.preventDefault());
+if (window.ResizeObserver) new ResizeObserver(() => { const c = map.getContainer(); if (c.offsetHeight > 0 && c.offsetWidth > 0) { map.invalidateSize(); if (ui.fitLater) fitAll(); } }).observe(map.getContainer());
 /* Điện thoại: đang gõ trong biểu mẫu thì ẩn bản đồ, đưa ô đang nhập lên chỗ dễ thấy (không bị bàn phím che) */
 const eTyping = t => !!(t && t.matches && t.matches('textarea, input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=date]):not([type=hidden])'));
 function eKeepVisible() {
