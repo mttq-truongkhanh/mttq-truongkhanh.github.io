@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Bản đồ số hộ nghèo, hộ cận nghèo",
-  "short_name": "Hộ nghèo",
-  "description": "Bản đồ số định vị hộ nghèo, hộ cận nghèo; quản lý thành viên hộ, hỗ trợ, thống kê theo ấp.",
+  "name": "Bản đồ số an sinh xã hội",
+  "short_name": "Bản đồ an sinh",
+  "description": "Bản đồ số an sinh xã hội: định vị hộ nghèo, cận nghèo, hộ khó khăn; quản lý thành viên hộ, hỗ trợ, thống kê theo ấp.",
   "lang": "vi",
   "start_url": "./",
   "scope": "./",

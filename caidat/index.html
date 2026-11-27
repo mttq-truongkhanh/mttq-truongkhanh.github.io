@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Cài ứng dụng Bản đồ số hộ nghèo – MTTQ xã Trường Khánh</title>
-<meta name="description" content="Quét mã để cài ứng dụng Bản đồ số hộ nghèo, hộ cận nghèo của Ủy ban MTTQ Việt Nam xã Trường Khánh lên điện thoại.">
+<title>Cài ứng dụng Bản đồ số an sinh xã hội – MTTQ xã Trường Khánh</title>
+<meta name="description" content="Quét mã để cài ứng dụng Bản đồ số an sinh xã hội của Ủy ban MTTQ Việt Nam xã Trường Khánh lên điện thoại.">
 <meta name="theme-color" content="#14213d">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Hộ nghèo">
+<meta name="apple-mobile-web-app-title" content="Bản đồ an sinh">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
   :root{--navy:#14213d;--navy2:#1f3260;--red:#a3191c;--gold:#d4a33a;--ink:#1b2230;--muted:#5d6878;--line:#e2e6eb;--bg:#eef1f4;--ok:#2e7d32}
@@ -62,7 +62,7 @@
   <div class="brand">
     <img src="/icon-192.png" alt="">
     <div>
-      <h1>Bản đồ số hộ nghèo, hộ cận nghèo</h1>
+      <h1>Bản đồ số an sinh xã hội</h1>
       <p>Ủy ban MTTQ Việt Nam xã Trường Khánh</p>
     </div>
   </div>
@@ -70,7 +70,7 @@
 <main id="v" aria-live="polite"></main>
 <div id="hint"></div>
 <footer>
-  <p class="muted">Sau khi cài: mở biểu tượng <b>Hộ nghèo</b> trên màn hình chính, đăng nhập bằng <b>số điện thoại</b> và <b>mật khẩu</b> quản trị viên đã cấp.</p>
+  <p class="muted">Sau khi cài: mở biểu tượng <b>Bản đồ an sinh</b> trên màn hình chính, đăng nhập bằng <b>số điện thoại</b> và <b>mật khẩu</b> quản trị viên đã cấp.</p>
   <p class="muted"><a href="/">Mở bản web (không cần cài)</a></p>
 </footer>
 <script>
@@ -164,7 +164,7 @@
       '<li>Bấm nút <b>Chia sẻ</b> <span class="k">⬆</span> ' + (ipad ? 'ở <b>góc trên bên phải</b>' : 'ở <b>thanh dưới cùng</b>') + '.<br><span class="muted">iOS mới: bấm <span class="k">⋯</span> rồi chọn <b>Chia sẻ</b>.</span></li>' +
       '<li>Kéo xuống, chọn <b>Thêm vào MH chính</b>.</li>' +
       '<li>Bấm <b>Thêm</b> ở góc trên bên phải. Xong!</li></ol></div>' +
-      '<div class="card"><p class="muted" style="margin:0">Biểu tượng <b>Hộ nghèo</b> sẽ xuất hiện trên màn hình chính. Bấm vào để mở như một ứng dụng.</p></div>',
+      '<div class="card"><p class="muted" style="margin:0">Biểu tượng <b>Bản đồ an sinh</b> sẽ xuất hiện trên màn hình chính. Bấm vào để mở như một ứng dụng.</p></div>',
       ipad ? ['tr', 'Nút Chia sẻ'] : ['bc', 'Bấm nút Chia sẻ ở đây']);
   }
 
@@ -184,7 +184,7 @@
         '<li>Chọn <b>Cài đặt ứng dụng</b> (hoặc <b>Thêm vào màn hình chính</b>), rồi bấm <b>Cài đặt</b>.</li></ol>' +
         '<p class="muted" style="margin:2px 0 0">Nếu nút đỏ <b>CÀI ĐẶT NGAY</b> hiện ra ở đây, chỉ cần bấm nút đó.</p></div>' +
         (chromeLike ? '' : '<div class="card"><h2>Không thấy mục cài đặt?</h2><p class="lead">Trình duyệt này có thể không hỗ trợ. Mở bằng Chrome:</p><a class="btn btn-navy" href="' + intentChrome + '">Mở bằng Chrome</a></div>') +
-        '<div class="card"><p class="muted" style="margin:0">Đã cài rồi? Tìm biểu tượng <b>Hộ nghèo</b> trên màn hình chính và bấm vào.</p></div>',
+        '<div class="card"><p class="muted" style="margin:0">Đã cài rồi? Tìm biểu tượng <b>Bản đồ an sinh</b> trên màn hình chính và bấm vào.</p></div>',
         ['tr', 'Bấm ⋮ ở đây']);
     }
   }
@@ -204,12 +204,12 @@
     }, androidBrowser);
   }
   function installing() {
-    show('<div class="card"><h2>Đang cài đặt…</h2><p class="lead"><span class="spin" style="border-color:rgba(20,33,61,.2);border-top-color:#14213d;vertical-align:-4px"></span>&nbsp; Chờ vài giây để điện thoại thêm biểu tượng <b>Hộ nghèo</b>.</p></div>');
+    show('<div class="card"><h2>Đang cài đặt…</h2><p class="lead"><span class="spin" style="border-color:rgba(20,33,61,.2);border-top-color:#14213d;vertical-align:-4px"></span>&nbsp; Chờ vài giây để điện thoại thêm biểu tượng <b>Bản đồ an sinh</b>.</p></div>');
     setTimeout(done, 9000);
   }
   function done() {
     if (mode === 'done') return; mode = 'done';
-    show('<div class="card ok"><h2>✅ Đã cài xong!</h2><p class="lead">Biểu tượng <b>Hộ nghèo</b> đã có trên màn hình chính. Từ nay chỉ cần bấm vào biểu tượng đó.</p>' +
+    show('<div class="card ok"><h2>✅ Đã cài xong!</h2><p class="lead">Biểu tượng <b>Bản đồ an sinh</b> đã có trên màn hình chính. Từ nay chỉ cần bấm vào biểu tượng đó.</p>' +
       '<a class="btn btn-main" href="/">Mở ứng dụng ngay</a></div>');
   }
 

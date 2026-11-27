@@ -7,9 +7,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Hộ nghèo">
-<meta name="application-name" content="Hộ nghèo">
-<title>Bản đồ số hộ nghèo, hộ cận nghèo – xã Trường Khánh</title>
+<meta name="apple-mobile-web-app-title" content="Bản đồ an sinh">
+<meta name="application-name" content="Bản đồ an sinh">
+<title>Bản đồ số an sinh xã hội – xã Trường Khánh</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1183,7 +1183,7 @@ input[type=color]{cursor:pointer}
   <div class="brand">
     <div class="brand-mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><path d="M9 10.5 12 8l3 2.5V13H9z" fill="#fff" stroke="none"/></svg></div>
     <div style="min-width:0">
-      <h1><span class="t-long">Bản đồ số hộ nghèo, hộ cận nghèo</span><span class="t-short">Bản đồ hộ nghèo</span></h1>
+      <h1><span class="t-long">Bản đồ số an sinh xã hội</span><span class="t-short">Bản đồ an sinh</span></h1>
       <div class="sub" id="hdrUnit"></div>
     </div>
   </div>
@@ -1414,7 +1414,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.27j';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.28a';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -1654,7 +1654,7 @@ const META_GOC = [['maHo', 'Mã hộ'], ['nk', 'Số nhân khẩu'], ['ap', 'Ấ
 function defaultSchema() {
   return {
     v: 1,
-    ui: { title: 'Bản đồ số hộ nghèo, hộ cận nghèo', short: 'Bản đồ hộ nghèo', navy: '#14213d', red: '#a3191c', pin: 'nk', list: ['maHo', 'nk', 'diaChi'], pop: ['maHo', 'ap', 'nk'], loc: [], goiY: true, legend: true, gia: 60, tre: 16 },
+    ui: { title: 'Bản đồ số an sinh xã hội', short: 'Bản đồ an sinh', navy: '#14213d', red: '#a3191c', pin: 'nk', list: ['maHo', 'nk', 'diaChi'], pop: ['maHo', 'ap', 'nk'], loc: [], goiY: true, legend: true, gia: 60, tre: 16 },
     loai: [...Object.entries(LOAI_GOC).map(([k, v]) => ({ k, ten: v.ten, mau: v.mau, dt: !!v.dt, an: false })), { k: 'thoatngheont', ten: 'Hộ thoát nghèo năm trước', mau: '#00838f', dt: false, an: false }],
     sec: SEC_GOC.map(([k, ten]) => ({ k, ten, an: false })),
     bf: {}, f: [], tvbf: {}, tv: [],
@@ -1928,7 +1928,9 @@ const curName = () => ME ? ME.name : '';
 const curId = () => ME ? ME.u : '';
 const curRole = () => ME ? ME.role : '';
 const isViewer = () => !!ME && ME.role === 'viewer';
-const myAps = () => (!ME || isAdmin() || isViewer()) ? [] : (ME.aps || []);   /* người chỉ xem: luôn toàn xã */
+const myAps = () => (!ME || isAdmin() || isViewer()) ? [] : (ME.aps || []);
+const cvKey = u => { const t = 'cv|' + String(u || ''); let x = 0; for (let i = 0; i < t.length; i++) x = (x * 31 + t.charCodeAt(i)) | 0; return 'h' + (x >>> 0).toString(36); };
+const myChucVu = () => { if (!ME) return ''; const m = SCHEMA().ui.cv; return String(ME.chucVu || (isObj(m) ? m[cvKey(ME.u)] || '' : '')).trim(); };   /* người chỉ xem: luôn toàn xã */
 const inScope = ap => { const a = myAps(); return !a.length || a.includes(ap); };
 function can(act, h) {
   if (isAdmin()) return true;
@@ -3022,7 +3024,7 @@ function renderData() {
       <div class="row gap wrap"><button class="btn btn-navy" data-act="export-xlsx">Xuất toàn bộ (${S.households.length} hộ)</button><button class="btn" data-act="export-xlsx-filter">Chỉ các hộ đang lọc (${filtered().length})</button></div></div>` : '';
   const note = `<p class="muted small">Thông tin hộ nghèo, số CCCD là dữ liệu cá nhân, phải quản lý, sử dụng đúng mục đích theo quy định về bảo vệ dữ liệu cá nhân. File Excel xuất ra không có mật khẩu — không chia sẻ qua kênh công khai.</p>`;
   const syncCard = `<div class="card"><h3>${I('shield')} Đồng bộ dữ liệu</h3>
-      <p style="margin-bottom:4px"><b>${esc(ME.name)}</b>${ME.chucVu ? ' — ' + esc(ME.chucVu) : ''}${isViewer() ? '' : ` · ${ROLE[ME.role]} · tên đăng nhập <b>${esc(ME.u)}</b>`}</p>
+      <p style="margin-bottom:4px"><b>${esc(ME.name)}</b>${myChucVu() ? ' — ' + esc(myChucVu()) : ''}${isAdmin() ? ` · ${ROLE[ME.role]} · tên đăng nhập <b>${esc(ME.u)}</b>` : isViewer() ? '' : ` · ${ROLE[ME.role]}`}</p>
       ${isAdmin() || isViewer() ? '' : `<p>Quyền: ${esc(permText(ME))} · Phạm vi: <b>${esc(scopeText(myAps()))}</b>. Xóa hộ chỉ quản trị viên thực hiện.</p>`}
       <p class="small" style="margin-bottom:8px">Dữ liệu cập nhật lúc <b>${S.loadedAt ? dt(S.loadedAt) : 'chưa tải'}</b>${OUT.length ? ` · <b style="color:var(--err)">${OUT.length} hộ chờ gửi</b>` : ' · đã gửi hết'}${net.online ? '' : ' · <b style="color:var(--err)">đang mất kết nối</b>'}</p>
       <button class="btn btn-navy" data-act="sync-now">${I('upload', 15)} Đồng bộ ngay</button></div>`;
@@ -3159,13 +3161,22 @@ async function uploadOld(list, cfg, note) {
 /* ----- Tài khoản cán bộ (quản trị viên) ----- */
 let USERS = null, LOG = [];
 async function fixViewerScope() {
-  if (!isAdmin() || ui.vsDone || !net.online) return; ui.vsDone = true;
+  if (!isAdmin() || ui.vsBusy || !net.online) return; ui.vsBusy = true;
   try {
     if (!USERS) await loadAccounts();
     const bad = (USERS || []).filter(u => u.role === 'viewer' && Array.isArray(u.aps) && u.aps.length);
     for (const u of bad) await api('userSave', { user: Object.assign({}, u, { aps: [] }) });
-    if (bad.length) { USERS = null; toast(`Đã đặt phạm vi toàn xã cho ${bad.length} tài khoản chỉ xem.`, 'ok'); if (ui.view === 'accounts') renderAccounts(); }
-  } catch (e) { ui.vsDone = false; }
+    if (bad.length) { await loadAccounts(); toast(`Đã đặt phạm vi toàn xã cho ${bad.length} tài khoản chỉ xem.`, 'ok'); }
+    /* chức vụ từng cán bộ → cấu trúc (mọi máy đọc được), khóa là mã băm nên không lộ tên đăng nhập */
+    const cv = {}; (USERS || []).filter(u => u && u.u && String(u.chucVu || '').trim()).sort((a, b) => String(a.u).localeCompare(String(b.u))).forEach(u => { cv[cvKey(u.u)] = String(u.chucVu).trim().slice(0, 120); });
+    const cur = isObj(SCHEMA().ui.cv) ? SCHEMA().ui.cv : {}, same = Object.keys(cv).length === Object.keys(cur).length && Object.keys(cv).every(k => cur[k] === cv[k]);
+    if (!same && !SE.dirty) {
+      const sc = clone(SCHEMA()); sc.ui.cv = cv;
+      const r = await api('config', { config: { schema: normSchema(sc) } });
+      if (r.config && isObj(r.config.schema)) { S.srv = r.config; S.config = mergeConfig(S.srv); saveCache(); if (SE.s) SE.s = clone(SCHEMA()); renderAll(); }
+    }
+    if (bad.length && ui.view === 'accounts') renderAccounts();
+  } catch (e) {} finally { ui.vsBusy = false; }
 }
 async function loadAccounts() { const [u, l] = await Promise.all([api('users'), api('log')]); USERS = u.users; LOG = l.log || []; }
 function renderAccounts() {
@@ -3237,14 +3248,14 @@ async function addUser() {
   const r = await formDialog('Thêm tài khoản cán bộ', v => userForm(v, true), 'Tạo tài khoản', x => validUser(x, true));
   if (!r) return;
   const res = await withBusy('Đang tạo tài khoản…', () => api('userSave', { isNew: true, user: userPayload(r), password: r.pw }));
-  USERS.push(res.user); USERS = null; renderAccounts();
+  USERS.push(res.user); USERS = null; renderAccounts(); setTimeout(fixViewerScope, 800);
   await showCredentials(res.user, r.pw, true);
 }
 async function editUser(u) {
   const r = await formDialog(`Sửa quyền — ${u.name}`, v => userForm(v || { name: u.name, chucVu: u.chucVu, role: u.role, aps: u.aps, ...u.perms }, false), 'Lưu', x => validUser(x, false, u));
   if (!r) return;
   await withBusy('Đang lưu…', () => api('userSave', { user: userPayload(r, u) }));
-  USERS = null; renderAccounts(); toast('Đã lưu. Quyền mới có hiệu lực ngay trên máy của cán bộ.', 'ok');
+  USERS = null; renderAccounts(); setTimeout(fixViewerScope, 800); toast('Đã lưu. Quyền mới có hiệu lực ngay trên máy của cán bộ.', 'ok');
 }
 async function resetUserPw(u) {
   const r = await formDialog(`Cấp lại mật khẩu — ${u.name}`, v => `<p>Dùng khi cán bộ quên mật khẩu hoặc cần đăng nhập trên máy mới. Mật khẩu cũ hết hiệu lực ngay.</p><label class="f"><span>Mật khẩu mới (8 số tạo sẵn; có thể sửa)</span><input name="pw" value="${esc((v && v.pw) || genPw())}"></label>`, 'Cấp mật khẩu', x => String(x.pw).replace(/\s+/g, '').length < 6 ? 'Mật khẩu ít nhất 6 ký tự.' : '');
@@ -3254,7 +3265,7 @@ async function resetUserPw(u) {
   await showCredentials(u, r.pw, false);
 }
 function credText(u, pw) {
-  return `Ứng dụng Bản đồ hộ nghèo — ${S.config.donVi}\n1. Mở link bằng Chrome (Android) hoặc Safari (iPhone): ${APP_LINK()}\n2. Bấm "Cài ứng dụng" để đưa ra màn hình chính.\n3. Đăng nhập — Tên đăng nhập: ${u.u} — Mật khẩu: ${pw}`;
+  return `Ứng dụng ${tenBD()} — ${S.config.donVi}\n1. Mở link bằng Chrome (Android) hoặc Safari (iPhone): ${APP_LINK()}\n2. Bấm "Cài ứng dụng" để đưa ra màn hình chính.\n3. Đăng nhập — Tên đăng nhập: ${u.u} — Mật khẩu: ${pw}`;
 }
 async function showCredentials(u, pw, isNew) {
   const text = credText(u, pw);
@@ -3529,7 +3540,7 @@ function renderSettings() {
       <label class="chk mt12"><input type="checkbox" name="labels" ${C.labels ? 'checked' : ''}> Hiện tên chủ hộ trên bản đồ khi phóng to</label>
     </fieldset>
     <fieldset><legend>Tài khoản</legend>
-      <p style="margin:0 0 8px"><b>${esc(curName())}</b> · ${ROLE[curRole()]} · tên đăng nhập <b>${esc(curId())}</b></p>
+      <p style="margin:0 0 8px"><b>${esc(curName())}</b>${isAdmin() ? ` · ${ROLE[curRole()]} · tên đăng nhập <b>${esc(curId())}</b>` : `${myChucVu() ? ' — ' + esc(myChucVu()) : ''}${isViewer() ? '' : ' · ' + ROLE[curRole()]}`}</p>
       <div class="row gap wrap"><button type="button" class="btn btn-sm" data-act="change-pw">Đổi mật khẩu</button><button type="button" class="btn btn-sm" data-act="logout">${I('lock', 14)}Đăng xuất</button></div>
       <p class="hint">${remembered() ? 'Máy này đang <b>ghi nhớ đăng nhập</b> (mở là vào ngay). Bấm Đăng xuất nếu giao máy cho người khác.' : 'Ứng dụng tự đăng xuất sau 30 phút không thao tác.'}</p>
     </fieldset>
@@ -4017,7 +4028,7 @@ const isStandalone = () => matchMedia('(display-mode: standalone)').matches || n
 const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 let installEvt = null;
 addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; });
-addEventListener('appinstalled', () => { installEvt = null; toast('Đã cài ứng dụng. Mở bằng biểu tượng “Hộ nghèo” trên màn hình chính.', 'ok'); });
+addEventListener('appinstalled', () => { installEvt = null; toast('Đã cài ứng dụng. Mở bằng biểu tượng “Bản đồ an sinh” trên màn hình chính.', 'ok'); });
 if (WEB) {
   const add = (rel, href, extra) => { const l = document.createElement('link'); l.rel = rel; l.href = href; Object.assign(l, extra || {}); document.head.appendChild(l); };
   add('manifest', 'manifest.webmanifest'); add('icon', 'icon-192.png', { sizes: '192x192', type: 'image/png' }); add('apple-touch-icon', 'apple-touch-icon.png');
@@ -4169,7 +4180,7 @@ async function forgotPassword() {
 let started = false;
 function applyRoleUI() {
   $('#tabAccounts').hidden = !isAdmin(); $('#tabSchema').hidden = !isAdmin();
-  $('#userChip .av').textContent = initials(curName()); $('#userChip .nm').textContent = curName(); $('#userChip .role').textContent = isViewer() ? (ME.chucVu || '') : (ROLE[curRole()] || '');
+  $('#userChip .av').textContent = initials(curName()); $('#userChip .nm').textContent = curName(); $('#userChip .role').textContent = isAdmin() ? (ROLE[curRole()] || '') : (myChucVu() || (isViewer() ? '' : ROLE[curRole()] || ''));
 }
 /* ---------- Tự cập nhật phiên bản mới ----------
    Ứng dụng cài trên điện thoại thường chạy ngầm, không tự tải lại. Khi mở lại / định kỳ, hỏi version.json:
@@ -4213,6 +4224,7 @@ function startApp() {
    ========================================================= */
 function renderAll() {
   if (!ME) return;
+  applyRoleUI();
   $('#hdrUnit').textContent = S.config.donVi + (S.config.tinh ? ', ' + S.config.tinh : '');
   renderList();
   if (ui.view === 'detail') renderDetail();
@@ -4346,7 +4358,8 @@ async function onAct(act, el, e) {
       const ok = OUT.length ? await confirmDlg('Đăng xuất', `Còn <b>${OUT.length} hộ</b> chưa gửi lên máy chủ. Các hộ này vẫn được giữ trên máy và sẽ gửi khi bạn đăng nhập lại.`, 'Vẫn đăng xuất') : true;
       if (!ok) break; lsSet(CKEY, null); endSession('Đã đăng xuất.'); break; }
     case 'user-menu': {
-      const r = await dialog(curName(), `<p style="margin-top:0">${isViewer() ? (ME.chucVu ? esc(ME.chucVu) : '') : `${ROLE[curRole()]} · tên đăng nhập <b>${esc(curId())}</b>${!isAdmin() ? `<br>${esc(permText(ME))} · Phạm vi: ${esc(scopeText(myAps()))}` : ''}`}</p><p class="muted small">${esc(S.config.donVi)} · Dữ liệu cập nhật ${S.loadedAt ? dt(S.loadedAt) : 'chưa tải'}${OUT.length ? ` · ${OUT.length} hộ chờ gửi` : ''}</p>`, [{ label: 'Đóng', value: null }, { label: 'Đổi mật khẩu', value: 'pw' }, { label: 'Đồng bộ ngay', value: 'sync' }, { label: 'Đăng xuất', cls: 'btn-navy', value: 'out' }]);
+      const who = isAdmin() ? `${ROLE[curRole()]} · tên đăng nhập <b>${esc(curId())}</b>` : [myChucVu() ? `<b>${esc(myChucVu())}</b>` : '', isViewer() ? '' : `${ROLE[curRole()]} · ${esc(permText(ME))} · Phạm vi: ${esc(scopeText(myAps()))}`].filter(Boolean).join('<br>');
+      const r = await dialog(curName(), `<p style="margin-top:0">${who}</p><p class="muted small">${esc(S.config.donVi)} · Dữ liệu cập nhật ${S.loadedAt ? dt(S.loadedAt) : 'chưa tải'}${OUT.length ? ` · ${OUT.length} hộ chờ gửi` : ''}</p>`, [{ label: 'Đóng', value: null }, { label: 'Đổi mật khẩu', value: 'pw' }, { label: 'Đồng bộ ngay', value: 'sync' }, { label: 'Đăng xuất', cls: 'btn-navy', value: 'out' }]);
       if (r === 'pw') await changePassword(); else if (r === 'sync') await onAct('sync-now', el); else if (r === 'out') await onAct('logout', el);
       break; }
     case 'ap-info': await apInfoDlg(el.dataset.ap); break;
