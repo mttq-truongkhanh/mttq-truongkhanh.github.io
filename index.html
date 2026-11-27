@@ -693,6 +693,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .topbar{display:flex;align-items:center;gap:14px;padding:calc(8px + env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) 8px max(14px, env(safe-area-inset-left));background:var(--navy);color:#fff;border-bottom:3px solid var(--red);flex:none}
 .brand{display:flex;align-items:center;gap:10px;min-width:0}
 .brand-mark{width:36px;height:36px;border-radius:9px;background:var(--red);display:grid;place-items:center;flex:none;box-shadow:inset 0 0 0 2px rgba(255,255,255,.15)}
+.brand-mark.has-img{background:#fff;padding:2px;overflow:hidden;box-shadow:none}
+.brand-mark img{display:block;width:100%;height:100%;object-fit:contain;border-radius:7px}
 .brand h1{font-size:15.5px;margin:0;font-weight:700;letter-spacing:.1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .t-short{display:none}
 .brand .sub{font-size:12px;color:#c9d2e3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -855,6 +857,14 @@ textarea{resize:vertical}
 .ds-brand b{font-size:21px;letter-spacing:.01em;line-height:1.2}
 .ds-brand span{font-size:13px;opacity:.92}
 .ds-brand small{font-size:11px;opacity:.8;letter-spacing:.02em}
+.ds-logo{display:block;width:60px;height:60px;object-fit:contain;background:#fff;border-radius:12px;padding:3px;flex:none}
+.ds-logo-btn{position:relative;flex:none;border:0;background:none;padding:0;color:#fff;cursor:pointer;display:grid;place-items:center;min-width:44px;min-height:44px}
+.ds-pen{position:absolute;right:-6px;bottom:-6px;width:22px;height:22px;border-radius:50%;background:var(--gold,#f2c94c);color:#143d66;display:grid;place-items:center;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.ds-brand-edit{align-self:flex-start;margin-top:6px;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.1);color:#fff;border-radius:999px;padding:4px 10px;font-size:12px;display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.br-box{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.br-prev{width:96px;height:96px;border:1px dashed var(--line);border-radius:14px;display:grid;place-items:center;background:#f6f7f9;flex:none}
+.br-prev img{max-width:88px;max-height:88px;object-fit:contain;border-radius:10px}
+.br-act{display:flex;flex-direction:column;gap:8px;align-items:flex-start;flex:1 1 180px}
 .ds-search{background:#fff;color:var(--ink);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
 .ds-st{display:flex;align-items:center;gap:8px;color:#1d4ed8;font-weight:700;font-size:14px;letter-spacing:.01em}
 .ds-search input,.ds-search select{width:100%;font:inherit;font-size:15px;padding:11px 16px;border:1px solid #cfd6df;border-radius:999px;background:#fff;color:var(--ink)}
@@ -1404,7 +1414,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.27i';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.27j';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -1810,11 +1820,21 @@ function readExt(root, at, fields, base) {
   }
   return cleanExt(fields, o);
 }
+/* Biểu tượng mặc định (ghim bản đồ) và ảnh đại diện do quản trị viên chọn */
+function brandSvg(n) { return `<svg width="${n}" height="${n}" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><path d="M9 10.5 12 8l3 2.5V13H9z" fill="#fff" stroke="none"/></svg>`; }
+function okLogo(v) { return typeof v === 'string' && v.length <= 30000 && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(v); }
+function logoSrc(u) { u = u || SCHEMA().ui; return okLogo(u.logo) ? u.logo : ''; }
+const TEN_BD0 = 'Bản đồ số an sinh xã hội';
+const tenBD = () => String(SCHEMA().ui.tenBD || '').trim() || TEN_BD0;
+const brandMark = (px, ic, u) => { const lg = logoSrc(u); return `<div class="brand-mark${lg ? ' has-img' : ''}"${px ? ` style="width:${px}px;height:${px}px"` : ''}>${lg ? `<img src="${lg}" alt="">` : brandSvg(ic || 22)}</div>`; };
 function applyTheme(u, tenXa) {
+  { const lg = logoSrc(u);
+    $$('.topbar .brand-mark').forEach(el => { el.classList.toggle('has-img', !!lg); el.innerHTML = lg ? `<img src="${lg}" alt="">` : brandSvg(22); });
+    const fav = document.querySelector('link[rel=icon]'); if (fav) { fav.href = lg || 'icon-192.png'; fav.type = lg ? lg.slice(5, lg.indexOf(';')) : 'image/png'; } }
   const r = document.documentElement.style; r.setProperty('--navy', u.navy); r.setProperty('--red', u.red);
   const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = u.navy;
   const a = document.querySelector('.t-long'), b = document.querySelector('.t-short'); if (a) a.textContent = u.title; if (b) b.textContent = u.short;
-  document.title = u.title + (tenXa ? ` – xã ${tenXa}` : '');
+  document.title = u.title + (tenXa && !String(u.title).toLowerCase().includes(String(tenXa).toLowerCase()) ? ` – xã ${tenXa}` : '');
 }
 /* Áp cấu trúc vào ứng dụng: phân loại, danh mục, gợi ý nhập, màu sắc */
 function applySchema(c) {
@@ -2554,6 +2574,46 @@ function nhaPlan() {
 const GON_SEC = ['thunhap', 'nguyennhan'];
 const gonSecs = () => SCHEMA().ui.gonMig ? [] : GON_SEC.filter(k => secOf(k) && !secOf(k).an);
 const nhaPend = () => { if (SCHEMA().ui.nhaMig) return null; const p = nhaPlan(); return p && p.can ? p : null; };
+const LOGO_MAX = 14000;   /* ký tự — ảnh đại diện lưu cùng cấu trúc trên máy chủ nên giữ thật nhỏ */
+async function logoNen(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error('Không đọc được ảnh này. Hãy chọn ảnh khác (JPG, PNG).')); i.src = url; });
+    const W = img.naturalWidth || img.width, H = img.naturalHeight || img.height; if (!W || !H) throw new Error('Không đọc được ảnh này.');
+    for (const side of [192, 160, 128, 112, 96, 80]) {
+      const r = Math.min(1, side / Math.max(W, H)), c = document.createElement('canvas'); c.width = Math.max(1, Math.round(W * r)); c.height = Math.max(1, Math.round(H * r));
+      const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(img, 0, 0, c.width, c.height);
+      let d = c.toDataURL('image/png'); if (okLogo(d) && d.length <= LOGO_MAX) return d;
+      g.globalCompositeOperation = 'destination-over'; g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.globalCompositeOperation = 'source-over';
+      for (const q of [0.9, 0.8, 0.7]) { d = c.toDataURL('image/jpeg', q); if (okLogo(d) && d.length <= LOGO_MAX) return d; }
+    }
+    throw new Error('Ảnh quá lớn, không thu nhỏ được. Hãy chọn ảnh khác.');
+  } finally { URL.revokeObjectURL(url); }
+}
+async function brandDlg() {
+  if (!isAdmin()) return;
+  let logo = logoSrc();
+  const prev = () => `<div class="br-prev">${logo ? `<img src="${logo}" alt="">` : `<div class="brand-mark" style="width:84px;height:84px">${brandSvg(46)}</div>`}</div>`;
+  const body = `<div class="br-box"><div id="brPrev">${prev()}</div>
+      <div class="br-act"><label class="btn btn-navy btn-sm">${I('camera', 15)} Chọn ảnh từ máy<input type="file" accept="image/*" id="brFile" hidden></label>
+      <button type="button" class="btn btn-sm" id="brReset">Dùng biểu tượng mặc định</button>
+      <p class="hint" style="margin:2px 0 0">Nên chọn ảnh vuông, nền trong hoặc nền trắng (ví dụ logo Mặt trận). Ảnh tự thu nhỏ.</p></div></div>
+    <label class="f mt12"><span>Tên bản đồ</span><input name="tenBD" maxlength="80" value="${esc(tenBD())}" placeholder="${esc(TEN_BD0)}"></label>
+    <p class="hint">Ảnh và tên hiện ở góc trên ứng dụng, đầu trang Thống kê, màn hình đăng nhập của mọi tài khoản. Biểu tượng ứng dụng ngoài màn hình chính điện thoại không đổi.</p>`;
+  const pr = dialog('Ảnh đại diện và tên bản đồ', body, [{ label: 'Hủy', value: null }, { label: 'Lưu', cls: 'btn-navy', value: b => ({ ten: ($('[name=tenBD]', b).value || '').trim() }) }]);
+  const box = $('#dlg'), redraw = () => { $('#brPrev', box).innerHTML = prev(); };
+  $('#brFile', box).addEventListener('change', async e => {
+    const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
+    try { logo = await withBusy('Đang thu nhỏ ảnh…', () => logoNen(f)); redraw(); } catch (er) { toast(er.message || 'Không đọc được ảnh này.', 'err'); }
+  });
+  $('#brReset', box).addEventListener('click', () => { logo = ''; redraw(); });
+  const r = await pr; if (!r) return;
+  const sc = clone(SCHEMA()), ten = (r.ten || TEN_BD0).slice(0, 80);
+  sc.ui.tenBD = ten; sc.ui.title = ten; sc.ui.short = ten.slice(0, 40); sc.ui.logo = logo;
+  const ok = await quickSchema(sc, 'Đã đổi ảnh đại diện và tên bản đồ.');
+  if (ok && logo && SCHEMA().ui.logo !== logo) toast('Máy chủ chưa lưu được ảnh — hãy thử ảnh khác nhỏ, đơn giản hơn.', 'err');
+  if (ok && ui.view === 'settings') renderSettings();
+}
 async function nhaMigDlg() {
   const p = nhaPend(), gs = gonSecs(); if (!p && !gs.length) { toast('Biểu mẫu đã gọn, không còn gì cần áp dụng.', 'ok'); return; }
   const bxT = p ? p.bx.map(loaiTen).join(', ') : '';
@@ -2823,7 +2883,7 @@ function renderStats() {
 
   /* ----- Đầu trang + tra cứu ----- */
   const hero = `<div class="ds-hero">
-    <div class="ds-brand">${I('landmark', 30)}<div><b>BẢN ĐỒ SỐ AN SINH XÃ HỘI</b><span>${esc(donVi.toUpperCase())}</span><small>HỆ THỐNG QUẢN LÝ VÀ ĐIỀU HÀNH AN SINH</small></div></div>
+    <div class="ds-brand">${(() => { const lg = logoSrc(), pic = lg ? `<img class="ds-logo" src="${lg}" alt="">` : I('landmark', 30); return isAdmin() ? `<button type="button" class="ds-logo-btn" data-act="brand-edit" title="Đổi ảnh đại diện">${pic}<span class="ds-pen">${I('edit', 12)}</span></button>` : pic; })()}<div><b>${esc(tenBD().toUpperCase())}</b><span>${esc(donVi.toUpperCase())}</span><small>HỆ THỐNG QUẢN LÝ VÀ ĐIỀU HÀNH AN SINH</small>${isAdmin() ? `<button type="button" class="ds-brand-edit" data-act="brand-edit">${I('edit', 13)} Đổi ảnh đại diện, tên bản đồ</button>` : ''}</div></div>
     <form class="ds-search" id="dsSearch" autocomplete="off">
       <div class="ds-st">${I('search', 17)} TRA CỨU HỘ GIA ĐÌNH ${scoped ? 'TRONG PHẠM VI ĐƯỢC GIAO' : 'TOÀN XÃ'}</div>
       <input name="q" type="search" placeholder="Nhập tên chủ hộ hoặc mã hộ...">
@@ -3451,6 +3511,7 @@ function printHH(h) {
 function renderSettings() {
   const C = S.config, ad = isAdmin();
   $('#setForm').innerHTML = `
+    ${ad ? `<div class="card br-card"><h3>${I('edit')} Ảnh đại diện và tên bản đồ</h3><div class="row gap" style="align-items:center">${brandMark(56, 30)}<div class="grow"><b>${esc(tenBD())}</b><div class="muted small">${logoSrc() ? 'Đang dùng ảnh đại diện riêng' : 'Đang dùng biểu tượng mặc định'}</div></div></div><button type="button" class="btn btn-navy btn-sm mt8" data-act="brand-edit">Đổi ảnh đại diện, tên bản đồ</button></div>` : ''}
     ${ad ? `<div class="card" style="border-color:var(--navy)"><h3>${I('layers')} Cấu trúc ứng dụng</h3><p>Thêm, bớt, đổi tên các trường thông tin; thêm phân loại hộ; nhập Ban công tác Mặt trận, chi hội trưởng từng ${esc(apl())}; đổi màu, tên ứng dụng…</p><button type="button" class="btn btn-navy btn-sm" data-act="go-schema">Mở Cấu trúc ứng dụng</button></div>` : ''}
     ${ad ? `<fieldset><legend>Đơn vị (áp dụng cho mọi người)</legend>
       <label class="f"><span>Tên cơ quan (hiện trên tiêu đề, phiếu in)</span><input name="donVi" value="${esc(C.donVi)}"></label>
@@ -3985,7 +4046,7 @@ async function installGuide() {
 /* =========================================================
    CỔNG ĐĂNG NHẬP / THIẾT LẬP
    ========================================================= */
-const gateBrand = sub2 => `<div class="gate-brand"><div class="brand-mark" style="width:44px;height:44px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><path d="M9 10.5 12 8l3 2.5V13H9z" fill="#fff" stroke="none"/></svg></div><div><h2>${esc(SCHEMA().ui.title)}</h2><div class="muted small">${sub2}</div></div></div>`;
+const gateBrand = sub2 => `<div class="gate-brand">${brandMark(44, 26)}<div><h2>${esc(SCHEMA().ui.title)}</h2><div class="muted small">${sub2}</div></div></div>`;
 /* Nút cài ứng dụng ngay trên màn hình đăng nhập */
 function installCTA() {
   if (isStandalone() || !WEB) return '';
@@ -4214,6 +4275,7 @@ async function onAct(act, el, e) {
     case 'anh-bo': if (draft) { collectForm(); delete draft.ext[el.dataset.k]; rerenderEdit(false); } break;
     case 'anh-xem': { const src = el.getAttribute('src'); if (okAnh(src)) await dialog(el.getAttribute('alt') || 'Ảnh', `<img src="${src}" alt="" style="display:block;width:100%;height:auto;border-radius:8px">`, [{ label: 'Đóng', cls: 'btn-navy', value: null }], { wide: true }); break; }
     case 'nha-mig': if (isAdmin()) await nhaMigDlg(); break;
+    case 'brand-edit': await brandDlg(); break;
     case 'nha-later': ui.nhaLater = true; renderBanners(); break;
     case 'ht-del': collectForm(); draft.hoTro.splice(+el.dataset.i, 1); rerenderEdit(false); break;
     case 'f-loai': { const k = el.dataset.k; ui.f.loai.has(k) ? ui.f.loai.delete(k) : ui.f.loai.add(k); renderList(); break; }
