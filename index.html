@@ -1404,7 +1404,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.27h';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.27i';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -1907,7 +1907,8 @@ const isAdmin = () => !!ME && ME.role === 'admin';
 const curName = () => ME ? ME.name : '';
 const curId = () => ME ? ME.u : '';
 const curRole = () => ME ? ME.role : '';
-const myAps = () => (!ME || isAdmin()) ? [] : (ME.aps || []);
+const isViewer = () => !!ME && ME.role === 'viewer';
+const myAps = () => (!ME || isAdmin() || isViewer()) ? [] : (ME.aps || []);   /* người chỉ xem: luôn toàn xã */
 const inScope = ap => { const a = myAps(); return !a.length || a.includes(ap); };
 function can(act, h) {
   if (isAdmin()) return true;
@@ -2961,8 +2962,8 @@ function renderData() {
       <div class="row gap wrap"><button class="btn btn-navy" data-act="export-xlsx">Xuất toàn bộ (${S.households.length} hộ)</button><button class="btn" data-act="export-xlsx-filter">Chỉ các hộ đang lọc (${filtered().length})</button></div></div>` : '';
   const note = `<p class="muted small">Thông tin hộ nghèo, số CCCD là dữ liệu cá nhân, phải quản lý, sử dụng đúng mục đích theo quy định về bảo vệ dữ liệu cá nhân. File Excel xuất ra không có mật khẩu — không chia sẻ qua kênh công khai.</p>`;
   const syncCard = `<div class="card"><h3>${I('shield')} Đồng bộ dữ liệu</h3>
-      <p style="margin-bottom:4px"><b>${esc(ME.name)}</b>${ME.chucVu ? ' — ' + esc(ME.chucVu) : ''} · ${ROLE[ME.role]} · tên đăng nhập <b>${esc(ME.u)}</b></p>
-      ${isAdmin() ? '' : `<p>Quyền: ${esc(permText(ME))} · Phạm vi: <b>${esc(scopeText(ME.aps))}</b>. Xóa hộ chỉ quản trị viên thực hiện.</p>`}
+      <p style="margin-bottom:4px"><b>${esc(ME.name)}</b>${ME.chucVu ? ' — ' + esc(ME.chucVu) : ''}${isViewer() ? '' : ` · ${ROLE[ME.role]} · tên đăng nhập <b>${esc(ME.u)}</b>`}</p>
+      ${isAdmin() || isViewer() ? '' : `<p>Quyền: ${esc(permText(ME))} · Phạm vi: <b>${esc(scopeText(myAps()))}</b>. Xóa hộ chỉ quản trị viên thực hiện.</p>`}
       <p class="small" style="margin-bottom:8px">Dữ liệu cập nhật lúc <b>${S.loadedAt ? dt(S.loadedAt) : 'chưa tải'}</b>${OUT.length ? ` · <b style="color:var(--err)">${OUT.length} hộ chờ gửi</b>` : ' · đã gửi hết'}${net.online ? '' : ' · <b style="color:var(--err)">đang mất kết nối</b>'}</p>
       <button class="btn btn-navy" data-act="sync-now">${I('upload', 15)} Đồng bộ ngay</button></div>`;
   if (isAdmin()) {
@@ -3097,6 +3098,15 @@ async function uploadOld(list, cfg, note) {
 
 /* ----- Tài khoản cán bộ (quản trị viên) ----- */
 let USERS = null, LOG = [];
+async function fixViewerScope() {
+  if (!isAdmin() || ui.vsDone || !net.online) return; ui.vsDone = true;
+  try {
+    if (!USERS) await loadAccounts();
+    const bad = (USERS || []).filter(u => u.role === 'viewer' && Array.isArray(u.aps) && u.aps.length);
+    for (const u of bad) await api('userSave', { user: Object.assign({}, u, { aps: [] }) });
+    if (bad.length) { USERS = null; toast(`Đã đặt phạm vi toàn xã cho ${bad.length} tài khoản chỉ xem.`, 'ok'); if (ui.view === 'accounts') renderAccounts(); }
+  } catch (e) { ui.vsDone = false; }
+}
 async function loadAccounts() { const [u, l] = await Promise.all([api('users'), api('log')]); USERS = u.users; LOG = l.log || []; }
 function renderAccounts() {
   const box = $('#accounts');
@@ -3114,7 +3124,7 @@ function renderAccounts() {
     ${us.length ? us.map(u => `<div class="acc">
         <div class="row gap"><b>${esc(u.name)}</b><span class="tag ${u.role === 'editor' ? 'info' : ''}">${ROLE[u.role]}</span>${u.locked ? '<span class="tag red">Đã khóa</span>' : ''}</div>
         ${u.chucVu ? `<div class="sub2">${esc(u.chucVu)}</div>` : ''}
-        <div class="small" style="margin-top:3px">Tên đăng nhập: <b>${esc(u.u)}</b> · Quyền: ${esc(permText(u))} · Phạm vi: <b>${esc(scopeText(u.aps))}</b></div>
+        <div class="small" style="margin-top:3px">Tên đăng nhập: <b>${esc(u.u)}</b> · Quyền: ${esc(permText(u))} · Phạm vi: <b>${esc(u.role === 'viewer' ? 'toàn xã' : scopeText(u.aps))}</b></div>
         <div class="sub2">Tạo ${dd(u.createdAt)} · Đăng nhập gần nhất: ${u.lastLogin ? dt(u.lastLogin) : '<b>chưa đăng nhập</b>'}</div>
         <div class="row gap mt8">
           <button class="btn btn-sm btn-navy" data-act="acc-reset" data-uid="${esc(u.u)}">${I('key', 14)}Cấp lại mật khẩu</button>
@@ -3141,7 +3151,7 @@ function userForm(v, isNew) {
       <label class="chk"><input type="checkbox" ${chk('edit', v.edit ?? true)}> Sửa thông tin hộ (gồm thêm/bớt thành viên, lượt hỗ trợ, định vị)</label>
       <label class="chk"><input type="checkbox" ${chk('export', v.export ?? false)}> Xuất Excel</label>
       <label class="chk muted"><input type="checkbox" disabled> Xóa hộ — chỉ quản trị viên</label></div>
-    <div class="f"><span>Phạm vi ấp được giao (không chọn = toàn xã)</span><div class="ck-grid">${aps.map(a => `<label class="chk"><input type="checkbox" name="aps" data-multi="1" value="${esc(a)}" ${sel.includes(a) ? 'checked' : ''}>${esc(a)}</label>`).join('') || '<span class="muted">Chưa có danh sách ấp — nhập trong Cài đặt.</span>'}</div></div>
+    <div class="f"><span>Phạm vi ấp được giao — cho cán bộ nhập liệu (không chọn = toàn xã; người chỉ xem luôn xem toàn xã)</span><div class="ck-grid">${aps.map(a => `<label class="chk"><input type="checkbox" name="aps" data-multi="1" value="${esc(a)}" ${sel.includes(a) ? 'checked' : ''}>${esc(a)}</label>`).join('') || '<span class="muted">Chưa có danh sách ấp — nhập trong Cài đặt.</span>'}</div></div>
     ${isNew ? `<p class="hint">Tạo xong, ứng dụng hiện sẵn tin nhắn gồm <b>link cài ứng dụng, tên đăng nhập và mật khẩu</b> để gửi cho cán bộ.</p>` : ''}`;
 }
 function suggestU(name) {
@@ -3161,7 +3171,7 @@ const validUser = (r, isNew, self) => {
   }
   return '';
 };
-const userPayload = (r, base) => ({ u: base ? base.u : (normU(r.u) || suggestU(r.name)), name: String(r.name).trim(), chucVu: String(r.chucVu || '').trim(), role: r.role === 'viewer' ? 'viewer' : 'editor', perms: { add: !!r.add, edit: !!r.edit, export: !!r.export }, aps: r.aps || [], locked: base ? !!base.locked : false });
+const userPayload = (r, base) => ({ u: base ? base.u : (normU(r.u) || suggestU(r.name)), name: String(r.name).trim(), chucVu: String(r.chucVu || '').trim(), role: r.role === 'viewer' ? 'viewer' : 'editor', perms: { add: !!r.add, edit: !!r.edit, export: !!r.export }, aps: r.role === 'viewer' ? [] : (r.aps || []), locked: base ? !!base.locked : false });
 async function addUser() {
   if (!USERS) await loadAccounts();
   const r = await formDialog('Thêm tài khoản cán bộ', v => userForm(v, true), 'Tạo tài khoản', x => validUser(x, true));
@@ -4098,7 +4108,7 @@ async function forgotPassword() {
 let started = false;
 function applyRoleUI() {
   $('#tabAccounts').hidden = !isAdmin(); $('#tabSchema').hidden = !isAdmin();
-  $('#userChip .av').textContent = initials(curName()); $('#userChip .nm').textContent = curName(); $('#userChip .role').textContent = ROLE[curRole()] || '';
+  $('#userChip .av').textContent = initials(curName()); $('#userChip .nm').textContent = curName(); $('#userChip .role').textContent = isViewer() ? (ME.chucVu || '') : (ROLE[curRole()] || '');
 }
 /* ---------- Tự cập nhật phiên bản mới ----------
    Ứng dụng cài trên điện thoại thường chạy ngầm, không tự tải lại. Khi mở lại / định kỳ, hỏi version.json:
@@ -4134,6 +4144,7 @@ function startApp() {
   ui.selId = null; ui.f.ap = ''; ui.fromStats = false; document.body.classList.remove('list-full'); showView('stats'); renderAll();
   if (S.households.some(hasLoc)) setTimeout(fitAll, 250);
   setTimeout(() => checkUpdate(), 5000);
+  setTimeout(() => fixViewerScope(), 6000);
 }
 
 /* =========================================================
@@ -4273,7 +4284,7 @@ async function onAct(act, el, e) {
       const ok = OUT.length ? await confirmDlg('Đăng xuất', `Còn <b>${OUT.length} hộ</b> chưa gửi lên máy chủ. Các hộ này vẫn được giữ trên máy và sẽ gửi khi bạn đăng nhập lại.`, 'Vẫn đăng xuất') : true;
       if (!ok) break; lsSet(CKEY, null); endSession('Đã đăng xuất.'); break; }
     case 'user-menu': {
-      const r = await dialog(curName(), `<p style="margin-top:0">${ROLE[curRole()]} · tên đăng nhập <b>${esc(curId())}</b>${!isAdmin() ? `<br>${esc(permText(ME))} · Phạm vi: ${esc(scopeText(ME.aps))}` : ''}</p><p class="muted small">${esc(S.config.donVi)} · Dữ liệu cập nhật ${S.loadedAt ? dt(S.loadedAt) : 'chưa tải'}${OUT.length ? ` · ${OUT.length} hộ chờ gửi` : ''}</p>`, [{ label: 'Đóng', value: null }, { label: 'Đổi mật khẩu', value: 'pw' }, { label: 'Đồng bộ ngay', value: 'sync' }, { label: 'Đăng xuất', cls: 'btn-navy', value: 'out' }]);
+      const r = await dialog(curName(), `<p style="margin-top:0">${isViewer() ? (ME.chucVu ? esc(ME.chucVu) : '') : `${ROLE[curRole()]} · tên đăng nhập <b>${esc(curId())}</b>${!isAdmin() ? `<br>${esc(permText(ME))} · Phạm vi: ${esc(scopeText(myAps()))}` : ''}`}</p><p class="muted small">${esc(S.config.donVi)} · Dữ liệu cập nhật ${S.loadedAt ? dt(S.loadedAt) : 'chưa tải'}${OUT.length ? ` · ${OUT.length} hộ chờ gửi` : ''}</p>`, [{ label: 'Đóng', value: null }, { label: 'Đổi mật khẩu', value: 'pw' }, { label: 'Đồng bộ ngay', value: 'sync' }, { label: 'Đăng xuất', cls: 'btn-navy', value: 'out' }]);
       if (r === 'pw') await changePassword(); else if (r === 'sync') await onAct('sync-now', el); else if (r === 'out') await onAct('logout', el);
       break; }
     case 'ap-info': await apInfoDlg(el.dataset.ap); break;
