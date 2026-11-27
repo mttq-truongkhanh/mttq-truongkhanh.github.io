@@ -1414,7 +1414,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.28a';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.28b';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -1830,7 +1830,7 @@ const brandMark = (px, ic, u) => { const lg = logoSrc(u); return `<div class="br
 function applyTheme(u, tenXa) {
   { const lg = logoSrc(u);
     $$('.topbar .brand-mark').forEach(el => { el.classList.toggle('has-img', !!lg); el.innerHTML = lg ? `<img src="${lg}" alt="">` : brandSvg(22); });
-    const fav = document.querySelector('link[rel=icon]'); if (fav) { fav.href = lg || 'icon-192.png'; fav.type = lg ? lg.slice(5, lg.indexOf(';')) : 'image/png'; } }
+    const fav = document.querySelector('link[rel=icon]'); if (fav) { fav.href = lg || 'icon-192.png?v=2'; fav.type = lg ? lg.slice(5, lg.indexOf(';')) : 'image/png'; } }
   const r = document.documentElement.style; r.setProperty('--navy', u.navy); r.setProperty('--red', u.red);
   const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = u.navy;
   const a = document.querySelector('.t-long'), b = document.querySelector('.t-short'); if (a) a.textContent = u.title; if (b) b.textContent = u.short;
@@ -4031,7 +4031,7 @@ addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = 
 addEventListener('appinstalled', () => { installEvt = null; toast('Đã cài ứng dụng. Mở bằng biểu tượng “Bản đồ an sinh” trên màn hình chính.', 'ok'); });
 if (WEB) {
   const add = (rel, href, extra) => { const l = document.createElement('link'); l.rel = rel; l.href = href; Object.assign(l, extra || {}); document.head.appendChild(l); };
-  add('manifest', 'manifest.webmanifest'); add('icon', 'icon-192.png', { sizes: '192x192', type: 'image/png' }); add('apple-touch-icon', 'apple-touch-icon.png');
+  add('manifest', 'manifest.webmanifest'); add('icon', 'icon-192.png?v=2', { sizes: '192x192', type: 'image/png' }); add('apple-touch-icon', 'apple-touch-icon.png?v=2');
   if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW', err)));
 }
 async function installGuide() {
