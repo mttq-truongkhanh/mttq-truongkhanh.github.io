@@ -866,6 +866,8 @@ textarea{resize:vertical}
 .ds-years{margin:14px 0 0;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff}
 .ds-yt{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;margin-bottom:4px;color:#6d4c41}
 .empty-help{text-align:left}
+.near{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.near .chip{font-size:13px}
 .empty-help p{margin:0 0 10px}
 .ds-yr{padding:8px 0;border-bottom:1px dashed var(--line)}
 .ds-yr:last-of-type{border-bottom:0}
@@ -1366,7 +1368,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.27c';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.27d';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -2203,6 +2205,15 @@ function matchQ(h, q) {
   const hay = ' ' + norm([h.chuHo, h.maHo, h.diaChi, h.ap, h.dienThoai, h.phuTrach, ...xs, ...h.thanhVien.map(m => m.hoTen + ' ' + (m.cccd || ''))].join(' | ')) + ' ';
   return ws.every(w => hay.includes(w));
 }
+/* Không tìm thấy: gợi ý hộ gần giống (khớp được nhiều chữ nhất trong tên chủ hộ, thành viên) */
+function nearHTML(q) {
+  const ws = norm(q).split(/\s+/).filter(Boolean); if (!ws.length) return '';
+  const need = ws.length >= 2 ? ws.length - 1 : 1;
+  const sc = S.households.map(h => { const hay = ' ' + norm([h.chuHo, h.maHo, ...h.thanhVien.map(m => m.hoTen)].join(' ')).replace(/[^a-z0-9]+/g, ' ') + ' '; return { h, n: ws.filter(w => hay.includes(' ' + w + ' ') || hay.includes(w)).length }; })
+    .filter(x => x.n >= need).sort((a, b) => b.n - a.n || a.h.chuHo.localeCompare(b.h.chuHo, 'vi')).slice(0, 6);
+  return `${sc.length ? `<p>Hộ <b>gần giống</b>:</p><div class="near">${sc.map(x => `<button type="button" class="chip" data-act="open" data-id="${esc(x.h.id)}"><b>${esc(x.h.chuHo)}</b>&nbsp;· ${esc(x.h.ap || 'chưa rõ ' + apl())}</button>`).join('')}</div>` : ''}
+    <p class="muted small">Thử gõ ít chữ hơn (ví dụ chỉ tên “${esc(String(q).trim().split(/\s+/).pop())}”), hoặc tìm theo mã hộ, số điện thoại. Hộ do cán bộ khác vừa nhập: bấm ⟳ Cập nhật ở cuối danh sách để tải số liệu mới nhất.</p>`;
+}
 /* Danh sách trống: giải thích bộ lọc đang chặn, gợi ý hộ khớp tên ở nơi khác */
 const apBare = x => norm(x).replace(/^\d+\s*[.)-]?\s*/, '').replace(/^ap\s+/, '');
 function emptyHelp() {
@@ -2216,7 +2227,7 @@ function emptyHelp() {
     ? [...new Set(S.households.filter(h => h.ap && h.ap !== ui.f.ap && apBare(h.ap) === apBare(ui.f.ap)).map(h => h.ap))] : [];
   return `<div class="empty empty-help"><p>Không có hộ nào${ui.f.q ? ` khớp “<b>${esc(ui.f.q)}</b>”` : ''}${act.length ? ` trong bộ lọc: <b>${esc(act.join(' · '))}</b>` : ''}.</p>
     ${act.length && hit.length ? `<p>Có <b>${hit.length}</b> hộ khớp tên ở nơi khác: ${hit.slice(0, 5).map(h => `<b>${esc(h.chuHo)}</b> (${esc(h.ap || 'chưa rõ ' + apl())})`).join(', ')}${hit.length > 5 ? '…' : ''}.</p>` : ''}
-    ${!hit.length && ui.f.q ? `<p class="muted small">Thử gõ ít chữ hơn (ví dụ chỉ tên “${esc(String(ui.f.q).trim().split(/\s+/).pop())}”), hoặc tìm theo mã hộ, số điện thoại.</p>` : ''}
+    ${!hit.length && ui.f.q ? nearHTML(ui.f.q) : ''}
     ${act.length ? `<button type="button" class="btn btn-navy" data-act="f-clear">Bỏ lọc, tìm toàn xã</button>` : ''}
     ${old.length ? `<p class="muted small" style="margin-top:12px">${esc(ui.f.ap)} chưa có hộ vì các hộ đang ghi tên ${esc(apl())} cũ: ${old.map(a => `<b>${esc(a)}</b> (${S.households.filter(h => h.ap === a).length} hộ)`).join(', ')}.</p>${old.map(a => `<button type="button" class="btn btn-sm" data-act="ap-move" data-ap="${esc(a)}">Chuyển các hộ “${esc(a)}” sang ${esc(ui.f.ap)}</button>`).join(' ')}` : ''}</div>`;
 }
