@@ -1039,6 +1039,8 @@ code{background:var(--soft);padding:1px 5px;border-radius:5px;font-size:12.5px;w
   .pick-banner{top:auto;bottom:10px;left:10px;right:10px;transform:none;max-width:none}
   .pick-banner span{flex:1}
   body[data-view=schema] #mapWrap{display:none}
+  body.q-focus #mapWrap{display:none}
+  body.q-focus #addBtns,body.q-focus #banners,body.q-focus #fMoreBtn,body.q-focus #fExt{display:none!important}
 }
 @media (max-width:520px){
   .topbar .brand>div:last-child{display:none}
@@ -1091,6 +1093,8 @@ code{background:var(--soft);padding:1px 5px;border-radius:5px;font-size:12.5px;w
 .btn-navy:hover{background:var(--navy);filter:brightness(.8)}
 .view-foot{align-items:center}
 #fExt{display:flex;flex-wrap:wrap;gap:6px}
+.f-more{display:block;font-size:13.5px;padding:2px 0}
+.f-more[hidden]{display:none}
 #fExt select{width:auto;flex:1 1 140px;font-size:13px;padding:5px 8px}
 #fExt select.on{border-color:var(--navy);box-shadow:inset 0 0 0 1px var(--navy)}
 .f-bool{margin:4px 0 10px;align-items:flex-start}
@@ -1158,6 +1162,7 @@ input[type=color]{cursor:pointer}
           <label class="chk small"><input type="checkbox" id="fNoLoc"> Chưa định vị</label>
         </div>
         <div class="chips mt8" id="fLoai"></div>
+        <button type="button" class="linkbtn f-more mt8" id="fMoreBtn" data-act="f-more" hidden></button>
         <div class="mt8" id="fExt" hidden></div>
         <div class="row gap mt12" id="addBtns">
           <button class="btn btn-primary grow" data-act="new"><i data-ic="plus"></i>Thêm hộ</button>
@@ -1361,7 +1366,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.27b';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.27c';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -2249,7 +2254,9 @@ function locOptions(f) {
 function renderExtFilters() {
   const box = $('#fExt'), fs = locFields();
   for (const k of Object.keys(ui.f.x)) if (!fs.some(f => f.k === k)) delete ui.f.x[k];
-  box.hidden = !fs.length; if (!fs.length) { box.innerHTML = ''; return; }
+  const mb = $('#fMoreBtn'), on = Object.values(ui.f.x).filter(v => v !== '').length;
+  mb.hidden = !fs.length; mb.innerHTML = `${ui.fMore ? '▾' : '▸'} Lọc thêm${on ? ` <b>(${on} đang chọn)</b>` : ''}`; mb.setAttribute('aria-expanded', !!ui.fMore);
+  box.hidden = !fs.length || !ui.fMore; if (!fs.length) { box.innerHTML = ''; return; }
   box.innerHTML = fs.map(f => { const cur = ui.f.x[f.k] || ''; const opts = locOptions(f); return `<select data-loc="${esc(f.k)}" class="${cur ? 'on' : ''}" aria-label="Lọc theo ${esc(f.ten)}"><option value="">${esc(f.ten)}: tất cả</option>${opts.map(([v, t]) => `<option value="${esc(v)}" ${String(v) === cur ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>`; }).join('');
 }
 function apOrder() { const list = [...S.config.apList]; for (const h of S.households) if (h.ap && !list.includes(h.ap)) list.push(h.ap); return list; }
@@ -2318,7 +2325,7 @@ function openDetail(id, { fly = true } = {}) {
   const h = byId(id); if (!h) return;
   ui.selId = id; renderDetail(); showView('detail'); highlight(id);
   $$('#list .hh').forEach(b => b.classList.toggle('sel', b.dataset.id === id));
-  if (fly && hasLoc(h)) { map.flyTo([h.lat, h.lng], Math.max(map.getZoom(), 17), { duration: .6 }); setTimeout(() => markers.get(id)?.openPopup(), 650); }
+  if (fly && hasLoc(h) && map.getContainer().offsetHeight > 0) { map.invalidateSize(); map.flyTo([h.lat, h.lng], Math.max(map.getZoom(), 17), { duration: .6 }); setTimeout(() => markers.get(id)?.openPopup(), 650); }
   $('#v-detail .view-body').scrollTop = 0;
 }
 function renderDetail() {
@@ -4034,6 +4041,7 @@ async function onAct(act, el, e) {
     case 'ht-chot': if (isAdmin()) await chotNam(); break;
     case 'app-update': await doReload(); break;
     case 'ap-move': if (isAdmin()) await apMove(el.dataset.ap || ''); break;
+    case 'f-more': ui.fMore = !ui.fMore; renderExtFilters(); break;
     case 'f-clear': ui.f.ap = ''; ui.f.loai = new Set(); ui.f.noLoc = false; ui.f.x = {}; if ($('#fNoLoc')) $('#fNoLoc').checked = false; renderList(); break;
     case 'st-ap': ui.stApSel = el.dataset.ap || ''; renderStats(); setTimeout(() => { const d = $('#dsApd'); if (d) d.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30); break;
     case 'st-aplist': ui.f.q = ''; $('#q').value = ''; ui.f.loai = new Set(); ui.f.ap = el.dataset.ap || '__none'; ui.selId = null; showView('list'); renderAll(); if ($('#fAp')) $('#fAp').value = ui.f.ap; break;
@@ -4104,7 +4112,17 @@ document.addEventListener('click', e => {
   if (el.disabled) return;
   e.preventDefault(); onAct(el.dataset.act, el, e);
 });
-$('#q').addEventListener('input', e => { ui.f.q = e.target.value; clearTimeout(ui._qt); ui._qt = setTimeout(() => { if (ui.view !== 'list') showView('list'); renderList(); }, 140); });
+$('#q').addEventListener('focus', () => { if (matchMedia('(max-width:860px)').matches) { clearTimeout(ui._qb); document.body.classList.add('q-focus'); } });
+$('#q').addEventListener('blur', () => { clearTimeout(ui._qb); ui._qb = setTimeout(() => { if (document.body.classList.contains('q-focus')) { document.body.classList.remove('q-focus'); setTimeout(() => map.invalidateSize(), 80); } }, 350); });
+$('#q').addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  e.preventDefault(); ui.f.q = e.target.value; const l = filtered();
+  clearTimeout(ui._qb); document.body.classList.remove('q-focus'); e.target.blur();
+  if (ui.view !== 'list') showView('list'); renderList();
+  setTimeout(() => { map.invalidateSize(); if (l.length === 1) openDetail(l[0].id); }, 150);
+  if (l.length !== 1) toast(l.length ? `Tìm thấy ${l.length} hộ.` : 'Không tìm thấy hộ nào — xem gợi ý trong danh sách.', l.length ? 'ok' : 'err');
+});
+$('#q').addEventListener('input', e => { ui.f.q = e.target.value; clearTimeout(ui._qt); ui._qt = setTimeout(() => { if (ui.view !== 'list') showView('list'); renderList(); const vb = $('#list').parentElement; if (vb) vb.scrollTop = 0; }, 140); });
 $('#fAp').addEventListener('change', e => { ui.f.ap = e.target.value; renderList(); });
 $('#fNoLoc').addEventListener('change', e => { ui.f.noLoc = e.target.checked; renderList(); });
 $('#editForm').addEventListener('input', e => {
