@@ -865,6 +865,8 @@ textarea{resize:vertical}
 .ds-ms{font-size:13px;opacity:.9}
 .ds-years{margin:14px 0 0;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff}
 .ds-yt{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;margin-bottom:4px;color:#6d4c41}
+.empty-help{text-align:left}
+.empty-help p{margin:0 0 10px}
 .ds-yr{padding:8px 0;border-bottom:1px dashed var(--line)}
 .ds-yr:last-of-type{border-bottom:0}
 .ds-yh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
@@ -1359,7 +1361,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.27';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.27b';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -2189,6 +2191,30 @@ function showView(v) {
   $('#panel').classList.toggle('wide', ['edit', 'stats', 'accounts', 'schema'].includes(v));
   setTimeout(() => map.invalidateSize(), 220);
 }
+/* Tìm theo từng chữ: "năm nguyễn" vẫn ra "Nguyễn Văn Năm" */
+function matchQ(h, q) {
+  const ws = norm(q).split(/\s+/).filter(Boolean); if (!ws.length) return true;
+  const xs = SCHEMA().f.map(f => fText(f, h.ext[f.k]));
+  const hay = ' ' + norm([h.chuHo, h.maHo, h.diaChi, h.ap, h.dienThoai, h.phuTrach, ...xs, ...h.thanhVien.map(m => m.hoTen + ' ' + (m.cccd || ''))].join(' | ')) + ' ';
+  return ws.every(w => hay.includes(w));
+}
+/* Danh sách trống: giải thích bộ lọc đang chặn, gợi ý hộ khớp tên ở nơi khác */
+const apBare = x => norm(x).replace(/^\d+\s*[.)-]?\s*/, '').replace(/^ap\s+/, '');
+function emptyHelp() {
+  const act = [];
+  if (ui.f.ap) act.push(ui.f.ap === '__none' ? `Chưa rõ ${apl()}` : ui.f.ap);
+  if (ui.f.loai.size) act.push([...ui.f.loai].map(loaiTen).join(', '));
+  if (ui.f.noLoc) act.push('Chưa định vị');
+  const xN = Object.values(ui.f.x).filter(v => v !== '').length; if (xN) act.push(`${xN} bộ lọc thêm`);
+  const hit = ui.f.q ? S.households.filter(h => matchQ(h, ui.f.q)) : [];
+  const old = ui.f.ap && ui.f.ap !== '__none' && isAdmin() && !S.households.some(h => h.ap === ui.f.ap)
+    ? [...new Set(S.households.filter(h => h.ap && h.ap !== ui.f.ap && apBare(h.ap) === apBare(ui.f.ap)).map(h => h.ap))] : [];
+  return `<div class="empty empty-help"><p>Không có hộ nào${ui.f.q ? ` khớp “<b>${esc(ui.f.q)}</b>”` : ''}${act.length ? ` trong bộ lọc: <b>${esc(act.join(' · '))}</b>` : ''}.</p>
+    ${act.length && hit.length ? `<p>Có <b>${hit.length}</b> hộ khớp tên ở nơi khác: ${hit.slice(0, 5).map(h => `<b>${esc(h.chuHo)}</b> (${esc(h.ap || 'chưa rõ ' + apl())})`).join(', ')}${hit.length > 5 ? '…' : ''}.</p>` : ''}
+    ${!hit.length && ui.f.q ? `<p class="muted small">Thử gõ ít chữ hơn (ví dụ chỉ tên “${esc(String(ui.f.q).trim().split(/\s+/).pop())}”), hoặc tìm theo mã hộ, số điện thoại.</p>` : ''}
+    ${act.length ? `<button type="button" class="btn btn-navy" data-act="f-clear">Bỏ lọc, tìm toàn xã</button>` : ''}
+    ${old.length ? `<p class="muted small" style="margin-top:12px">${esc(ui.f.ap)} chưa có hộ vì các hộ đang ghi tên ${esc(apl())} cũ: ${old.map(a => `<b>${esc(a)}</b> (${S.households.filter(h => h.ap === a).length} hộ)`).join(', ')}.</p>${old.map(a => `<button type="button" class="btn btn-sm" data-act="ap-move" data-ap="${esc(a)}">Chuyển các hộ “${esc(a)}” sang ${esc(ui.f.ap)}</button>`).join(' ')}` : ''}</div>`;
+}
 function filtered() {
   const q = norm(ui.f.q);
   return S.households.filter(h => {
@@ -2196,7 +2222,7 @@ function filtered() {
     if (ui.f.loai.size && ![...ui.f.loai].some(k => inLoai(h, k))) return false;
     if (ui.f.noLoc && hasLoc(h)) return false;
     for (const [k, val] of Object.entries(ui.f.x)) if (val !== '' && !matchLoc(h, k, val)) return false;
-    if (q) { const xs = SCHEMA().f.map(f => fText(f, h.ext[f.k])); const hay = norm([h.chuHo, h.maHo, h.diaChi, h.ap, h.dienThoai, h.phuTrach, ...xs, ...h.thanhVien.map(m => m.hoTen + ' ' + (m.cccd || ''))].join(' | ')); if (!hay.includes(q)) return false; }
+    if (q && !matchQ(h, q)) return false;
     return true;
   });
 }
@@ -2261,6 +2287,7 @@ function renderList() {
       ${mp.length ? `<div class="hh-meta">${esc(mp.join(' · '))}</div>` : ''}</div>
       <div class="hh-side">${loaiBadges(h)}${hasLoc(h) ? '' : '<span class="tag warn">Chưa định vị</span>'}</div></button>`;
   }
+  if (!html && S.households.length) html = emptyHelp();
   $('#list').innerHTML = html || `<div class="empty">${S.households.length ? 'Không có hộ nào khớp bộ lọc.' : isAdmin() ? 'Chưa có hộ nào. Bấm <b>Thêm hộ</b>, hoặc vào mục <b>Dữ liệu</b> để nhập từ Excel / chuyển dữ liệu phiên bản cũ.' : can('add') ? 'Chưa có hộ nào trong phạm vi được giao. Bấm <b>Thêm hộ</b> để nhập.' : 'Chưa có hộ nào trong phạm vi được giao.'}</div>`;
   const nk = list.reduce((s, h) => s + h.thanhVien.length, 0), noLoc = list.filter(h => !hasLoc(h)).length;
   $('#listFoot').innerHTML = `<span>Hiển thị ${list.length}/${S.households.length} hộ · ${fmt(nk)} nhân khẩu · ${noLoc} hộ chưa định vị</span><button class="linkbtn sync-btn" data-act="sync-now" title="Tải số liệu mới nhất">⟳ <span id="syncInfo"></span></button>`; syncUI();
@@ -2277,6 +2304,8 @@ function renderBanners() {
   if (isAdmin()) {
     const kh = kemHintKey();
     if (kh) h += `<div class="banner info"><div>Phân loại <b>“${esc(loaiTen(kh))}”</b> đang tách riêng, nên một hộ vừa nghèo vừa thuộc “${esc(loaiTen(kh))}” phải nhập thành 2 hộ. Chuyển thành <b>diện kèm theo</b> để chỉ cần đánh dấu thêm?</div><div class="row gap" style="margin-left:auto;flex:none"><button class="btn btn-sm btn-navy" data-act="kem-convert" data-k="${esc(kh)}">Chuyển</button><button class="btn btn-sm" data-act="kem-later" data-k="${esc(kh)}">Để sau</button></div></div>`;
+    const apL0 = S.config.apList || [], oldAps = apL0.length ? [...new Set(S.households.filter(h => h.ap && !apL0.includes(h.ap)).map(h => h.ap))] : [];
+    if (oldAps.length) h += `<div class="banner warn"><div>Có hộ đang ghi tên ${esc(apl())} không có trong danh sách ${esc(apl())} (tên cũ): ${oldAps.map(a => `<b>${esc(a)}</b> (${S.households.filter(x => x.ap === a).length} hộ)`).join(', ')} — lọc và thống kê theo ${esc(apl())} sẽ không thấy các hộ này.</div><div class="row gap wrap" style="margin-left:auto;flex:none">${oldAps.map(a => `<button class="btn btn-sm btn-navy" data-act="ap-move" data-ap="${esc(a)}">Chuyển “${esc(a)}”…</button>`).join('')}</div></div>`;
     const dn = dupPairs().length;
     if (dn) h += `<div class="banner warn"><div>Có <b>${dn}</b> hộ có thể bị <b>nhập trùng</b> (một bản phân loại chính, một bản chỉ là diện kèm theo).</div><button class="btn btn-sm" data-act="merge-dups">Xem và gộp</button></div>`;
   }
@@ -4005,6 +4034,7 @@ async function onAct(act, el, e) {
     case 'ht-chot': if (isAdmin()) await chotNam(); break;
     case 'app-update': await doReload(); break;
     case 'ap-move': if (isAdmin()) await apMove(el.dataset.ap || ''); break;
+    case 'f-clear': ui.f.ap = ''; ui.f.loai = new Set(); ui.f.noLoc = false; ui.f.x = {}; if ($('#fNoLoc')) $('#fNoLoc').checked = false; renderList(); break;
     case 'st-ap': ui.stApSel = el.dataset.ap || ''; renderStats(); setTimeout(() => { const d = $('#dsApd'); if (d) d.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30); break;
     case 'st-aplist': ui.f.q = ''; $('#q').value = ''; ui.f.loai = new Set(); ui.f.ap = el.dataset.ap || '__none'; ui.selId = null; showView('list'); renderAll(); if ($('#fAp')) $('#fAp').value = ui.f.ap; break;
     case 'st-aphist': apHistDlg(el.dataset.ap || ''); break;
