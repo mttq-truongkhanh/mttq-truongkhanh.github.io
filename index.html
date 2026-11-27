@@ -1067,6 +1067,11 @@ code{background:var(--soft);padding:1px 5px;border-radius:5px;font-size:12.5px;w
   .pick-banner span{flex:1}
   body[data-view=schema] #mapWrap{display:none}
   body.q-focus #mapWrap,body.list-full #mapWrap{display:none}
+  body[data-view=edit] #mapWrap{height:24vh;min-height:140px}
+  body[data-view=edit].map-big #mapWrap{height:76vh}
+  body[data-view=edit].e-focus:not(.map-big) #mapWrap{display:none}
+  body[data-view=edit]:not(.map-big) .map-tools{flex-direction:row}
+  body[data-view=edit]:not(.map-big) #baseSeg,body[data-view=edit]:not(.map-big) .map-tools [data-act=fit],body[data-view=edit]:not(.map-big) #btnLabels{display:none}
   body.q-focus #addBtns,body.q-focus #banners,body.q-focus #fMoreBtn,body.q-focus #fExt{display:none!important}
 }
 @media (max-width:520px){
@@ -1395,7 +1400,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.27f';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.27g';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -2230,7 +2235,7 @@ addEventListener('popstate', () => {
 function leaveListFull() { ui.fromStats = false; document.body.classList.remove('list-full'); ui.f.loai = new Set(); ui.f.ap = ''; setTimeout(() => map.invalidateSize(), 80); }
 function showView(v) {
   navSync(v);
-  ui.view = v; document.body.dataset.view = v;
+  ui.view = v; document.body.dataset.view = v; if (v !== 'edit') document.body.classList.remove('e-focus');
   $$('.view').forEach(s => s.classList.toggle('active', s.id === 'v-' + v));
   const tab = ['list', 'detail', 'edit'].includes(v) ? 'list' : v; ui.tab = tab;
   $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
@@ -2366,7 +2371,7 @@ function renderBanners() {
     if (kh) h += `<div class="banner info"><div>Phân loại <b>“${esc(loaiTen(kh))}”</b> đang tách riêng, nên một hộ vừa nghèo vừa thuộc “${esc(loaiTen(kh))}” phải nhập thành 2 hộ. Chuyển thành <b>diện kèm theo</b> để chỉ cần đánh dấu thêm?</div><div class="row gap" style="margin-left:auto;flex:none"><button class="btn btn-sm btn-navy" data-act="kem-convert" data-k="${esc(kh)}">Chuyển</button><button class="btn btn-sm" data-act="kem-later" data-k="${esc(kh)}">Để sau</button></div></div>`;
     const apL0 = S.config.apList || [], oldAps = apL0.length ? [...new Set(S.households.filter(h => h.ap && !apL0.includes(h.ap)).map(h => h.ap))] : [];
     if (oldAps.length) h += `<div class="banner warn"><div>Có hộ đang ghi tên ${esc(apl())} không có trong danh sách ${esc(apl())} (tên cũ): ${oldAps.map(a => `<b>${esc(a)}</b> (${S.households.filter(x => x.ap === a).length} hộ)`).join(', ')} — lọc và thống kê theo ${esc(apl())} sẽ không thấy các hộ này.</div><div class="row gap wrap" style="margin-left:auto;flex:none">${oldAps.map(a => `<button class="btn btn-sm btn-navy" data-act="ap-move" data-ap="${esc(a)}">Chuyển “${esc(a)}”…</button>`).join('')}</div></div>`;
-    if (!SCHEMA().ui.nhaMig && !ui.nhaLater) { const p = nhaPlan(); if (p && p.can) h += `<div class="banner info"><div>Sắp xếp lại <b>ô nhập về nhà ở</b>: chỉ khi đánh dấu “${esc(p.bx.map(loaiTen).join(', '))}” mới hiện ô mô tả tình trạng nhà và ô đính kèm ảnh${p.xoa.length ? `; xóa ${p.xoa.map(f => `“${esc(f.ten)}”`).join(', ')}` : ''}.</div><div class="row gap" style="margin-left:auto;flex:none"><button class="btn btn-sm btn-navy" data-act="nha-mig">Xem và áp dụng</button><button class="btn btn-sm" data-act="nha-later">Để sau</button></div></div>`; }
+    if (!ui.nhaLater) { const p = nhaPend(), gs = gonSecs(); if (p || gs.length) h += `<div class="banner info"><div><b>Gọn biểu mẫu thêm hộ</b>: ${[gs.length ? `bỏ mục ${gs.map(k => `“${esc(SECT(k))}”`).join(', ')}` : '', p ? `chỉ khi đánh dấu “${esc(p.bx.map(loaiTen).join(', '))}” mới hiện ô mô tả tình trạng nhà và ô ảnh${p.xoa.length ? `; xóa ${p.xoa.map(f => `“${esc(f.ten)}”`).join(', ')}` : ''}` : ''].filter(Boolean).join('; ')}.</div><div class="row gap" style="margin-left:auto;flex:none"><button class="btn btn-sm btn-navy" data-act="nha-mig">Xem và áp dụng</button><button class="btn btn-sm" data-act="nha-later">Để sau</button></div></div>`; }
     const dn = dupPairs().length;
     if (dn) h += `<div class="banner warn"><div>Có <b>${dn}</b> hộ có thể bị <b>nhập trùng</b> (một bản phân loại chính, một bản chỉ là diện kèm theo).</div><button class="btn btn-sm" data-act="merge-dups">Xem và gộp</button></div>`;
   }
@@ -2548,33 +2553,45 @@ function nhaPlan() {
   const anhOk = anh.length > 0 && anh.every(f => sameL(f) && !f.an);
   return { bx, mota, moTaOk, xoa, anh, anhOk, can: !moTaOk || !anhOk || xoa.length > 0 };
 }
+const GON_SEC = ['thunhap', 'nguyennhan'];
+const gonSecs = () => SCHEMA().ui.gonMig ? [] : GON_SEC.filter(k => secOf(k) && !secOf(k).an);
+const nhaPend = () => { if (SCHEMA().ui.nhaMig) return null; const p = nhaPlan(); return p && p.can ? p : null; };
 async function nhaMigDlg() {
-  const p = nhaPlan(); if (!p) { toast('Chưa có phân loại “Bức xúc nhà ở”.', 'err'); return; }
-  const bxT = p.bx.map(loaiTen).join(', ');
+  const p = nhaPend(), gs = gonSecs(); if (!p && !gs.length) { toast('Biểu mẫu đã gọn, không còn gì cần áp dụng.', 'ok'); return; }
+  const bxT = p ? p.bx.map(loaiTen).join(', ') : '';
   const ck = (name, html) => `<label class="chk"><input type="checkbox" name="${name}" checked><span>${html}</span></label>`;
-  let body = `<p style="margin-top:0">Khi thêm/sửa hộ, chỉ lúc đánh dấu <b>${esc(bxT)}</b> mới hiện ô mô tả tình trạng nhà và ô đính kèm ảnh. Các thay đổi sẽ áp dụng:</p><div class="mrg-list">`;
+  let body = `<p style="margin-top:0">Các thay đổi sẽ áp dụng cho phần thêm/sửa hộ:</p><div class="mrg-list">`;
+  gs.forEach(k => { body += ck('s_' + k, `Bỏ mục <b>“${esc(SECT(k))}”</b> <small class="muted">(không hiện khi thêm/sửa hộ, xem chi tiết, in phiếu)</small>`); });
+  if (p) {
   if (!p.moTaOk) body += ck('mota', p.mota ? `Đổi ô <b>“${esc(p.mota.ten)}”</b> thành <b>“${NHA_MOTA}”</b> (ghi tình trạng căn nhà, không ghi địa chỉ)` : `Thêm ô <b>“${NHA_MOTA}”</b> (ghi tình trạng căn nhà, không ghi địa chỉ)`);
   if (!p.anhOk) body += ck('anh', p.anh.length ? `Ô ảnh <b>“${esc(p.anh[0].ten)}”</b> chỉ hiện khi đánh dấu ${esc(bxT)}` : `Thêm ô <b>“${NHA_ANH}”</b> (chụp hoặc chọn ảnh từ điện thoại)`);
   p.xoa.forEach((f, i) => { body += ck('x' + i, `Xóa ô <b>“${esc(f.ten)}”</b> <small class="muted">(nhóm ${esc(SECT(f.sec || 'chung'))})</small>`); });
+  }
   body += `</div>`;
-  if (!p.xoa.some(f => /^phan loai/.test(norm(f.ten)))) body += `<p class="hint">Không thấy ô “Phân loại” do anh/chị tự tạo. Ô “${esc(BL('loai'))}” chính (hộ nghèo, cận nghèo…) là ô bắt buộc nên được giữ lại.</p>`;
-  body += `<p class="hint">Bỏ đánh dấu mục nào thì mục đó giữ nguyên. Số liệu đã nhập ở ô bị xóa vẫn còn trong hồ sơ, chỉ không hiện nữa. Phần “Chi tiết hỗ trợ” và “Tổng số tiền đã được hỗ trợ” có sẵn trong mục ${esc(SECT('hotro'))}, tự cộng từ các lượt hỗ trợ.</p>`;
-  const r = await dialog('Sắp xếp lại ô nhập về nhà ở', body, [{ label: 'Hủy', value: null }, { label: 'Áp dụng', cls: 'btn-navy', value: b => readForm(b) }], { wide: true });
+  if (p && !p.xoa.some(f => /^phan loai/.test(norm(f.ten)))) body += `<p class="hint">Không thấy ô “Phân loại” do anh/chị tự tạo. Ô “${esc(BL('loai'))}” chính (hộ nghèo, cận nghèo…) là ô bắt buộc nên được giữ lại.</p>`;
+  body += `<p class="hint">Bỏ đánh dấu mục nào thì mục đó giữ nguyên. Số liệu đã nhập trước đây vẫn còn trong hồ sơ, chỉ không hiện nữa; muốn hiện lại thì bật trong mục Cấu trúc.${p ? ` Phần “Chi tiết hỗ trợ” và “Tổng số tiền đã được hỗ trợ” có sẵn trong mục ${esc(SECT('hotro'))}, tự cộng từ các lượt hỗ trợ.` : ''}</p>`;
+  const r = await dialog('Gọn biểu mẫu thêm hộ', body, [{ label: 'Hủy', value: null }, { label: 'Áp dụng', cls: 'btn-navy', value: b => readForm(b) }], { wide: true });
   if (!r) return;
-  const sc = clone(SCHEMA()), keys = sc.f.map(f => f.k), delK = p.xoa.filter((f, i) => r['x' + i]).map(f => f.k);
+  const sc = clone(SCHEMA()), keys = sc.f.map(f => f.k);
+  gs.forEach(k => { const x = sc.sec.find(y => y.k === k); if (x && r['s_' + k]) x.an = true; });
+  if (gs.length) sc.ui.gonMig = 1;
+  let themAnh = false;
+  if (p) {
+  const delK = p.xoa.filter((f, i) => r['x' + i]).map(f => f.k);
   let moK = p.mota ? p.mota.k : '';
   if (r.mota) {
     if (p.mota) Object.assign(sc.f.find(x => x.k === p.mota.k), { ten: NHA_MOTA, kieu: 'textarea', goiY: NHA_GOIY, sec: 'chung', loai: [...p.bx], an: false });
     else { moK = newKey('x', keys); keys.push(moK); sc.f.push({ k: moK, ten: NHA_MOTA, kieu: 'textarea', opts: [], goiY: NHA_GOIY, sec: 'chung', loai: [...p.bx] }); }
   }
-  const themAnh = r.anh && !p.anh.length;
+  themAnh = r.anh && !p.anh.length;
   if (r.anh) {
     if (p.anh.length) sc.f.filter(f => f.kieu === 'anh').forEach(f => { f.loai = [...p.bx]; f.an = false; });
     else { const f = { k: newKey('x', keys), ten: NHA_ANH, kieu: 'anh', opts: [], goiY: '', sec: 'chung', loai: [...p.bx] }, i = sc.f.findIndex(x => x.k === moK); if (i >= 0) sc.f.splice(i + 1, 0, f); else sc.f.push(f); }
   }
   sc.f = sc.f.filter(f => !delK.includes(f.k));
   sc.ui.nhaMig = 1;
-  const ok = await quickSchema(sc, 'Đã sắp xếp lại các ô nhập về nhà ở.');
+  }
+  const ok = await quickSchema(sc, 'Đã gọn biểu mẫu thêm hộ.');
   if (ok && themAnh && !SCHEMA().f.some(f => f.kieu === 'anh')) toast('Máy chủ chưa nhận kiểu ô “Ảnh” — ô ảnh chưa được thêm.', 'err');
 }
 function htRow(x, i) {
@@ -2707,7 +2724,7 @@ function setEditLoc(lat, lng, { pan = false } = {}) {
   if (!inVN(draft.lat, draft.lng)) toast('Tọa độ nằm ngoài lãnh thổ Việt Nam — vui lòng kiểm tra lại.', 'err');
   if (!$('[data-act=clear-loc]')) rerenderEdit();
 }
-function startPick() { ui.pick = true; $('#mapWrap').classList.add('picking'); document.body.classList.add('map-big'); setTimeout(() => map.invalidateSize(), 230); }
+function startPick() { document.body.classList.remove('e-focus'); ui.pick = true; $('#mapWrap').classList.add('picking'); document.body.classList.add('map-big'); setTimeout(() => map.invalidateSize(), 230); }
 function stopPick() { ui.pick = false; $('#mapWrap').classList.remove('picking'); document.body.classList.remove('map-big'); setTimeout(() => map.invalidateSize(), 230); }
 async function gpsFill() {
   const info = $('#gpsInfo'), id0 = draft && draft.id; if (info) info.textContent = 'Đang lấy tọa độ GPS… (có thể mất 5–20 giây)';
@@ -4324,6 +4341,23 @@ $('#editForm').addEventListener('change', e => {
   if ((t.name === 'loai' || t.dataset.kem !== undefined) && draft && SCHEMA().f.some(f => f.loai.length)) rerenderEdit();   /* hiện/ẩn trường chỉ áp dụng cho một số phân loại */
 });
 $('#editForm').addEventListener('submit', e => e.preventDefault());
+/* Điện thoại: đang gõ trong biểu mẫu thì ẩn bản đồ, đưa ô đang nhập lên chỗ dễ thấy (không bị bàn phím che) */
+const eTyping = t => !!(t && t.matches && t.matches('textarea, input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=date]):not([type=hidden])'));
+function eKeepVisible() {
+  const t = document.activeElement; if (!eTyping(t) || !$('#editForm').contains(t)) return;
+  const vb = t.closest('.view-body'); if (!vb) return;
+  const r = t.getBoundingClientRect(), vv = window.visualViewport, bottom = vv ? vv.offsetTop + vv.height : innerHeight, top = vb.getBoundingClientRect().top;
+  if (r.bottom > bottom - 8 || r.top < top) vb.scrollTop += r.top - top - Math.max(30, (bottom - top) * 0.22);
+}
+$('#editForm').addEventListener('focusin', e => {
+  if (!eTyping(e.target) || ui.pick || !matchMedia('(max-width:860px)').matches) return;
+  clearTimeout(ui._eb); document.body.classList.add('e-focus'); clearTimeout(ui._ek); ui._ek = setTimeout(eKeepVisible, 380);
+});
+$('#editForm').addEventListener('focusout', () => {
+  clearTimeout(ui._eb);
+  ui._eb = setTimeout(() => { if (eTyping(document.activeElement) && $('#editForm').contains(document.activeElement)) return; if (document.body.classList.contains('e-focus')) { document.body.classList.remove('e-focus'); setTimeout(() => map.invalidateSize(), 80); } }, 300);
+});
+if (window.visualViewport) visualViewport.addEventListener('resize', () => { if (document.body.classList.contains('e-focus')) { clearTimeout(ui._ek); ui._ek = setTimeout(eKeepVisible, 120); } });
 $('#fExt').addEventListener('change', e => { const s = e.target.closest('select[data-loc]'); if (!s) return; ui.f.x[s.dataset.loc] = s.value; renderList(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && ui.pick) stopPick(); });
 document.addEventListener('click', e => { const b = e.target.closest('.pw-eye'); if (!b) return; e.preventDefault(); e.stopPropagation(); const i = b.parentElement.querySelector('input'); if (i) { i.type = i.type === 'password' ? 'text' : 'password'; i.focus(); } }, true);
