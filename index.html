@@ -860,6 +860,7 @@ textarea{resize:vertical}
 .dv-card{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:14px 0 4px;padding:14px 16px;border-radius:14px;background:#fff7ed;border:1.5px solid #fb923c}
 .dv-ic{width:46px;height:46px;border-radius:50%;background:#ea580c;color:#fff;display:grid;place-items:center;flex:none}
 .dv-t{flex:1 1 200px;min-width:0}.dv-t b{display:block;font-size:16px}.dv-t small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.dv-b{display:flex;gap:8px;flex-wrap:wrap}
 .dv-box{display:flex;flex-direction:column;gap:8px;margin:10px 0 12px;padding:12px 14px;border-radius:12px;background:#fff7ed;border:1.5px solid #fb923c}
 .dv-box .dv-go{min-height:52px;font-size:17px;justify-content:center}
 .ds-logo{display:block;width:60px;height:60px;object-fit:contain;background:#fff;border-radius:12px;padding:3px;flex:none}
@@ -1419,7 +1420,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.28c';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.28d';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -3046,7 +3047,9 @@ function renderStats() {
     ${apRows.length && !SECH('apinfo') ? `<div class="sec">${esc(SECT('apinfo'))}</div>${apRows.map(x => `<div class="card" style="padding:8px 12px"><b>${esc(x)}</b><dl class="kv" style="margin:6px 0 0">${apInfoKV(x)}</dl></div>`).join('')}` : ''}`;
 
   const dvN = can('edit') ? S.households.filter(h => !hasLoc(h) && can('edit', h)).length : 0;
-  const dvCard = dvN ? `<div class="dv-card"><span class="dv-ic">${I('gps', 26)}</span><div class="dv-t"><b>Đi định vị hộ</b><small>Còn <b>${fmt(dvN)}</b> hộ chưa định vị${!isAdmin() && myAps().length ? ' trong ' + esc(scopeText(myAps())) : ''}. Chọn hộ, đứng tại nhà rồi bấm “Định vị tại đây” — không cần nhập lại họ tên, năm sinh.</small></div><button type="button" class="btn btn-navy" data-act="dv-start">Bắt đầu</button></div>` : '';
+  const dvAdd = can('add') ? `<button type="button" class="btn" data-act="dv-new">${I('plus', 16)}Thêm hộ mới</button>` : '';
+  const dvCard = dvN ? `<div class="dv-card"><span class="dv-ic">${I('gps', 26)}</span><div class="dv-t"><b>Đi định vị hộ</b><small>Còn <b>${fmt(dvN)}</b> hộ chưa định vị${!isAdmin() && myAps().length ? ' trong ' + esc(scopeText(myAps())) : ''}. Chọn hộ, đứng tại nhà rồi bấm “Định vị tại đây” — không cần nhập lại họ tên, năm sinh.${dvAdd ? ' Có hộ mới phát sinh thì bấm “Thêm hộ mới”.' : ''}</small></div><div class="dv-b"><button type="button" class="btn btn-navy" data-act="dv-start">Bắt đầu</button>${dvAdd}</div></div>`
+    : dvAdd && !isAdmin() ? `<div class="dv-card"><span class="dv-ic">${I('plus', 26)}</span><div class="dv-t"><b>Có hộ mới phát sinh?</b><small>Đứng tại nhà của hộ rồi bấm “Thêm hộ mới” — vị trí được lấy luôn.</small></div><div class="dv-b">${dvAdd}</div></div>` : '';
   $('#stats').innerHTML = `<div class="ds">${hero}${dvCard}${secI}${secII}${secIII}${secIV}
     ${more.trim() ? `<details class="ds-more"><summary>Phân tích thêm: đối tượng trong hộ, chỉ số thiếu hụt, nhu cầu…</summary>${more}</details>` : ''}</div>`;
   $('#dsSearch').addEventListener('submit', e => {
@@ -4311,6 +4314,7 @@ async function onAct(act, el, e) {
     case 'edit-gps': enterEdit(byId(id), { gps: true }); break;
     case 'dv-gps': await dvGPS(id); break;
     case 'dv-map': { const h = byId(id); if (!h) break; enterEdit(h); setTimeout(() => { startPick(); toast('Chạm vào đúng mái nhà của hộ trên bản đồ (có thể phóng to), rồi bấm “Lưu”.'); }, 300); break; }
+    case 'dv-new': if (can('add')) enterEdit(null, { gps: true }); break;
     case 'dv-start': {
       ui.f.q = ''; $('#q').value = ''; ui.f.loai = new Set(); ui.f.x = {}; ui.f.noLoc = true; if ($('#fNoLoc')) $('#fNoLoc').checked = true;
       ui.f.ap = !isAdmin() && myAps().length === 1 ? myAps()[0] : '';
