@@ -857,6 +857,11 @@ textarea{resize:vertical}
 .ds-brand b{font-size:21px;letter-spacing:.01em;line-height:1.2}
 .ds-brand span{font-size:13px;opacity:.92}
 .ds-brand small{font-size:11px;opacity:.8;letter-spacing:.02em}
+.dv-card{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:14px 0 4px;padding:14px 16px;border-radius:14px;background:#fff7ed;border:1.5px solid #fb923c}
+.dv-ic{width:46px;height:46px;border-radius:50%;background:#ea580c;color:#fff;display:grid;place-items:center;flex:none}
+.dv-t{flex:1 1 200px;min-width:0}.dv-t b{display:block;font-size:16px}.dv-t small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.dv-box{display:flex;flex-direction:column;gap:8px;margin:10px 0 12px;padding:12px 14px;border-radius:12px;background:#fff7ed;border:1.5px solid #fb923c}
+.dv-box .dv-go{min-height:52px;font-size:17px;justify-content:center}
 .ds-logo{display:block;width:60px;height:60px;object-fit:contain;background:#fff;border-radius:12px;padding:3px;flex:none}
 .ds-logo-btn{position:relative;flex:none;border:0;background:none;padding:0;color:#fff;cursor:pointer;display:grid;place-items:center;min-width:44px;min-height:44px}
 .ds-pen{position:absolute;right:-6px;bottom:-6px;width:22px;height:22px;border-radius:50%;background:var(--gold,#f2c94c);color:#143d66;display:grid;place-items:center;box-shadow:0 1px 3px rgba(0,0,0,.3)}
@@ -1414,7 +1419,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.28b';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.28c';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -1930,6 +1935,14 @@ const curRole = () => ME ? ME.role : '';
 const isViewer = () => !!ME && ME.role === 'viewer';
 const myAps = () => (!ME || isAdmin() || isViewer()) ? [] : (ME.aps || []);
 const cvKey = u => { const t = 'cv|' + String(u || ''); let x = 0; for (let i = 0; i < t.length; i++) x = (x * 31 + t.charCodeAt(i)) | 0; return 'h' + (x >>> 0).toString(36); };
+const CB_X = '_cb';   /* ext._cb = "thời điểm|Họ tên — chức vụ" của cán bộ ấp cập nhật gần nhất */
+const cbText = () => `${Date.now()}|${curName()}${myChucVu() ? ' — ' + myChucVu() : ''}`;
+function ngCapNhat(h) {
+  const m = String((h.ext || {})[CB_X] || '').match(/^(\d{10,})\|(.+)$/);
+  if (m) return { ten: m[2], at: +m[1], ap: true };
+  const cvm = SCHEMA().ui.cv, cv = isObj(cvm) && h.updatedById ? cvm[cvKey(h.updatedById)] || '' : '';
+  return { ten: h.updatedBy ? h.updatedBy + (cv && !h.updatedBy.includes(cv) ? ' — ' + cv : '') : '', at: h.updatedAt, ap: false };
+}
 const myChucVu = () => { if (!ME) return ''; const m = SCHEMA().ui.cv; return String(ME.chucVu || (isObj(m) ? m[cvKey(ME.u)] || '' : '')).trim(); };   /* người chỉ xem: luôn toàn xã */
 const inScope = ap => { const a = myAps(); return !a.length || a.includes(ap); };
 function can(act, h) {
@@ -2261,7 +2274,7 @@ addEventListener('popstate', () => {
   if (ui.view !== 'list' && ui.view !== 'stats') { showView('stats'); renderStats(); }
 });
 /* Danh sách mở từ ô số liệu ở Thống kê (cả trang, có nút quay lại Thống kê) */
-function leaveListFull() { ui.fromStats = false; document.body.classList.remove('list-full'); ui.f.loai = new Set(); ui.f.ap = ''; setTimeout(() => map.invalidateSize(), 80); }
+function leaveListFull() { if (ui.dv) { ui.f.noLoc = false; if ($('#fNoLoc')) $('#fNoLoc').checked = false; } ui.fromStats = false; ui.dv = false; document.body.classList.remove('list-full'); ui.f.loai = new Set(); ui.f.ap = ''; setTimeout(() => map.invalidateSize(), 80); }
 function showView(v) {
   navSync(v);
   ui.view = v; document.body.dataset.view = v; if (v !== 'edit') document.body.classList.remove('e-focus');
@@ -2310,6 +2323,7 @@ function filtered() {
     if (ui.f.ap === '__none') { if (h.ap) return false; } else if (ui.f.ap && h.ap !== ui.f.ap) return false;
     if (ui.f.loai.size && ![...ui.f.loai].some(k => inLoai(h, k))) return false;
     if (ui.f.noLoc && hasLoc(h)) return false;
+    if (ui.dv && !can('edit', h)) return false;
     for (const [k, val] of Object.entries(ui.f.x)) if (val !== '' && !matchLoc(h, k, val)) return false;
     if (q && !matchQ(h, q)) return false;
     return true;
@@ -2382,7 +2396,7 @@ function renderList() {
   $('#list').innerHTML = html || `<div class="empty">${S.households.length ? 'Không có hộ nào khớp bộ lọc.' : isAdmin() ? 'Chưa có hộ nào. Bấm <b>Thêm hộ</b>, hoặc vào mục <b>Dữ liệu</b> để nhập từ Excel / chuyển dữ liệu phiên bản cũ.' : can('add') ? 'Chưa có hộ nào trong phạm vi được giao. Bấm <b>Thêm hộ</b> để nhập.' : 'Chưa có hộ nào trong phạm vi được giao.'}</div>`;
   const nk = list.reduce((s, h) => s + h.thanhVien.length, 0), noLoc = list.filter(h => !hasLoc(h)).length;
   { const lb = $('#lfBar'); lb.hidden = !ui.fromStats;
-    if (ui.fromStats) { const ten = ui.f.loai.size ? [...ui.f.loai].map(loaiTen).join(', ') : 'Tất cả hộ', noi = ui.f.ap ? (ui.f.ap === '__none' ? 'Chưa rõ ' + apl() : ui.f.ap) : (!isAdmin() && myAps().length ? 'Phạm vi được giao' : 'Toàn xã');
+    if (ui.fromStats) { const ten = ui.dv ? 'Hộ chưa định vị' : ui.f.loai.size ? [...ui.f.loai].map(loaiTen).join(', ') : 'Tất cả hộ', noi = ui.f.ap ? (ui.f.ap === '__none' ? 'Chưa rõ ' + apl() : ui.f.ap) : (!isAdmin() && myAps().length ? 'Phạm vi được giao' : 'Toàn xã');
       lb.innerHTML = `<button type="button" class="btn btn-sm btn-ghost" data-act="lf-back">${I('back', 15)}Thống kê</button><div class="lf-t"><b>Danh sách ${esc(ten.charAt(0).toLowerCase() + ten.slice(1))}</b><small>${esc(noi)} · ${fmt(list.length)} hộ · ${fmt(nk)} nhân khẩu</small></div><button type="button" class="btn btn-sm lf-map" data-act="lf-map">${I('map', 15)}${document.body.classList.contains('list-full') ? 'Xem bản đồ' : 'Ẩn bản đồ'}</button>`; } }
   $('#listFoot').innerHTML = `<span>Hiển thị ${list.length}/${S.households.length} hộ · ${fmt(nk)} nhân khẩu · ${noLoc} hộ chưa định vị</span><button class="linkbtn sync-btn" data-act="sync-now" title="Tải số liệu mới nhất">⟳ <span id="syncInfo"></span></button>`; syncUI();
   refreshMarkers(list); renderLegend(list); renderBanners();
@@ -2428,15 +2442,18 @@ function renderDetail() {
   $('#detail').innerHTML = `
     <div class="d-head" style="--c:${L0.mau}">${loaiBadges(h)}${h.sample ? '<span class="tag">Dữ liệu mẫu</span>' : ''}${pendIds().has(h.id) ? '<span class="tag info">Chưa gửi lên máy chủ</span>' : ''}
       <h2>${esc(h.chuHo)}</h2><div class="muted">${esc(BL('maHo'))} <b>${esc(h.maHo || 'chờ cấp')}</b> · ${esc(h.ap || 'Chưa rõ ' + apl())}${h.namCongNhan && !BH('namCongNhan') ? ` · ${esc(BL('namCongNhan'))} ${h.namCongNhan}` : ''}</div></div>
+    ${ce && !hasLoc(h) ? `<div class="dv-box"><div class="dv-t"><b>Hộ này chưa định vị</b><small>Đứng tại nhà của hộ rồi bấm nút bên dưới. Không cần nhập lại thông tin.</small></div>
+      <button type="button" class="btn btn-navy dv-go" data-act="dv-gps" data-id="${h.id}">${I('gps', 18)}Định vị tại đây</button>
+      <button type="button" class="btn btn-sm" data-act="dv-map" data-id="${h.id}">${I('map', 15)}Chọn trên bản đồ</button></div>` : ''}
     <div class="d-actions">
       ${ce ? `<button class="btn btn-sm btn-navy" data-act="edit" data-id="${h.id}">${I('edit', 15)}Sửa</button>` : ''}
-      ${hasLoc(h) ? `<button class="btn btn-sm" data-act="fly" data-id="${h.id}">${I('map', 15)}Xem trên bản đồ</button><a class="btn btn-sm" href="${dirLink(h)}" target="_blank" rel="noopener">${I('route', 15)}Chỉ đường</a>` : ce ? `<button class="btn btn-sm" data-act="edit-gps" data-id="${h.id}">${I('gps', 15)}Định vị ngay</button>` : ''}
+      ${hasLoc(h) ? `<button class="btn btn-sm" data-act="fly" data-id="${h.id}">${I('map', 15)}Xem trên bản đồ</button><a class="btn btn-sm" href="${dirLink(h)}" target="_blank" rel="noopener">${I('route', 15)}Chỉ đường</a>${ce ? `<button class="btn btn-sm" data-act="dv-gps" data-id="${h.id}">${I('gps', 15)}Định vị lại</button>` : ''}` : ''}
       <button class="btn btn-sm" data-act="print" data-id="${h.id}">${I('print', 15)}In phiếu</button>
       ${can('delete') && !chinhOf(h) ? `<button class="btn btn-sm" data-act="merge-pick" data-id="${h.id}" title="Hộ này bị nhập trùng với một hộ nghèo, cận nghèo… đã có">Gộp vào hộ chính…</button>` : ''}
       ${can('delete') ? `<button class="btn btn-sm btn-danger" data-act="delete" data-id="${h.id}">${I('trash', 15)}Xóa</button>` : ''}
     </div>
     ${body}
-    <p class="muted small" style="margin-top:16px">${h.createdBy ? `Người tạo: ${esc(h.createdBy)} (${dd(h.createdAt)}) · ` : ''}Cập nhật lần cuối: ${h.updatedBy ? esc(h.updatedBy) + ', ' : ''}${dt(h.updatedAt)}</p>`;
+    <p class="muted small" style="margin-top:16px">${h.createdBy ? `Người tạo: ${esc(h.createdBy)} (${dd(h.createdAt)}) · ` : ''}Cập nhật lần cuối: ${h.updatedBy ? esc(ngCapNhat(Object.assign({}, h, { ext: {} })).ten) + ', ' : ''}${dt(h.updatedAt)}${(c => c.ap && c.ten !== ngCapNhat(Object.assign({}, h, { ext: {} })).ten ? `<br>Cán bộ ấp cập nhật: <b>${esc(c.ten)}</b>, ${dt(c.at)}` : '')(ngCapNhat(h))}</p>`;
 }
 
 /* Nội dung từng nhóm thông tin ở màn hình chi tiết hộ (kv = các trường bổ sung của nhóm, đã dựng sẵn) */
@@ -2796,6 +2813,29 @@ async function gpsFill() {
     toast(`Đã lấy vị trí (±${Math.round(c.accuracy)} m)`, 'ok');
   } catch (e) { if (!draft || draft.id !== id0) return; const i2 = $('#gpsInfo'); if (i2) i2.textContent = e.message; toast(e.message, 'err'); }
 }
+async function dvGPS(id) {
+  const h = byId(id); if (!h || !can('edit', h)) { toast('Tài khoản của bạn không có quyền này.', 'err'); return; }
+  let c; try { c = await withBusy('Đang lấy vị trí GPS… (5–20 giây, nên đứng ngoài trời)', () => getGPS()); } catch (e) { toast(e.message, 'err'); return; }
+  try { showMe(c); if (map.getContainer().offsetHeight) map.setView([c.latitude, c.longitude], 18); } catch (e) {}
+  const acc = Math.round(c.accuracy || 0);
+  const r = await dialog('Lưu vị trí cho hộ này?', `<p style="margin-top:0"><b>${esc(h.chuHo)}</b>${h.ap ? ' — ' + esc(h.ap) : ''}${h.diaChi ? '<br>' + esc(h.diaChi) : ''}</p>
+    <p>Sai số khoảng <b>±${acc} m</b>.${acc > 30 ? ' <span style="color:var(--red)">Sai số lớn — nên ra chỗ thoáng rồi bấm “Lấy lại”.</span>' : ' Vị trí đủ chính xác.'}</p>${hasLoc(h) ? '<p class="hint">Vị trí cũ của hộ sẽ được thay bằng vị trí này.</p>' : ''}`,
+    [{ label: 'Hủy', value: null }, { label: 'Lấy lại', value: 'again' }, { label: 'Lưu vị trí', cls: 'btn-navy', value: 'ok' }]);
+  if (r === 'again') return dvGPS(id);
+  if (r === 'ok') await dvSave(h, c.latitude, c.longitude);
+}
+async function dvSave(h, lat, lng) {
+  const base = h.updatedAt, d = clone(h);
+  d.lat = Math.round(lat * 1e7) / 1e7; d.lng = Math.round(lng * 1e7) / 1e7;
+  if (!inVN(d.lat, d.lng)) { toast('Tọa độ nằm ngoài lãnh thổ Việt Nam — hãy thử lại.', 'err'); return; }
+  d.updatedAt = Date.now(); d.updatedBy = curName(); d.updatedById = curId(); if (!isAdmin()) d.ext[CB_X] = cbText();
+  const clean = sanitizeHH(d); replaceLocal(clean); queueSave(clean, base); saveCache(); renderList();
+  await sync({ quiet: true, toastSent: false });
+  const sent = !OUT.some(o => o.h.id === clean.id), con = S.households.filter(x => !hasLoc(x) && can('edit', x)).length;
+  toast(`${sent ? 'Đã lưu vị trí' : 'Đã lưu vị trí trên máy (sẽ tự gửi khi có mạng)'} cho hộ ${clean.chuHo}.${ui.dv ? ` Còn ${con} hộ chưa định vị.` : ''}`, sent ? 'ok' : 'err');
+  if (ui.dv && ui.view === 'detail') { ui.selId = null; showView('list'); renderAll(); }
+  else if (ui.view === 'detail' && ui.selId === clean.id) renderDetail();
+}
 async function saveEdit() {
   collectForm();
   const d = draft, isNew = !!d._new;
@@ -2814,7 +2854,7 @@ async function saveEdit() {
   d.thanhVien = d.thanhVien.filter(m => m.hoTen);
   if (!d.thanhVien.length) d.thanhVien.push(Object.assign(blankTV(), { hoTen: d.chuHo, quanHe: 'Chủ hộ' }));
   d.hoTro = d.hoTro.filter(x => x.noiDung || x.giaTri);
-  d.updatedAt = Date.now(); d.updatedBy = curName(); d.updatedById = curId();
+  d.updatedAt = Date.now(); d.updatedBy = curName(); d.updatedById = curId(); if (!isAdmin()) d.ext[CB_X] = cbText();
   if (isNew) { d.createdAt = d.updatedAt; d.createdBy = curName(); d.createdById = curId(); }
   const clean = sanitizeHH(d); if (clean.ap) ui.lastAp = clean.ap;
   replaceLocal(clean); queueSave(clean, isNew ? 0 : d._base); saveCache();
@@ -2966,6 +3006,7 @@ function renderStats() {
     ${tool('db', 'Cập nhật dữ liệu', 'Quản lý hồ sơ và biến động hộ dân.', 'st-go', 'data-t="list"')}
     ${tool('trend', 'Thống kê báo cáo', `Tổng hợp toàn xã và từng ${esc(apl())}.`, 'st-scroll', 'data-to="dsI"')}
     ${can('export') ? tool('table', 'Xuất Excel', 'Phục vụ báo cáo định kỳ.', 'export-xlsx') : ''}
+    ${isAdmin() ? tool('upload', 'Nhập danh sách hộ', `Tải danh sách hộ các ${esc(apl())} từ Excel (chỉ quản trị viên).`, 'st-import') : ''}
     ${SECH('hotro') ? '' : tool('calendar', 'Theo dõi theo năm', 'So sánh kết quả qua các năm.', 'st-scroll', 'data-to="dsYears"')}</div>`;
 
   /* ----- Phân tích thêm (các chỉ số cũ) ----- */
@@ -3004,7 +3045,9 @@ function renderStats() {
     ${tf.length ? `<div class="sec">Thông tin bổ sung của thành viên (${fmt(nk(all))} người)</div>${tf.map(f => statField(f, all.flatMap(h => h.thanhVien.map(m => m.ext[f.k])), 'người')).join('')}` : ''}
     ${apRows.length && !SECH('apinfo') ? `<div class="sec">${esc(SECT('apinfo'))}</div>${apRows.map(x => `<div class="card" style="padding:8px 12px"><b>${esc(x)}</b><dl class="kv" style="margin:6px 0 0">${apInfoKV(x)}</dl></div>`).join('')}` : ''}`;
 
-  $('#stats').innerHTML = `<div class="ds">${hero}${secI}${secII}${secIII}${secIV}
+  const dvN = can('edit') ? S.households.filter(h => !hasLoc(h) && can('edit', h)).length : 0;
+  const dvCard = dvN ? `<div class="dv-card"><span class="dv-ic">${I('gps', 26)}</span><div class="dv-t"><b>Đi định vị hộ</b><small>Còn <b>${fmt(dvN)}</b> hộ chưa định vị${!isAdmin() && myAps().length ? ' trong ' + esc(scopeText(myAps())) : ''}. Chọn hộ, đứng tại nhà rồi bấm “Định vị tại đây” — không cần nhập lại họ tên, năm sinh.</small></div><button type="button" class="btn btn-navy" data-act="dv-start">Bắt đầu</button></div>` : '';
+  $('#stats').innerHTML = `<div class="ds">${hero}${dvCard}${secI}${secII}${secIII}${secIV}
     ${more.trim() ? `<details class="ds-more"><summary>Phân tích thêm: đối tượng trong hộ, chỉ số thiếu hụt, nhu cầu…</summary>${more}</details>` : ''}</div>`;
   $('#dsSearch').addEventListener('submit', e => {
     e.preventDefault(); const f = e.target, q = f.q.value.trim(), lo = f.loai.value, ap = f.ap.value;
@@ -3281,21 +3324,20 @@ async function showCredentials(u, pw, isNew) {
 /* ----- Excel ----- */
 /* Cột của file Excel dựng theo cấu trúc hiện tại: trường ẩn không xuất, trường bổ sung thêm cột (khóa 'x:<mã trường>') */
 const xw = t => Math.min(40, Math.max(11, String(t).length + 2));
-function colsHo() {
+/* Ô mô tả nhà ở (diện bức xúc) — không xuất Excel vì đã có cột diện và ảnh */
+const isMoTaNha = f => ['text', 'textarea'].includes(f.kieu) && / mo ta /.test(' ' + norm(f.ten).replace(/[^a-z0-9]+/g, ' ') + ' ') && / nha /.test(' ' + norm(f.ten).replace(/[^a-z0-9]+/g, ' ') + ' ');
+function colsHo(tpl) {
   const s = SCHEMA(), c = [['STT', 'stt', 6], [BL('maHo'), 'maHo', 11], [BL('chuHo'), 'chuHo', 24], [apL(), 'ap', 14]];
   if (!BH('diaChi')) c.push([BL('diaChi'), 'diaChi', 26]);
   c.push([BL('loai'), 'loai', 17]);
   kemKeys().filter(k => !LOAI[k].an || S.households.some(h => inLoai(h, k))).forEach(k => c.push([loaiTen(k), 'kem:' + k, xw(loaiTen(k))]));
   if (!BH('namCongNhan')) c.push([BL('namCongNhan'), 'namCongNhan', 10]);
-  c.push(['Số nhân khẩu', 'nk', 9]);
+  if (!tpl) c.push(['Số nhân khẩu', 'nk', 9]);
   if (!BH('dienThoai')) c.push([BL('dienThoai'), 'dienThoai', 13]);
-  if (!BH('thuNhap')) c.push([(s.bf.thuNhap || {}).ten || 'Thu nhập BQ (nghìn đ/người/tháng)', 'thuNhap', 14]);
-  if (!BH('thieuHut')) c.push(['Số chỉ số thiếu hụt', 'soTH', 10], ['Các chỉ số thiếu hụt', 'thieuHut', 40]);
   if (!SECH('nguyennhan')) c.push([SECT('nguyennhan'), 'nguyenNhan', 34]);
-  if (!SECH('nhucau')) c.push([SECT('nhucau'), 'nhuCau', 34]);
   if (!BH('phuTrach')) c.push([BL('phuTrach'), 'phuTrach', 22]);
-  c.push(['Vĩ độ', 'lat', 11], ['Kinh độ', 'lng', 11], ['Xem bản đồ', 'link', 13]);
-  s.f.filter(f => !f.an && f.xl).forEach(f => c.push([f.ten, 'x:' + f.k, xw(f.ten)]));
+  if (isAdmin()) { c.push(['Vĩ độ', 'lat', 11], ['Kinh độ', 'lng', 11]); if (!tpl) c.push(['Xem bản đồ', 'link', 13]); }   /* vị trí nhà: chỉ quản trị viên */
+  s.f.filter(f => !f.an && f.xl && !isMoTaNha(f) && !(tpl && f.kieu === 'anh')).forEach(f => c.push([f.ten, 'x:' + f.k, f.kieu === 'anh' ? 24 : xw(f.ten)]));
   if (!SECH('ghichu')) c.push([SECT('ghichu'), 'ghiChu', 30]);
   c.push(['Người cập nhật', 'updatedBy', 20], ['Thời điểm cập nhật', 'updatedAtTxt', 17]);
   return c;
@@ -3338,7 +3380,7 @@ function mapTv() {
 function matchHdr(text, mp) { const k = hdrKey(text); if (!k) return null; if (mp[k]) return mp[k]; for (const key of Object.keys(mp)) if (key.length > 3 && !mp[key].startsWith('x:') && k.startsWith(key)) return mp[key]; return null; }
 function hoRow(h, i) {
   const th = thieuHutCur(h);
-  const r = { stt: i + 1, maHo: h.maHo, chuHo: h.chuHo, ap: h.ap, diaChi: h.diaChi, loai: loaiTen(h.loai), namCongNhan: h.namCongNhan, nk: h.thanhVien.length, dienThoai: h.dienThoai, thuNhap: h.thuNhap, soTH: th.length, thieuHut: th.map(chiSoTen).join('; '), nguyenNhan: h.nguyenNhan.join('; '), nhuCau: h.nhuCau.join('; '), phuTrach: h.phuTrach, lat: h.lat, lng: h.lng, link: hasLoc(h) ? { text: 'Mở bản đồ', hyperlink: viewLink(h) } : '', ghiChu: h.ghiChu, updatedBy: h.updatedBy, updatedAtTxt: dt(h.updatedAt) };
+  const r = { stt: i + 1, maHo: h.maHo, chuHo: h.chuHo, ap: h.ap, diaChi: h.diaChi, loai: loaiTen(h.loai), namCongNhan: h.namCongNhan, nk: h.thanhVien.length, dienThoai: h.dienThoai, thuNhap: h.thuNhap, soTH: th.length, thieuHut: th.map(chiSoTen).join('; '), nguyenNhan: h.nguyenNhan.join('; '), nhuCau: h.nhuCau.join('; '), phuTrach: h.phuTrach, lat: h.lat, lng: h.lng, link: hasLoc(h) ? { text: 'Mở bản đồ', hyperlink: viewLink(h) } : '', ghiChu: h.ghiChu, updatedBy: ngCapNhat(h).ten, updatedAtTxt: dt(ngCapNhat(h).at) };
   for (const f of SCHEMA().f) r['x:' + f.k] = fCell(f, h.ext[f.k]);
   for (const k of kemKeys()) r['kem:' + k] = inLoai(h, k) ? 'Có' : '';
   return r;
@@ -3361,15 +3403,31 @@ function styleSheet(ws, nCols, filter = true) {
 async function buildWorkbook(list, { template = false } = {}) {
   const wb = new ExcelJS.Workbook(); wb.creator = S.config.donVi; wb.created = new Date();
   const add = (name, cols) => { const ws = wb.addWorksheet(name); ws.columns = cols.map(([h, k, w]) => ({ header: h, key: k, width: w })); return ws; };
-  const cH = colsHo(), cT = colsTv(), hasCol = (cols, k) => cols.some(c => c[1] === k);
+  const cH = colsHo(template), cT = colsTv(), hasCol = (cols, k) => cols.some(c => c[1] === k);
   const ws1 = add('DanhSachHo', template ? cH.slice(0, -2) : cH), ws2 = add('ThanhVien', cT), ws3 = add('HoTro', COLS_HT);
   let i2 = 0, i3 = 0;
   list.forEach((h, i) => {
-    const r = ws1.addRow(hoRow(h, i)); const lc = r.getCell('link'); if (lc.value && lc.value.hyperlink) lc.font = { color: { argb: 'FF1D4EA8' }, underline: true };
+    const r = ws1.addRow(hoRow(h, i)); if (hasCol(cH, 'link')) { const lc = r.getCell('link'); if (lc.value && lc.value.hyperlink) lc.font = { color: { argb: 'FF1D4EA8' }, underline: true }; }
     h.thanhVien.forEach(m => { const r2 = ws2.addRow(tvRowX(h, m, ++i2)); if (hasCol(cT, 'cccd')) r2.getCell('cccd').numFmt = '@'; });
     h.hoTro.forEach(x => ws3.addRow({ stt: ++i3, maHo: h.maHo, chuHo: h.chuHo, ap: h.ap, ngay: dateVN(x.ngay), hinhThuc: htOf(x) ? htTen(htOf(x)) : '', noiDung: x.noiDung, donVi: x.donVi, giaTri: x.giaTri }));
   });
-  if (hasCol(cH, 'thuNhap')) ws1.getColumn('thuNhap').numFmt = '#,##0';
+  /* Ảnh hiện trạng nhà ở: chèn thẳng ảnh vào ô */
+  const anhF = template ? [] : SCHEMA().f.filter(f => f.kieu === 'anh' && hasCol(cH, 'x:' + f.k));
+  if (anhF.length) {
+    const dim = src => new Promise(r => { const im = new Image(); im.onload = () => r({ w: im.naturalWidth || 4, h: im.naturalHeight || 3 }); im.onerror = () => r({ w: 4, h: 3 }); im.src = src; });
+    for (let i = 0; i < list.length; i++) {
+      let hMax = 0; const rn = i + 2;
+      for (const f of anhF) {
+        const v = list[i].ext[f.k], ex = okAnh(v) ? (/^data:image\/png/.test(v) ? 'png' : /^data:image\/jpe?g/.test(v) ? 'jpeg' : '') : '';
+        if (!ex) continue;
+        const d = await dim(v), k = Math.min(150 / d.w, 110 / d.h, 1), w = Math.round(d.w * k), hh = Math.round(d.h * k), col = ws1.getColumn('x:' + f.k).number - 1;
+        ws1.getRow(rn).getCell('x:' + f.k).value = null;
+        ws1.addImage(wb.addImage({ base64: v, extension: ex }), { tl: { col: col + 0.08, row: rn - 1 + 0.08 }, ext: { width: w, height: hh }, editAs: 'oneCell' });
+        hMax = Math.max(hMax, hh);
+      }
+      if (hMax) ws1.getRow(rn).height = Math.max(ws1.getRow(rn).height || 15, Math.ceil((hMax + 12) * 0.75));
+    }
+  }
   ws3.getColumn('giaTri').numFmt = '#,##0'; if (hasCol(cT, 'cccd')) ws2.getColumn('cccd').numFmt = '@';
   SCHEMA().f.filter(f => f.kieu === 'money' && hasCol(cH, 'x:' + f.k)).forEach(f => { ws1.getColumn('x:' + f.k).numFmt = '#,##0'; });
   styleSheet(ws1, ws1.columnCount); styleSheet(ws2, cT.length); styleSheet(ws3, COLS_HT.length);
@@ -3378,19 +3436,17 @@ async function buildWorkbook(list, { template = false } = {}) {
     const xf = [...SCHEMA().f.filter(f => !f.an && f.xl && f.kieu !== 'anh').map(f => [f, 'DanhSachHo']), ...SCHEMA().tv.filter(f => !f.an && f.xl).map(f => [f, 'ThanhVien'])];
     const xnote = ([f, ws]) => `• Cột “${f.ten}” (trang ${ws}): ${KIEU[f.kieu]}` + (f.kieu === 'select' ? ` — ghi một trong: ${f.opts.join('; ')}` : f.kieu === 'multi' ? ` — ghi nhiều mục cách nhau bằng dấu chấm phẩy, trong số: ${f.opts.join('; ')}` : f.kieu === 'bool' ? ' — ghi Có hoặc để trống' : f.kieu === 'nguoi' ? ' — ghi họ tên rồi số điện thoại, ví dụ: Nguyễn Văn A - 0912345678' : f.kieu === 'date' ? ' — ghi ngày/tháng/năm' : '') + '.';
     ['HƯỚNG DẪN NHẬP DỮ LIỆU', '• Giữ nguyên tên các trang (DanhSachHo, ThanhVien, HoTro) và dòng tiêu đề. Xóa dòng ví dụ trước khi nhập.', `• ${BL('maHo')} dùng để nối Danh sách hộ với Thành viên, Hỗ trợ. Mỗi hộ một mã duy nhất.`,
-     `• ${BL('loai')} ghi một trong: ${Object.keys(LOAI).filter(k => !LOAI[k].an && !isKem(k)).map(loaiTen).join(' / ')}.`, ...kemKeys().filter(k => !LOAI[k].an).map(k => `• Cột “${loaiTen(k)}”: ghi Có nếu hộ đồng thời thuộc diện này (ví dụ hộ nghèo có bức xúc về nhà ở) — mỗi hộ chỉ nhập 1 dòng, không tách thành 2 hộ.`), '• Thu nhập ghi theo nghìn đồng/người/tháng (ví dụ 1500 = 1.500.000 đồng).',
-     '• Các chỉ số thiếu hụt, nguyên nhân, nhu cầu: ghi nhiều mục cách nhau bằng dấu chấm phẩy (;), đúng tên trong ứng dụng.',
-     '• Vĩ độ, kinh độ: dạng số thập phân (ví dụ 9.691234 và 106.031234). Có thể để trống rồi định vị sau trên bản đồ.', '• Cột Có BHYT ghi Có/Không; cột Khuyết tật ghi Có hoặc để trống.',
-     ...xf.map(xnote),
-     '• Tên các chỉ số thiếu hụt hợp lệ: ' + CHI_SO.map(c => c.ten).join('; ')].forEach((t, i) => { const c = g.getCell(i + 1, 1); c.value = t; c.alignment = { wrapText: true }; c.font = { name: 'Times New Roman', size: 12, bold: i === 0 }; });
+     `• ${BL('loai')} ghi một trong: ${Object.keys(LOAI).filter(k => !LOAI[k].an && !isKem(k)).map(loaiTen).join(' / ')}.`, ...kemKeys().filter(k => !LOAI[k].an).map(k => `• Cột “${loaiTen(k)}”: ghi Có nếu hộ đồng thời thuộc diện này (ví dụ hộ nghèo có bức xúc về nhà ở) — mỗi hộ chỉ nhập 1 dòng, không tách thành 2 hộ.`), ...(SECH('nguyennhan') ? [] : ['• Nguyên nhân: ghi nhiều mục cách nhau bằng dấu chấm phẩy (;), đúng tên trong ứng dụng.']),
+     '• Vĩ độ, kinh độ: dạng số thập phân (ví dụ 9.691234 và 106.031234). Nên để trống: cán bộ ấp đến tận nhà, mở ứng dụng → “Đi định vị hộ” → chọn hộ → “Định vị tại đây”, không phải nhập lại họ tên, năm sinh.', '• Cột Có BHYT ghi Có/Không; cột Khuyết tật ghi Có hoặc để trống.',
+     ...xf.map(xnote)].forEach((t, i) => { const c = g.getCell(i + 1, 1); c.value = t; c.alignment = { wrapText: true }; c.font = { name: 'Times New Roman', size: 12, bold: i === 0 }; });
   } else {
     const cats = [...new Set([...Object.keys(LOAI).filter(k => !LOAI[k].an), ...list.map(h => h.loai)])];
     const nkA = arr => arr.reduce((s, h) => s + h.thanhVien.length, 0);
-    const ws4 = wb.addWorksheet('ThongKe'); ws4.orderNo = -1; ws4.columns = [[apL(), 18], ['Tổng số hộ', 10], ['Tổng nhân khẩu', 11], ...cats.flatMap(k => [[`${loaiTen(k)} (số hộ)`, 12], [`${loaiTen(k)} (nhân khẩu)`, 12]]), ['Đã định vị', 10]].map(([h, w]) => ({ header: h, width: w }));
-    const aps = [...new Set([...apOrder(), ...list.map(h => h.ap || '')])], t = new Array(cats.length * 2 + 3).fill(0), rx = [];
-    aps.forEach(a => { const arr = list.filter(h => (h.ap || '') === a); if (!arr.length) return; const v = [arr.length, nkA(arr), ...cats.flatMap(k => { const b = arr.filter(h => inLoai(h, k)); return [b.length, nkA(b)]; }), arr.filter(hasLoc).length]; v.forEach((x, i) => t[i] += x); rx.push([a || `Chưa rõ ${apl()}`, ...v]); });
+    const ws4 = wb.addWorksheet('ThongKe'); ws4.orderNo = -1; ws4.columns = [[apL(), 18], ['Tổng số hộ', 10], ['Tổng nhân khẩu', 11], ...cats.flatMap(k => [[`${loaiTen(k)} (số hộ)`, 12], [`${loaiTen(k)} (nhân khẩu)`, 12]]), ...(isAdmin() ? [['Đã định vị', 10]] : [])].map(([h, w]) => ({ header: h, width: w }));
+    const aps = [...new Set([...apOrder(), ...list.map(h => h.ap || '')])], t = new Array(cats.length * 2 + (isAdmin() ? 3 : 2)).fill(0), rx = [];
+    aps.forEach(a => { const arr = list.filter(h => (h.ap || '') === a); if (!arr.length) return; const v = [arr.length, nkA(arr), ...cats.flatMap(k => { const b = arr.filter(h => inLoai(h, k)); return [b.length, nkA(b)]; }), ...(isAdmin() ? [arr.filter(hasLoc).length] : [])]; v.forEach((x, i) => t[i] += x); rx.push([a || `Chưa rõ ${apl()}`, ...v]); });
     const tr = ws4.addRow([xaTong(), ...t]); rx.forEach(r => ws4.addRow(r));
-    styleSheet(ws4, cats.length * 2 + 4, false); tr.font = { bold: true, name: 'Times New Roman', size: 12 };
+    styleSheet(ws4, cats.length * 2 + (isAdmin() ? 4 : 3), false); tr.font = { bold: true, name: 'Times New Roman', size: 12 };
     /* Thông tin ấp: Ban công tác Mặt trận, chi hội trưởng */
     const sA = SCHEMA(), apsInfo = apOrder().filter(a => apInfoKV(a));
     if (sA.apF.length && apsInfo.length) {
@@ -4253,6 +4309,20 @@ async function onAct(act, el, e) {
     case 'new-gps': enterEdit(null, { gps: true }); break;
     case 'edit': enterEdit(byId(id)); break;
     case 'edit-gps': enterEdit(byId(id), { gps: true }); break;
+    case 'dv-gps': await dvGPS(id); break;
+    case 'dv-map': { const h = byId(id); if (!h) break; enterEdit(h); setTimeout(() => { startPick(); toast('Chạm vào đúng mái nhà của hộ trên bản đồ (có thể phóng to), rồi bấm “Lưu”.'); }, 300); break; }
+    case 'dv-start': {
+      ui.f.q = ''; $('#q').value = ''; ui.f.loai = new Set(); ui.f.x = {}; ui.f.noLoc = true; if ($('#fNoLoc')) $('#fNoLoc').checked = true;
+      ui.f.ap = !isAdmin() && myAps().length === 1 ? myAps()[0] : '';
+      ui.dv = true; ui.fromStats = true; ui.selId = null; document.body.classList.add('list-full'); showView('list'); renderAll();
+      setTimeout(() => { const vb = $('#list').parentElement; if (vb) vb.scrollTop = 0; }, 0);
+      break;
+    }
+    case 'st-import': if (isAdmin()) {
+      const r = await dialog('Nhập danh sách hộ từ Excel', `<ol style="margin:0;padding-left:20px;line-height:1.6"><li>Bấm <b>Tải file mẫu</b>, điền danh sách hộ của các ${esc(apl())}: mã hộ, họ tên chủ hộ, ${esc(apl())}, phân loại…; thành viên (họ tên, năm sinh…) ở trang <b>ThanhVien</b>.</li><li>Bấm <b>Chọn file để nhập</b>. Hộ trùng mã hộ sẽ được cập nhật, không bị nhân đôi.</li><li>Cán bộ ${esc(apl())} chỉ cần đến tận nhà, mở ứng dụng → <b>Đi định vị hộ</b> → chọn hộ → <b>Định vị tại đây</b>.</li></ol>`,
+        [{ label: 'Đóng', value: null }, { label: 'Tải file mẫu', value: 'tpl' }, { label: 'Chọn file để nhập', cls: 'btn-navy', value: 'imp' }]);
+      if (r === 'tpl') await exportTemplate(); else if (r === 'imp') $('#fileXlsx').click();
+    } break;
     case 'fly': { document.body.classList.remove('list-full'); map.invalidateSize(); const h = byId(id); if (h && hasLoc(h)) { map.flyTo([h.lat, h.lng], 18, { duration: .6 }); setTimeout(() => markers.get(id)?.openPopup(), 650); } break; }
     case 'delete': {
       if (!can('delete')) { toast('Chỉ quản trị viên được xóa hộ.', 'err'); break; }
