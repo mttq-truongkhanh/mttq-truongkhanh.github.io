@@ -1420,7 +1420,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.28d';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.28e';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -3342,7 +3342,7 @@ function colsHo(tpl) {
   if (isAdmin()) { c.push(['Vĩ độ', 'lat', 11], ['Kinh độ', 'lng', 11]); if (!tpl) c.push(['Xem bản đồ', 'link', 13]); }   /* vị trí nhà: chỉ quản trị viên */
   s.f.filter(f => !f.an && f.xl && !isMoTaNha(f) && !(tpl && f.kieu === 'anh')).forEach(f => c.push([f.ten, 'x:' + f.k, f.kieu === 'anh' ? 24 : xw(f.ten)]));
   if (!SECH('ghichu')) c.push([SECT('ghichu'), 'ghiChu', 30]);
-  c.push(['Người cập nhật', 'updatedBy', 20], ['Thời điểm cập nhật', 'updatedAtTxt', 17]);
+  c.push(['Người nhập liệu', 'updatedBy', 20], ['Thời điểm cập nhật', 'updatedAtTxt', 17]);
   return c;
 }
 function colsTv() {
