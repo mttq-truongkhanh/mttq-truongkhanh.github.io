@@ -861,6 +861,16 @@ textarea{resize:vertical}
 .dv-ic{width:46px;height:46px;border-radius:50%;background:#ea580c;color:#fff;display:grid;place-items:center;flex:none}
 .dv-t{flex:1 1 200px;min-width:0}.dv-t b{display:block;font-size:16px}.dv-t small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
 .dv-b{display:flex;gap:8px;flex-wrap:wrap}
+.ds-mb{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:10px}
+.ds-mb span{background:rgba(255,255,255,.14);border-radius:10px;padding:7px 10px;font-size:12.5px;line-height:1.3}
+.ds-mb b{display:block;font-size:16px;margin-top:2px}.ds-mb small{opacity:.8}
+.nv-box{border:1.5px solid #86efac;background:#f0fdf4;border-radius:12px;padding:10px 12px;margin:12px 0}
+.nv-h{display:flex;align-items:center;gap:8px;margin-bottom:6px;color:#166534}.nv-h b{flex:1;min-width:0}
+.nv-sum{font-weight:800;color:#15803d;white-space:nowrap;font-size:16px}
+.nv-r{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px dashed #bbf7d0}
+.nv-n{flex:1;min-width:0;word-break:break-word}.nv-n small{display:block;color:var(--muted);font-size:12px}
+.nv-v{white-space:nowrap;font-variant-numeric:tabular-nums}.nv-b{display:flex;gap:2px;flex:none}
+.nv-list{margin-bottom:8px}
 .dv-box{display:flex;flex-direction:column;gap:8px;margin:10px 0 12px;padding:12px 14px;border-radius:12px;background:#fff7ed;border:1.5px solid #fb923c}
 .dv-box .dv-go{min-height:52px;font-size:17px;justify-content:center}
 .ds-logo{display:block;width:60px;height:60px;object-fit:contain;background:#fff;border-radius:12px;padding:3px;flex:none}
@@ -1420,7 +1430,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.28e';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.29a';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -2916,6 +2926,48 @@ function dsTiles(arr, apKey) {
     ${one('bucxuc', 'Hộ bức xúc nhà ở', 'home', '#0e7490')}</div>`;
 }
 const htSumOf = a => a.reduce((t, x) => t + (x.giaTri || 0), 0);
+/* Nguồn vận động riêng của xã và từng ấp — không thuộc hộ nào. schema.ui.nv = { xa: [khoản], ap: { tên ấp: [khoản] } }, khoản = { id, ngay, noiDung, giaTri, by, at } */
+const NV_XA = '*';
+function nvData() { const v = SCHEMA().ui.nv; return { xa: isObj(v) && Array.isArray(v.xa) ? v.xa.filter(isObj) : [], ap: isObj(v) && isObj(v.ap) ? v.ap : {} }; }
+const nvOf = k => { const d = nvData(); return k === NV_XA ? d.xa : Array.isArray(d.ap[k]) ? d.ap[k].filter(isObj) : []; };
+const nvFlat = () => { const d = nvData(); return [...d.xa.map(e => Object.assign({}, e, { cap: NV_XA })), ...Object.entries(d.ap).flatMap(([a, l]) => (Array.isArray(l) ? l : []).filter(isObj).map(e => Object.assign({}, e, { cap: a })))]; };
+const nvSum = a => a.reduce((t, e) => t + (+e.giaTri || 0), 0);
+const nvTen = k => k === NV_XA ? `xã ${S.config.tenXa || ''}`.trim() : k;
+function nvBlock(k, title) {
+  const l = nvOf(k).filter(htOpen).sort((a, b) => String(b.ngay || '').localeCompare(String(a.ngay || ''))), ad = isAdmin();
+  return `<div class="nv-box"><div class="nv-h">${I('coins', 18)}<b>${esc(title)}</b><span class="nv-sum">${fmt(nvSum(l))} đ</span></div>
+    ${l.length ? `<div class="nv-list">${l.map(e => `<div class="nv-r"><div class="nv-n">${esc(e.noiDung || '')}<small>${e.ngay ? dateVN(e.ngay) : 'Chưa ghi ngày'}</small></div><b class="nv-v">${fmt(+e.giaTri || 0)} đ</b>${ad ? `<span class="nv-b"><button type="button" class="icon-btn" data-act="nv-edit" data-k="${esc(k)}" data-id="${esc(e.id)}" title="Sửa">${I('edit', 14)}</button><button type="button" class="icon-btn" data-act="nv-del" data-k="${esc(k)}" data-id="${esc(e.id)}" title="Xóa">${I('trash', 14)}</button></span>` : ''}</div>`).join('')}</div>`
+      : `<p class="muted small" style="margin:4px 0 8px">Chưa có khoản nào${htNamLabel() ? ' trong ' + htNamLabel() : ''}.</p>`}
+    ${ad ? `<button type="button" class="btn btn-sm btn-navy" data-act="nv-add" data-k="${esc(k)}">${I('plus', 14)}Thêm nguồn vận động</button>` : ''}</div>`;
+}
+const nvToday = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+async function nvSaveList(k, fn, msg) {
+  const sc = clone(SCHEMA()), v = isObj(sc.ui.nv) ? sc.ui.nv : {}; v.xa = Array.isArray(v.xa) ? v.xa : []; v.ap = isObj(v.ap) ? v.ap : {};
+  if (k === NV_XA) v.xa = fn(v.xa); else { v.ap[k] = fn(Array.isArray(v.ap[k]) ? v.ap[k] : []); if (!v.ap[k].length) delete v.ap[k]; }
+  sc.ui.nv = v; return quickSchema(sc, msg);
+}
+async function nvForm(k, id) {
+  if (!isAdmin()) { toast('Chỉ quản trị viên nhập được nguồn vận động.', 'err'); return; }
+  if (SE.dirty) { toast('Đang có thay đổi Cấu trúc chưa lưu — lưu hoặc hủy trước.', 'err'); return; }
+  const cur = id ? nvOf(k).find(e => e.id === id) : null; if (id && !cur) return;
+  const r = await formDialog(`${cur ? 'Sửa' : 'Thêm'} nguồn vận động — ${nvTen(k)}`, v => { v = v || (cur ? { noiDung: cur.noiDung, giaTri: cur.giaTri, ngay: cur.ngay } : { ngay: nvToday() }); return `
+    <label class="f"><span>Nội dung nguồn vận động</span><textarea name="noiDung" rows="3" maxlength="300" placeholder="Ví dụ: Doanh nghiệp A ủng hộ Quỹ Vì người nghèo; con em xa quê đóng góp xây cầu…">${esc(v.noiDung || '')}</textarea></label>
+    <div class="grid2"><label class="f"><span>Số tiền (đồng)</span><input name="giaTri" type="number" min="0" step="1000" inputmode="numeric" value="${esc(v.giaTri ?? '')}"></label>
+    <label class="f"><span>Ngày</span><input name="ngay" type="date" value="${esc(v.ngay || '')}"></label></div>
+    <p class="hint">Số tiền tự cộng vào Tổng nguồn vận động. Chỉ ghi khoản <b>không</b> nằm trong phần hỗ trợ của từng hộ để khỏi cộng trùng.</p>`; },
+    cur ? 'Lưu' : 'Thêm', x => !String(x.noiDung || '').trim() ? 'Nhập nội dung nguồn vận động.' : !(toMoney(x.giaTri) > 0) ? 'Nhập số tiền.' : '');
+  if (!r) return;
+  const e = { id: cur ? cur.id : 'nv' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ngay: /^\d{4}-\d{2}-\d{2}$/.test(r.ngay || '') ? r.ngay : '', noiDung: String(r.noiDung).trim().slice(0, 300), giaTri: Math.round(toMoney(r.giaTri)), by: curName(), at: Date.now() };
+  const ok = await nvSaveList(k, a => { const i = a.findIndex(x => x && x.id === e.id); if (i >= 0) a[i] = e; else a.push(e); return a; }, cur ? 'Đã sửa nguồn vận động.' : `Đã thêm ${fmt(e.giaTri)} đ vào nguồn vận động của ${nvTen(k)}.`);
+  if (ok && !nvOf(k).some(x => x.id === e.id)) toast('Máy chủ chưa lưu được nguồn vận động.', 'err');
+}
+async function nvDel(k, id) {
+  if (!isAdmin()) return;
+  if (SE.dirty) { toast('Đang có thay đổi Cấu trúc chưa lưu — lưu hoặc hủy trước.', 'err'); return; }
+  const cur = nvOf(k).find(e => e.id === id); if (!cur) return;
+  if (!(await confirmDlg('Xóa khoản vận động?', `<p>${esc(cur.noiDung)} — <b>${fmt(+cur.giaTri || 0)} đ</b></p>`, 'Xóa', true))) return;
+  await nvSaveList(k, a => a.filter(x => x && x.id !== id), 'Đã xóa khoản vận động.');
+}
 const htNamLabel = () => { const c = chotDen(); return c ? 'năm ' + (+c.slice(0, 4) + 1) : ''; };
 function renderStats() {
   $('#statsExport').style.display = can('export') ? '' : 'none';
@@ -2963,15 +3015,19 @@ function renderStats() {
   /* ----- II. Nguồn lực vận động và hỗ trợ trong năm ----- */
   const htAll = all.flatMap(h => h.hoTro).filter(htOpen), htUn = htAll.filter(x => !htOf(x)), namL = htNamLabel(), chs = chotList();
   const fmtTr = v => v >= 1e6 ? (Math.round(v / 1e5) / 10).toLocaleString('vi-VN') + ' tr' : fmt(v) + ' đ';
-  const yRow = r => { const ht = r.ht || {};
-    const live = all.reduce((t, h) => t + h.hoTro.filter(x => String(x.ngay || '').slice(0, 4) === String(r.nam)).reduce((u, x) => u + (x.giaTri || 0), 0), 0);
-    const ds = [...HT_LOAI.filter(([k]) => ht[k]).map(([k, t]) => `${t} ${fmtTr(ht[k])}`), ...(ht[''] ? [`Chưa chọn ${fmtTr(ht[''])}`] : [])];
-    return `<div class="ds-yr"><div class="ds-yh"><b>Năm ${r.nam}</b><span>${fmt(r.luot || 0)} lượt</span><b class="ds-ym">${fmt(r.tong || 0)} đ</b></div>${ds.length ? `<div class="ds-yd">${esc(ds.join(' · '))}</div>` : ''}${live !== (r.tong || 0) ? `<div class="ds-yd">Hiện có ${fmt(live)} đ (có lượt nhập/sửa sau khi chốt)</div>` : ''}</div>`; };
+  const nvOpen = nvFlat().filter(htOpen), nvXa = nvOpen.filter(e => e.cap === NV_XA), nvApL = nvOpen.filter(e => e.cap !== NV_XA);
+  const yRow = r => { const ht = r.ht || {}, tg = (r.tong || 0) + (r.nv || 0), yy = x => String(x.ngay || '').slice(0, 4) === String(r.nam);
+    const live = all.reduce((t, h) => t + h.hoTro.filter(yy).reduce((u, x) => u + (x.giaTri || 0), 0), 0) + nvSum(nvFlat().filter(yy));
+    const ds = [...HT_LOAI.filter(([k]) => ht[k]).map(([k, t]) => `${t} ${fmtTr(ht[k])}`), ...(ht[''] ? [`Chưa chọn ${fmtTr(ht[''])}`] : []), ...(r.nv ? [`Nguồn vận động xã, ấp ${fmtTr(r.nv)}`] : [])];
+    return `<div class="ds-yr"><div class="ds-yh"><b>Năm ${r.nam}</b><span>${fmt(r.luot || 0)} lượt</span><b class="ds-ym">${fmt(tg)} đ</b></div>${ds.length ? `<div class="ds-yd">${esc(ds.join(' · '))}</div>` : ''}${live !== tg ? `<div class="ds-yd">Hiện có ${fmt(live)} đ (có khoản nhập/sửa sau khi chốt)</div>` : ''}</div>`; };
   const secII = SECH('hotro') ? '' : `<h3 class="ds-h" id="dsII">II. NGUỒN LỰC VẬN ĐỘNG VÀ HỖ TRỢ TRONG NĂM</h3>
-    <div class="ds-money"><div class="ds-mt">${I('handheart', 20)} TỔNG TIỀN VẬN ĐỘNG HỖ TRỢ</div><div class="ds-mv">${fmt(htSumOf(htAll))} ĐỒNG</div><div class="ds-ms">Tổng giá trị nguồn lực được ghi nhận ${namL ? 'trong ' + namL : '(chưa chốt năm)'} · ${fmt(htAll.length)} lượt hỗ trợ</div></div>
+    <div class="ds-money"><div class="ds-mt">${I('handheart', 20)} TỔNG NGUỒN VẬN ĐỘNG HỖ TRỢ</div><div class="ds-mv">${fmt(htSumOf(htAll) + nvSum(nvOpen))} ĐỒNG</div><div class="ds-ms">Tổng giá trị nguồn lực được ghi nhận ${namL ? 'trong ' + namL : '(chưa chốt năm)'}</div>
+      <div class="ds-mb"><span>Hỗ trợ trực tiếp các hộ<b>${fmt(htSumOf(htAll))} đ</b><small>${fmt(htAll.length)} lượt</small></span><span>Nguồn vận động của xã<b>${fmt(nvSum(nvXa))} đ</b><small>${fmt(nvXa.length)} khoản</small></span><span>Nguồn vận động các ${esc(apl())}<b>${fmt(nvSum(nvApL))} đ</b><small>${fmt(nvApL.length)} khoản</small></span></div></div>
     <div class="ds-tiles ds-ht">${HT_LOAI.map(([k, t, c, u, ic]) => { const a = htAll.filter(x => htOf(x) === k); return `<div class="ds-tile" style="--c:${c}"><div class="ds-ti">${I(ic, 22)}</div><div class="ds-tn">${t}</div><div class="ds-tv">${fmt(a.length)} <small>${u}</small></div><div class="ds-ts">${fmt(htSumOf(a))} đồng</div></div>`; }).join('')}
       ${htUn.length ? `<div class="ds-tile" style="--c:#90a4ae"><div class="ds-ti">${I('clipboard', 22)}</div><div class="ds-tn">Chưa chọn hình thức</div><div class="ds-tv">${fmt(htUn.length)} <small>lượt</small></div><div class="ds-ts">${fmt(htSumOf(htUn))} đồng</div></div>` : ''}</div>
-    <p class="ds-note">Theo dõi số lượng, kinh phí vận động, kinh phí phân bổ và kết quả thực hiện.${htUn.length && can('edit') ? ' Lượt “chưa chọn hình thức”: mở hộ → Sửa → chọn ô Hình thức.' : ''}</p>
+    <p class="ds-note">Theo dõi số lượng, kinh phí vận động, kinh phí phân bổ và kết quả thực hiện.</p>
+    ${nvBlock(NV_XA, `Nguồn vận động của xã ${S.config.tenXa || ''} (không thuộc hộ nào)`.replace('  ', ' '))}
+    ${nvApL.length ? `<p class="ds-note">Nguồn vận động các ${esc(apl())}: <b>${fmt(nvSum(nvApL))} đ</b> — ${[...new Set(nvApL.map(e => e.cap))].map(a => `${esc(a)} ${fmt(nvSum(nvApL.filter(e => e.cap === a)))} đ`).join('; ')}. Xem, thêm ở mục III (chọn từng ${esc(apl())}).</p>` : isAdmin() ? `<p class="ds-note">Nguồn vận động riêng của từng ${esc(apl())}: chọn ${esc(apl())} ở mục III rồi bấm “Thêm nguồn vận động”.</p>` : ''}
     <div class="ds-years" id="dsYears"><div class="ds-yt">${I('calendar', 17)} Số tiền hỗ trợ các năm đã chốt (4 năm gần nhất)</div>
       ${chs.length ? chs.slice(0, 4).map(yRow).join('') : `<p class="muted small" style="margin:6px 0">Chưa chốt năm nào. Cuối năm, quản trị viên bấm <b>Chốt năm</b>: số tiền ở trên được đưa xuống đây và tính lại từ đầu.</p>`}
       ${isAdmin() ? `<div class="row gap wrap mt8"><button type="button" class="btn btn-sm btn-navy" data-act="ht-chot">${I('lock', 14)} Chốt năm</button>${chs.length ? '<button type="button" class="btn btn-sm btn-ghost" data-act="ht-unchot">Hủy lần chốt gần nhất</button>' : ''}</div>` : ''}</div>`;
@@ -2989,7 +3045,9 @@ function renderStats() {
       <table class="tbl ds-t"><thead><tr><th>Nội dung</th><th class="num">Số lượng</th><th class="num">Kinh phí (đồng)</th></tr></thead><tbody>
         ${HT_LOAI.map(([k, t, c, u]) => { const x = selHT.filter(y => htOf(y) === k); return `<tr><td>${t}</td><td class="num">${fmt(x.length)} ${u}</td><td class="num">${fmt(htSumOf(x))}</td></tr>`; }).join('')}
         ${selHT.some(x => !htOf(x)) ? `<tr><td>Chưa chọn hình thức</td><td class="num">${fmt(selHT.filter(x => !htOf(x)).length)} lượt</td><td class="num">${fmt(htSumOf(selHT.filter(x => !htOf(x))))}</td></tr>` : ''}
-        <tr class="tot-row"><td>Tổng cộng</td><td class="num">${fmt(selHT.length)} lượt</td><td class="num">${fmt(htSumOf(selHT))}</td></tr></tbody></table>`}
+        ${(n => sel ? `<tr><td style="white-space:normal">Nguồn vận động riêng của ${esc(apl())}</td><td class="num">${fmt(n.length)} khoản</td><td class="num">${fmt(nvSum(n))}</td></tr>` : '')(nvOf(sel).filter(htOpen))}
+        <tr class="tot-row"><td>Tổng cộng</td><td class="num">${fmt(selHT.length)} lượt</td><td class="num">${fmt(htSumOf(selHT) + (sel ? nvSum(nvOf(sel).filter(htOpen)) : 0))}</td></tr></tbody></table>
+      ${sel ? nvBlock(sel, `Nguồn vận động của ${apName(sel)}`) : ''}`}
       <h4>3. Quản lý hồ sơ hộ dân</h4>
       <button type="button" class="ds-link" data-act="st-aplist" data-ap="${esc(sel)}">${I('users', 18)} Danh sách hộ gia đình và hoàn cảnh từng hộ <small>${fmt(selArr.length)} hộ</small></button>
       ${SECH('hotro') ? '' : `<button type="button" class="ds-link" data-act="st-aphist" data-ap="${esc(sel)}">${I('clipboard', 18)} Theo dõi tình trạng và lịch sử hỗ trợ <small>${fmt(selArr.reduce((t, h) => t + h.hoTro.length, 0))} lượt</small></button>`}
@@ -3445,6 +3503,14 @@ async function buildWorkbook(list, { template = false } = {}) {
   } else {
     const cats = [...new Set([...Object.keys(LOAI).filter(k => !LOAI[k].an), ...list.map(h => h.loai)])];
     const nkA = arr => arr.reduce((s, h) => s + h.thanhVien.length, 0);
+    const full = list.length >= S.households.length, apsL = new Set(list.map(h => h.ap || ''));
+    const nvX = nvFlat().filter(e => full || (e.cap !== NV_XA && apsL.has(e.cap))).sort((a, b) => (a.cap === NV_XA ? -1 : 0) - (b.cap === NV_XA ? -1 : 0) || String(a.cap).localeCompare(String(b.cap)) || String(a.ngay || '').localeCompare(String(b.ngay || '')));
+    if (nvX.length) {
+      const w6 = wb.addWorksheet('NguonVanDong'); w6.columns = [['STT', 6], ['Cấp', 18], ['Ngày', 12], ['Nội dung nguồn vận động', 50], ['Số tiền (đồng)', 16], ['Người nhập liệu', 22]].map(([h, w]) => ({ header: h, width: w }));
+      nvX.forEach((e, i) => w6.addRow([i + 1, e.cap === NV_XA ? nvTen(NV_XA).replace(/^x/, 'X') : e.cap, dateVN(e.ngay), e.noiDung, +e.giaTri || 0, e.by || '']));
+      const tr6 = w6.addRow(['', 'Tổng cộng', '', '', nvSum(nvX), '']); w6.getColumn(5).numFmt = '#,##0';
+      styleSheet(w6, 6, false); tr6.font = { bold: true, name: 'Times New Roman', size: 12 };
+    }
     const ws4 = wb.addWorksheet('ThongKe'); ws4.orderNo = -1; ws4.columns = [[apL(), 18], ['Tổng số hộ', 10], ['Tổng nhân khẩu', 11], ...cats.flatMap(k => [[`${loaiTen(k)} (số hộ)`, 12], [`${loaiTen(k)} (nhân khẩu)`, 12]]), ...(isAdmin() ? [['Đã định vị', 10]] : [])].map(([h, w]) => ({ header: h, width: w }));
     const aps = [...new Set([...apOrder(), ...list.map(h => h.ap || '')])], t = new Array(cats.length * 2 + (isAdmin() ? 3 : 2)).fill(0), rx = [];
     aps.forEach(a => { const arr = list.filter(h => (h.ap || '') === a); if (!arr.length) return; const v = [arr.length, nkA(arr), ...cats.flatMap(k => { const b = arr.filter(h => inLoai(h, k)); return [b.length, nkA(b)]; }), ...(isAdmin() ? [arr.filter(hasLoc).length] : [])]; v.forEach((x, i) => t[i] += x); rx.push([a || `Chưa rõ ${apl()}`, ...v]); });
@@ -3653,6 +3719,12 @@ function chotTinh(y) {
     r.tong += v; r.luot++; r.ht[k] = (r.ht[k] || 0) + v;
     const a = r.ap[h.ap || ''] = r.ap[h.ap || ''] || { tong: 0, luot: 0, ht: {} }; a.tong += v; a.luot++; a.ht[k] = (a.ht[k] || 0) + v;
   }
+  for (const e of nvFlat()) {
+    const d = String(e.ngay || ''); if (!d) { noDate++; continue; } if (d > den || (c && d <= c)) continue;
+    const ny = +d.slice(0, 4); if (!ny) continue;
+    const r = rows[ny] = rows[ny] || { nam: ny, tong: 0, luot: 0, ht: {}, ap: {} }, v = +e.giaTri || 0; r.nv = (r.nv || 0) + v;
+    if (e.cap !== NV_XA) { const a = r.ap[e.cap] = r.ap[e.cap] || { tong: 0, luot: 0, ht: {} }; a.nv = (a.nv || 0) + v; }
+  }
   const yrs = Object.keys(rows).map(Number), from = c ? +c.slice(0, 4) + 1 : Math.max(y - 3, Math.min(y, ...yrs));
   const out = []; for (let n = y; n >= from; n--) out.push(Object.assign(rows[n] || { nam: n, tong: 0, luot: 0, ht: {}, ap: {} }, { den: `${n}-12-31` }));
   return { out, older: yrs.filter(n => n < from), noDate };
@@ -3667,7 +3739,7 @@ async function chotNam() {
   if (!r1) return;
   const y = +r1.y, t = chotTinh(y), keep = [...t.out, ...chotList()].sort((a, b) => b.nam - a.nam), drop = keep.slice(4).map(r => r.nam);
   const ok = await confirmDlg(`Chốt năm ${y}`, `<p>Số tiền hỗ trợ đến hết <b>31/12/${y}</b> (cả xã):</p>
-    <table class="tbl"><tbody>${t.out.map(r => `<tr><td>Năm ${r.nam}</td><td class="num"><b>${fmt(r.tong)} đ</b></td><td class="num">${fmt(r.luot)} lượt</td></tr>`).join('')}</tbody></table>
+    <table class="tbl"><tbody>${t.out.map(r => `<tr><td>Năm ${r.nam}</td><td class="num"><b>${fmt(r.tong + (r.nv || 0))} đ</b></td><td class="num">${fmt(r.luot)} lượt${r.nv ? ` · nguồn vận động ${fmt(r.nv)} đ` : ''}</td></tr>`).join('')}</tbody></table>
     <p>Sau khi chốt: các số tiền này được đưa xuống bảng <b>các năm đã chốt</b>; khung trên tính lại từ đầu (từ 01/01/${y + 1}).${drop.length ? ` Bảng chỉ giữ 4 năm gần nhất nên <b>năm ${drop.join(', ')}</b> bị bỏ khỏi bảng.` : ''}</p>
     <p class="muted small">Các lượt hỗ trợ vẫn lưu nguyên trong từng hộ (xem ở trang chi tiết hộ, file Excel).${t.noDate ? ` Có ${t.noDate} lượt chưa ghi ngày — không tính vào năm chốt, vẫn nằm ở khung trên.` : ''}${t.older.length ? ` Lượt hỗ trợ trước năm ${t.out[t.out.length - 1].nam} không đưa vào bảng.` : ''}</p>`, 'Chốt');
   if (!ok) return;
@@ -4437,6 +4509,9 @@ async function onAct(act, el, e) {
       if (r === 'pw') await changePassword(); else if (r === 'sync') await onAct('sync-now', el); else if (r === 'out') await onAct('logout', el);
       break; }
     case 'ap-info': await apInfoDlg(el.dataset.ap); break;
+    case 'nv-add': await nvForm(el.dataset.k, ''); break;
+    case 'nv-edit': await nvForm(el.dataset.k, el.dataset.id); break;
+    case 'nv-del': await nvDel(el.dataset.k, el.dataset.id); break;
     case 'go-schema': if (isAdmin()) { showView('schema'); seOpen(); } break;
     case 'settings-save': await saveSettings(); break;
     case 'set-center': {
