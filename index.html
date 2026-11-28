@@ -882,6 +882,9 @@ textarea{resize:vertical}
 .nvq-tong{margin:10px 0}
 .btn-green{background:#15803d;border-color:#15803d;color:#fff}.btn-green:hover{background:#166534}
 #addBtns.has-nv .gps-t{display:none}
+body[data-view=list]:not(.show-map) #mapWrap{display:none}
+body.show-map .map-tgl{background:var(--navy);color:#fff;border-color:var(--navy)}
+@media (min-width:861px){ body[data-view=list]:not(.show-map) #panel{width:auto;flex:1;border-right:0} body[data-view=list]:not(.show-map) #v-list>*{width:100%;max-width:1100px;margin-left:auto;margin-right:auto} }
 .dv-box{display:flex;flex-direction:column;gap:8px;margin:10px 0 12px;padding:12px 14px;border-radius:12px;background:#fff7ed;border:1.5px solid #fb923c}
 .dv-box .dv-go{min-height:52px;font-size:17px;justify-content:center}
 .ds-logo{display:block;width:60px;height:60px;object-fit:contain;background:#fff;border-radius:12px;padding:3px;flex:none}
@@ -1231,7 +1234,7 @@ input[type=color]{cursor:pointer}
     <section class="view active" id="v-list">
       <div class="view-head">
         <div id="lfBar" hidden></div>
-        <div class="search"><i data-ic="search"></i><input id="q" type="search" placeholder="Tìm chủ hộ, thành viên, mã hộ, địa chỉ, CCCD…" autocomplete="off"></div>
+        <div class="row gap" style="align-items:stretch"><div class="search grow"><i data-ic="search"></i><input id="q" type="search" placeholder="Tìm chủ hộ, thành viên, mã hộ, địa chỉ, CCCD…" autocomplete="off"></div><button type="button" class="btn btn-sm map-tgl" data-act="map-toggle" id="mapTgl" title="Hiện / ẩn bản đồ vệ tinh" aria-label="Hiện bản đồ"><i data-ic="map"></i></button></div>
         <div class="row gap mt8" id="fRow">
           <select id="fAp" class="grow" aria-label="Lọc theo ấp"></select>
           <label class="chk small"><input type="checkbox" id="fNoLoc"> Chưa định vị</label>
@@ -1445,7 +1448,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.29c';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.29d';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -1909,14 +1912,14 @@ function mergeConfig(srv) {
 }
 function saveCache() {
   if (!ME) return;
-  const ok = lsSet(CKEY, { u: ME.u, api: API, me: ME, rev: S.rev, at: S.loadedAt, srv: S.srv, sheetUrl, households: S.households });
+  const ok = lsSet(CKEY, { u: ME.u, api: API, me: ME, rev: S.rev, at: S.loadedAt, srv: S.srv, sheetUrl, households: [...S.households, ...(S.nvh || [])] });
   if (!ok && storageOk) { storageOk = false; renderBanners(); }
 }
 function loadCache(c) {
   c = c || lsGet(CKEY);
   if (!c || !ME || c.u !== ME.u || c.api !== API) return false;
   S.srv = c.srv || {}; S.config = mergeConfig(S.srv); S.rev = c.rev || null; S.loadedAt = c.at || 0; sheetUrl = c.sheetUrl || '';
-  S.households = (c.households || []).map(sanitizeHH);
+  S.households = (c.households || []).map(sanitizeHH); splitNv(true);
   return true;
 }
 function persist() { PREFS.base = S.config.base; PREFS.labels = S.config.labels; savePrefs(); saveCache(); }
@@ -1987,12 +1990,22 @@ const normU = s => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, 
 const APP_LINK = () => WEB ? location.origin + location.pathname.replace(/index\.html$/, '') : 'https://mttq-truongkhanh.github.io';
 
 /* ---------- Đồng bộ với máy chủ ---------- */
-function replaceLocal(h) { const i = S.households.findIndex(x => x.id === h.id); if (i >= 0) S.households[i] = h; else S.households.push(h); }
+function replaceLocal(h) {
+  if (isNvH(h)) { S.nvh = S.nvh || []; const j = S.nvh.findIndex(x => x.id === h.id); if (j >= 0) S.nvh[j] = h; else S.nvh.push(h); return; }
+  const i = S.households.findIndex(x => x.id === h.id); if (i >= 0) S.households[i] = h; else S.households.push(h);
+}
+function isNvH(h) { return !!h && typeof h.id === 'string' && h.id.indexOf('nvap-') === 0; }
+function splitNv(reset) {
+  if (reset || !S.nvh) S.nvh = [];
+  if (!S.households.some(isNvH)) return;
+  for (const h of S.households.filter(isNvH)) { const j = S.nvh.findIndex(x => x.id === h.id); if (j >= 0) S.nvh[j] = h; else S.nvh.push(h); }
+  S.households = S.households.filter(h => !isNvH(h));
+}
 function applyServer(r) {
   S.rev = r.rev; S.srv = Object.assign({}, r.config || {}); if (r.sheetUrl) sheetUrl = r.sheetUrl;
   S.config = mergeConfig(S.srv);
   const list = (r.households || []).map(sanitizeHH), pend = new Map(OUT.map(o => [o.h.id, o.h])), ids = new Set(list.map(h => h.id));
-  S.households = list.map(h => pend.get(h.id) || h).concat([...pend.values()].filter(h => !ids.has(h.id)));
+  S.households = list.map(h => pend.get(h.id) || h).concat([...pend.values()].filter(h => !ids.has(h.id))); splitNv(true);
 }
 function applyMe(me) {
   if (!me) return;
@@ -2006,6 +2019,7 @@ function queueSave(h, base) {
 }
 async function onConflict(o, srvH) {
   srvH = sanitizeHH(srvH);
+  if (isNvH(o.h)) { const m = nvMerge(srvH, o.h); o.h = m; o.base = srvH.updatedAt; OUT.unshift(o); saveOut(); replaceLocal(m); return true; }
   const r = await dialog('Hộ vừa được người khác cập nhật', `<p>Hộ <b>${esc(srvH.chuHo)}</b> đã được <b>${esc(srvH.updatedBy || 'người khác')}</b> cập nhật lúc ${dt(srvH.updatedAt)}, trong lúc bạn cũng sửa hộ này.</p><p><b>Giữ bản của tôi</b>: ghi bản bạn vừa sửa lên máy chủ.<br><b>Dùng bản mới</b>: bỏ phần bạn vừa sửa, xem bản của ${esc(srvH.updatedBy || 'người kia')}.</p>`,
     [{ label: 'Dùng bản mới', value: 'srv' }, { label: 'Giữ bản của tôi', cls: 'btn-navy', value: 'mine' }], { modal: true });
   if (r === 'mine') { o.base = srvH.updatedAt; OUT.unshift(o); saveOut(); return true; }
@@ -2084,7 +2098,7 @@ function sessionExpired(msg) {
 }
 function endSession(msg) {
   TOKEN = null; ME = null; lsSet(TKEY, null); lsSet(TKEY, null, sessionStorage);
-  S.households = []; S.rev = null; ui.selId = null; USERS = null;
+  S.households = []; S.nvh = []; S.rev = null; ui.selId = null; USERS = null;
   mLayer.clearLayers(); markers.clear(); map.closePopup();
   showGate('login', msg);
 }
@@ -2396,8 +2410,8 @@ function renderFilters() {
   { const ks = loaiShown(); for (const k of [...ui.f.loai]) if (!ks.includes(k)) ui.f.loai.delete(k); }
   $('#fLoai').innerHTML = loaiShown().map(k => { const v = loaiOf(k); return `<button class="chip ${ui.f.loai.has(k) ? 'on' : ''}" data-act="f-loai" data-k="${esc(k)}" style="--c:${v.mau}" aria-pressed="${ui.f.loai.has(k)}"><span class="dot"></span>${esc(v.ten)} <b>${S.households.filter(h => inLoai(h, k)).length}</b></button>`; }).join('');
   renderExtFilters();
-  { const ab = $('#addBtns'), nb = $('#nvAddBtn'), ad = isAdmin();
-    ab.style.display = (can('add') || ad) && !ui.fromStats ? '' : 'none'; nb.hidden = !ad; ab.classList.toggle('has-nv', ad);
+  { const ab = $('#addBtns'), nb = $('#nvAddBtn'), nv = nvCanAdd();
+    ab.style.display = (can('add') || nv) && !ui.fromStats ? '' : 'none'; nb.hidden = !nv; ab.classList.toggle('has-nv', nv);
     $$('#addBtns [data-act=new],#addBtns [data-act=new-gps]').forEach(b => { b.style.display = can('add') ? '' : 'none'; }); }
   renderNvq();
 }
@@ -2428,7 +2442,7 @@ function renderList() {
   const nk = list.reduce((s, h) => s + h.thanhVien.length, 0), noLoc = list.filter(h => !hasLoc(h)).length;
   { const lb = $('#lfBar'); lb.hidden = !ui.fromStats;
     if (ui.fromStats) { const ten = ui.dv ? 'Hộ chưa định vị' : ui.f.loai.size ? [...ui.f.loai].map(loaiTen).join(', ') : 'Tất cả hộ', noi = ui.f.ap ? (ui.f.ap === '__none' ? 'Chưa rõ ' + apl() : ui.f.ap) : (!isAdmin() && myAps().length ? 'Phạm vi được giao' : 'Toàn xã');
-      lb.innerHTML = `<button type="button" class="btn btn-sm btn-ghost" data-act="lf-back">${I('back', 15)}Thống kê</button><div class="lf-t"><b>Danh sách ${esc(ten.charAt(0).toLowerCase() + ten.slice(1))}</b><small>${esc(noi)} · ${fmt(list.length)} hộ · ${fmt(nk)} nhân khẩu</small></div><button type="button" class="btn btn-sm lf-map" data-act="lf-map">${I('map', 15)}${document.body.classList.contains('list-full') ? 'Xem bản đồ' : 'Ẩn bản đồ'}</button>`; } }
+      lb.innerHTML = `<button type="button" class="btn btn-sm btn-ghost" data-act="lf-back">${I('back', 15)}Thống kê</button><div class="lf-t"><b>Danh sách ${esc(ten.charAt(0).toLowerCase() + ten.slice(1))}</b><small>${esc(noi)} · ${fmt(list.length)} hộ · ${fmt(nk)} nhân khẩu</small></div><button type="button" class="btn btn-sm lf-map" data-act="lf-map">${I('map', 15)}${document.body.classList.contains('show-map') ? 'Ẩn bản đồ' : 'Xem bản đồ'}</button>`; } }
   $('#listFoot').innerHTML = `<span>Hiển thị ${list.length}/${S.households.length} hộ · ${fmt(nk)} nhân khẩu · ${noLoc} hộ chưa định vị</span><button class="linkbtn sync-btn" data-act="sync-now" title="Tải số liệu mới nhất">⟳ <span id="syncInfo"></span></button>`; syncUI();
   refreshMarkers(list); renderLegend(list); renderBanners();
 }
@@ -2458,7 +2472,7 @@ function openDetail(id, { fly = true } = {}) {
   const h = byId(id); if (!h) return;
   ui.selId = id; renderDetail(); showView('detail'); highlight(id);
   $$('#list .hh').forEach(b => b.classList.toggle('sel', b.dataset.id === id));
-  if (fly && hasLoc(h) && map.getContainer().offsetHeight > 0) { map.invalidateSize(); map.flyTo([h.lat, h.lng], Math.max(map.getZoom(), 17), { duration: .6 }); setTimeout(() => markers.get(id)?.openPopup(), 650); }
+  if (fly && hasLoc(h) && map.getContainer().offsetHeight > 0) { map.invalidateSize({ pan: false }); map.flyTo([h.lat, h.lng], Math.max(map.getZoom(), 17), { duration: .6 }); setTimeout(() => markers.get(id)?.openPopup(), 650); }
   $('#v-detail .view-body').scrollTop = 0;
 }
 function renderDetail() {
@@ -2951,52 +2965,87 @@ const htSumOf = a => a.reduce((t, x) => t + (x.giaTri || 0), 0);
    Các lượt này được cộng thẳng vào số tổng nguồn lực ở trang Thống kê (cả xã, và ấp được ghi). */
 const NV_XA = '*';
 function nvData() { const v = SCHEMA().ui.nv; return { xa: isObj(v) && Array.isArray(v.xa) ? v.xa.filter(isObj) : [], ap: isObj(v) && isObj(v.ap) ? v.ap : {} }; }
-const nvFlat = () => { const d = nvData(); return [...d.xa.map(e => Object.assign({}, e, { ap: String(e.ap || '') })), ...Object.entries(d.ap).flatMap(([a, l]) => (Array.isArray(l) ? l : []).filter(isObj).map(e => Object.assign({}, e, { ap: a })))]; };
+const nvArr = v => Array.isArray(v) ? v.filter(isObj) : [];
+const nvLegacy = () => { const d = nvData(); return [...d.xa.map(e => Object.assign({}, e, { ap: String(e.ap || '') })), ...Object.entries(d.ap).flatMap(([a, l]) => nvArr(l).map(e => Object.assign({}, e, { ap: a })))]; };
+const nvFlat = () => {
+  const rec = (S.nvh || []).flatMap(h => nvArr(h.ext && h.ext._ht).map(e => Object.assign({}, e, { ap: h.ap || '', _rec: h.id }))), ids = new Set(rec.map(e => e.id));
+  return [...nvLegacy().filter(e => !ids.has(e.id)), ...rec];
+};
+const nvRecId = ap => 'nvap-' + (ap ? (hashStr('ap|' + ap) >>> 0).toString(36) : 'xa');
+const nvRec = ap => (S.nvh || []).find(h => h.id === nvRecId(ap)) || null;
+function nvNewRec(ap) {
+  const id = nvRecId(ap);
+  return sanitizeHH({ id, maHo: 'HTC-' + id.slice(5).toUpperCase(), chuHo: `Sổ hỗ trợ chung — ${ap || ('xã ' + (S.config.tenXa || '')).trim()}`, ap, loai: Object.keys(LOAI).find(k => !isKem(k)) || 'ngheo',
+    ghiChu: 'Bản ghi đặc biệt của ứng dụng: các lượt hỗ trợ không gắn với hộ nào. Không xóa, không sửa tay.', ext: {}, createdBy: curName(), createdById: curId(), createdAt: Date.now() });
+}
+function nvMerge(srv, mine) {   /* gộp 2 bản của cùng một sổ: hợp các lượt theo mã, bỏ các lượt đã xóa */
+  const tomb = new Set([...arrStr((srv.ext || {})._htx || []), ...arrStr((mine.ext || {})._htx || [])]), m = new Map();
+  for (const e of [...nvArr((srv.ext || {})._ht), ...nvArr((mine.ext || {})._ht)]) if (e.id && !tomb.has(e.id)) { const o = m.get(e.id); if (!o || (+e.at || 0) >= (+o.at || 0)) m.set(e.id, e); }
+  const h = clone(mine); h.ext = Object.assign({}, mine.ext, { _ht: [...m.values()], _htx: [...tomb].slice(-300) }); h.updatedAt = Date.now(); return sanitizeHH(h);
+}
+/* Phạm vi được thêm lượt hỗ trợ chung: quản trị viên — chung toàn xã và mọi ấp; cán bộ ấp — chỉ các ấp được giao */
+const nvAps = () => isAdmin() ? ['', ...apOrder()] : can('edit') ? (myAps().length ? myAps() : apOrder()).filter(a => a && inScope(a)) : [];
+const nvCanAdd = () => nvAps().length > 0;
+const nvCanEdit = e => !!e && (isAdmin() || (!!e._rec && nvAps().includes(e.ap)));
+const nvBy = () => `${curName()}${myChucVu() ? ' — ' + myChucVu() : ''}`;
+async function nvhPut(h, base, msg) {
+  h.updatedAt = Date.now(); h.updatedBy = curName(); h.updatedById = curId();
+  const clean = sanitizeHH(h); replaceLocal(clean); queueSave(clean, base); saveCache(); renderAll();
+  await sync({ quiet: true, toastSent: false });
+  const sent = !OUT.some(o => o.h.id === clean.id);
+  if (msg || !sent) toast(sent ? msg : 'Đã lưu trên máy, đang chờ gửi lên máy chủ (ứng dụng tự gửi khi có mạng).', sent ? 'ok' : 'err');
+}
 const nvSum = a => a.reduce((t, e) => t + (+e.giaTri || 0), 0);
 const nvAsHT = e => ({ ngay: e.ngay || '', hinhThuc: '', noiDung: e.noiDung || '', donVi: e.donVi || '', giaTri: +e.giaTri || 0, _nv: e.id, _ap: e.ap || '' });
 const nvToday = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
 /* Trang Danh sách: danh sách các lượt hỗ trợ chung đang tính (sau lần chốt gần nhất) — xem, sửa, xóa */
 function renderNvq() {
   const box = $('#nvq'); if (!box) return;
-  const l = isAdmin() && !ui.fromStats ? nvFlat().filter(htOpen).sort((x, y) => String(y.ngay || '').localeCompare(String(x.ngay || ''))) : [];
+  const aps = nvAps(), l = nvCanAdd() && !ui.fromStats ? nvFlat().filter(htOpen).filter(e => isAdmin() || aps.includes(e.ap)).sort((x, y) => String(y.ngay || '').localeCompare(String(x.ngay || ''))) : [];
   if (!l.length) { box.innerHTML = ''; return; }
   const open = box.querySelector('details') ? box.querySelector('details').open : false;
   box.innerHTML = `<details class="nvq"${open ? ' open' : ''}><summary>${I('coins', 18)}<span class="grow"><b>Các lượt hỗ trợ chung đã nhập</b><small>${fmt(l.length)} lượt · không gắn với hộ nào · đã cộng vào trang Thống kê</small></span><b class="nvq-sum">${fmt(nvSum(l))} đ</b></summary>
-    <div class="nv-list">${l.map(e => `<div class="nv-r"><div class="nv-n">${esc(e.noiDung || '')}<small>${[e.ngay ? dateVN(e.ngay) : 'Chưa ghi ngày', e.donVi, e.ap || 'Chung toàn xã'].filter(Boolean).map(esc).join(' · ')}</small></div><b class="nv-v">${fmt(+e.giaTri || 0)} đ</b><span class="nv-b"><button type="button" class="icon-btn" data-act="nv-edit" data-id="${esc(e.id)}" title="Sửa">${I('edit', 14)}</button><button type="button" class="icon-btn" data-act="nv-del" data-id="${esc(e.id)}" title="Xóa">${I('trash', 14)}</button></span></div>`).join('')}</div></details>`;
+    <div class="nv-list">${l.map(e => `<div class="nv-r"><div class="nv-n">${esc(e.noiDung || '')}<small>${[e.ngay ? dateVN(e.ngay) : 'Chưa ghi ngày', e.donVi, e.ap || 'Chung toàn xã', isAdmin() && e.by ? 'Nhập: ' + e.by : ''].filter(Boolean).map(esc).join(' · ')}</small></div><b class="nv-v">${fmt(+e.giaTri || 0)} đ</b>${nvCanEdit(e) ? `<span class="nv-b"><button type="button" class="icon-btn" data-act="nv-edit" data-id="${esc(e.id)}" title="Sửa">${I('edit', 14)}</button><button type="button" class="icon-btn" data-act="nv-del" data-id="${esc(e.id)}" title="Xóa">${I('trash', 14)}</button></span>` : ''}</div>`).join('')}</div></details>`;
 }
 async function nvSave(fn, msg) {
   const sc = clone(SCHEMA()), v = isObj(sc.ui.nv) ? sc.ui.nv : {};
   v.xa = Array.isArray(v.xa) ? v.xa.filter(isObj) : []; v.ap = isObj(v.ap) ? v.ap : {};
   fn(v); for (const k of Object.keys(v.ap)) if (!Array.isArray(v.ap[k]) || !v.ap[k].length) delete v.ap[k];
-  sc.ui.nv = v; return quickSchema(sc, msg);
+  sc.ui.nv = v; return quickSchema(sc, msg || '');
 }
 async function nvForm(id) {
-  if (!isAdmin()) { toast('Chỉ quản trị viên nhập được lượt hỗ trợ chung.', 'err'); return; }
-  if (SE.dirty) { toast('Đang có thay đổi Cấu trúc chưa lưu — lưu hoặc hủy trước.', 'err'); return; }
-  const cur = id ? nvFlat().find(e => e.id === id) : null; if (id && !cur) return;
-  const aps = apOrder();
-  const r = await formDialog(cur ? 'Sửa lượt hỗ trợ' : 'Thêm lượt hỗ trợ', v => { v = v || (cur ? { noiDung: cur.noiDung, ngay: cur.ngay, giaTri: cur.giaTri, donVi: cur.donVi, ap: cur.ap } : { ngay: nvToday(), ap: '' }); return `
-    <p class="hint" style="margin-top:0">Hỗ trợ không gắn với hộ nào. Trị giá tự cộng vào số tổng nguồn lực ở trang Thống kê (cả xã, và ${esc(apl())} được chọn).</p>
+  if (!nvCanAdd()) { toast('Tài khoản của bạn không có quyền thêm lượt hỗ trợ.', 'err'); return; }
+  const cur = id ? nvFlat().find(x => x.id === id) : null; if (id && !cur) return;
+  if (cur && !nvCanEdit(cur)) { toast('Lượt này thuộc phạm vi khác — bạn không sửa được.', 'err'); return; }
+  const aps = nvAps(), apT = a => a || 'Chung toàn xã';
+  const r = await formDialog(cur ? 'Sửa lượt hỗ trợ' : 'Thêm lượt hỗ trợ', v => { v = v || (cur ? { noiDung: cur.noiDung, ngay: cur.ngay, giaTri: cur.giaTri, donVi: cur.donVi, ap: cur.ap } : { ngay: nvToday(), ap: aps[0] }); return `
+    <p class="hint" style="margin-top:0">Hỗ trợ không gắn với hộ nào. Trị giá tự cộng vào số tổng ở trang Thống kê${isAdmin() ? ` (cả xã, và ${esc(apl())} được chọn)` : ` của ${esc(apl())} và của cả xã`}.</p>
     <label class="f"><span>Nội dung hỗ trợ</span><textarea name="noiDung" rows="3" maxlength="300" placeholder="Ví dụ: Doanh nghiệp A ủng hộ Quỹ Vì người nghèo; tặng 50 phần quà Tết…">${esc(v.noiDung || '')}</textarea></label>
     <div class="grid2"><label class="f"><span>Ngày</span><input name="ngay" type="date" value="${esc(v.ngay || '')}"></label>
     <label class="f"><span>Trị giá (đồng)</span><input name="giaTri" type="number" min="0" step="1000" inputmode="numeric" value="${esc(v.giaTri ?? '')}"></label></div>
     <label class="f"><span>Đơn vị / nguồn hỗ trợ</span><input name="donVi" list="dlPhuTrach" maxlength="120" value="${esc(v.donVi || '')}"></label>
-    <label class="f"><span>Thuộc ${esc(apl())}</span><select name="ap"><option value="">Chung toàn xã</option>${[...new Set([...aps, ...(v.ap ? [v.ap] : [])])].filter(Boolean).map(a => `<option value="${esc(a)}" ${a === v.ap ? 'selected' : ''}>${esc(a)}</option>`).join('')}</select></label>`; },
-    cur ? 'Lưu' : 'Thêm', x => !String(x.noiDung || '').trim() ? 'Nhập nội dung hỗ trợ.' : !(toMoney(x.giaTri) > 0) ? 'Nhập trị giá.' : '');
+    ${aps.length === 1 ? `<input type="hidden" name="ap" value="${esc(aps[0])}"><p class="muted small">Thuộc: <b>${esc(apT(aps[0]))}</b></p>`
+      : `<label class="f"><span>Thuộc</span><select name="ap">${aps.map(a => `<option value="${esc(a)}" ${a === v.ap ? 'selected' : ''}>${esc(apT(a))}</option>`).join('')}</select></label>`}`; },
+    cur ? 'Lưu' : 'Thêm', x => !String(x.noiDung || '').trim() ? 'Nhập nội dung hỗ trợ.' : !(toMoney(x.giaTri) > 0) ? 'Nhập trị giá.' : !aps.includes(String(x.ap || '')) ? `Chọn ${apl()}.` : '');
   if (!r) return;
-  const e = { id: cur ? cur.id : 'nv' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ngay: /^\d{4}-\d{2}-\d{2}$/.test(r.ngay || '') ? r.ngay : '', noiDung: String(r.noiDung).trim().slice(0, 300), donVi: String(r.donVi || '').trim().slice(0, 120), giaTri: Math.round(toMoney(r.giaTri)), ap: String(r.ap || ''), by: curName(), at: Date.now() };
-  const ok = await nvSave(v => {
-    for (const k of Object.keys(v.ap)) v.ap[k] = (Array.isArray(v.ap[k]) ? v.ap[k] : []).filter(x => !x || x.id !== e.id);
-    const i = v.xa.findIndex(x => x.id === e.id); if (i >= 0) v.xa[i] = e; else v.xa.push(e);
-  }, cur ? 'Đã sửa lượt hỗ trợ.' : `Đã thêm ${fmt(e.giaTri)} đ — đã cộng vào trang Thống kê${e.ap ? ' (cả xã và ' + e.ap + ')' : ''}.`);
-  if (ok && !nvFlat().some(x => x.id === e.id)) toast('Máy chủ chưa lưu được lượt hỗ trợ.', 'err');
+  const ap = String(r.ap || ''), e = { id: cur ? cur.id : 'ht' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ngay: /^\d{4}-\d{2}-\d{2}$/.test(r.ngay || '') ? r.ngay : '', noiDung: String(r.noiDung).trim().slice(0, 300), donVi: String(r.donVi || '').trim().slice(0, 120), giaTri: Math.round(toMoney(r.giaTri)), by: nvBy(), at: Date.now() };
+  const ex = nvRec(ap);
+  if (!ex && !isAdmin() && !can('add')) { toast(`Sổ hỗ trợ của ${ap} chưa được tạo. Nhờ quản trị viên thêm lượt đầu tiên, hoặc cấp quyền “Thêm hộ”.`, 'err'); return; }
+  /* lượt cũ: bỏ khỏi chỗ cũ (cấu trúc, hoặc sổ của ấp khác) */
+  if (cur && !cur._rec) await nvSave(v => { v.xa = v.xa.filter(x => x.id !== cur.id); for (const k of Object.keys(v.ap)) v.ap[k] = nvArr(v.ap[k]).filter(x => x.id !== cur.id); }, '');
+  else if (cur && cur._rec && cur._rec !== nvRecId(ap)) { const old = (S.nvh || []).find(h => h.id === cur._rec); if (old) { const o = clone(old); o.ext._ht = nvArr(o.ext._ht).filter(x => x.id !== cur.id); o.ext._htx = [...arrStr(o.ext._htx || []), cur.id].slice(-300); await nvhPut(o, old.updatedAt, ''); } }
+  const h = clone(ex || nvNewRec(ap)); h.ext = h.ext || {};
+  h.ext._ht = [...nvArr(h.ext._ht).filter(x => x.id !== e.id), e]; h.ext._htx = arrStr(h.ext._htx || []).filter(x => x !== e.id);
+  await nvhPut(h, ex ? ex.updatedAt : 0, cur ? 'Đã sửa lượt hỗ trợ.' : `Đã thêm ${fmt(e.giaTri)} đ — đã cộng vào trang Thống kê (${ap ? ap + ' và cả xã' : 'chung toàn xã'}).`);
 }
 async function nvDel(id) {
-  if (!isAdmin()) return;
-  if (SE.dirty) { toast('Đang có thay đổi Cấu trúc chưa lưu — lưu hoặc hủy trước.', 'err'); return; }
-  const cur = nvFlat().find(e => e.id === id); if (!cur) return;
+  const cur = nvFlat().find(x => x.id === id); if (!cur) return;
+  if (!nvCanEdit(cur)) { toast('Bạn không xóa được lượt này.', 'err'); return; }
   if (!(await confirmDlg('Xóa lượt hỗ trợ?', `<p>${esc(cur.noiDung)} — <b>${fmt(+cur.giaTri || 0)} đ</b></p>`, 'Xóa', true))) return;
-  await nvSave(v => { v.xa = v.xa.filter(x => x.id !== id); for (const k of Object.keys(v.ap)) v.ap[k] = (Array.isArray(v.ap[k]) ? v.ap[k] : []).filter(x => !x || x.id !== id); }, 'Đã xóa lượt hỗ trợ.');
+  if (!cur._rec) { await nvSave(v => { v.xa = v.xa.filter(x => x.id !== id); for (const k of Object.keys(v.ap)) v.ap[k] = nvArr(v.ap[k]).filter(x => x.id !== id); }, 'Đã xóa lượt hỗ trợ.'); return; }
+  const old = (S.nvh || []).find(h => h.id === cur._rec); if (!old) return;
+  const o = clone(old); o.ext._ht = nvArr(o.ext._ht).filter(x => x.id !== id); o.ext._htx = [...arrStr(o.ext._htx || []), id].slice(-300);
+  await nvhPut(o, old.updatedAt, 'Đã xóa lượt hỗ trợ.');
 }
 const htNamLabel = () => { const c = chotDen(); return c ? 'năm ' + (+c.slice(0, 4) + 1) : ''; };
 function renderStats() {
@@ -3305,6 +3354,21 @@ async function fixViewerScope() {
       if (r.config && isObj(r.config.schema)) { S.srv = r.config; S.config = mergeConfig(S.srv); saveCache(); if (SE.s) SE.s = clone(SCHEMA()); renderAll(); }
     }
     if (bad.length && ui.view === 'accounts') renderAccounts();
+    const leg = nvLegacy();
+    if (leg.length && !SE.dirty) {
+      const by = new Map(); for (const x of leg) { if (!by.has(x.ap)) by.set(x.ap, []); by.get(x.ap).push(x); }
+      for (const [ap, l] of by) {
+        const ex = nvRec(ap), h = clone(ex || nvNewRec(ap)); h.ext = h.ext || {}; const have = new Set(nvArr(h.ext._ht).map(x => x.id));
+        h.ext._ht = [...nvArr(h.ext._ht), ...l.filter(x => !have.has(x.id)).map(x => ({ id: x.id, ngay: x.ngay || '', noiDung: x.noiDung || '', donVi: x.donVi || '', giaTri: +x.giaTri || 0, by: x.by || '', at: x.at || Date.now() }))];
+        h.updatedAt = Date.now(); h.updatedBy = curName(); h.updatedById = curId(); const c = sanitizeHH(h); replaceLocal(c); queueSave(c, ex ? ex.updatedAt : 0);
+      }
+      saveCache(); await sync({ quiet: true, toastSent: false });
+      if (!OUT.some(o => isNvH(o.h)) && nvLegacy().every(x => nvFlat().some(y => y.id === x.id && y._rec))) {
+        const sc = clone(SCHEMA()); delete sc.ui.nv;
+        const r2 = await api('config', { config: { schema: normSchema(sc) } });
+        if (r2.config && isObj(r2.config.schema)) { S.srv = r2.config; S.config = mergeConfig(S.srv); saveCache(); if (SE.s) SE.s = clone(SCHEMA()); renderAll(); }
+      }
+    }
     if (!SCHEMA().ui.gon2 && !SE.dirty) {
       const sc = clone(SCHEMA()), x = sc.sec.find(y => y.k === 'nhucau'); if (x) x.an = true; sc.ui.gon2 = 1;
       const r = await api('config', { config: { schema: normSchema(sc) } });
@@ -4317,7 +4381,7 @@ function afterLogin(r, remember) {
   lsSet(UKEY, r.me.u); setSession(r.token, remember);
   ME = r.me;
   const o = lsGet(OKEY); OUT = o && o.u === ME.u ? (o.items || []) : [];
-  if (!loadCache()) { S.households = OUT.map(x => x.h); S.rev = null; S.loadedAt = 0; }
+  if (!loadCache()) { S.households = OUT.map(x => x.h); splitNv(true); S.rev = null; S.loadedAt = 0; }
   S.srv = r.config || S.srv || {}; S.config = mergeConfig(S.srv); if (r.sheetUrl) sheetUrl = r.sheetUrl;
   startApp();
   sync({ quiet: false, force: true });
@@ -4430,7 +4494,7 @@ async function onAct(act, el, e) {
         [{ label: 'Đóng', value: null }, { label: 'Tải file mẫu', value: 'tpl' }, { label: 'Chọn file để nhập', cls: 'btn-navy', value: 'imp' }]);
       if (r === 'tpl') await exportTemplate(); else if (r === 'imp') $('#fileXlsx').click();
     } break;
-    case 'fly': { document.body.classList.remove('list-full'); map.invalidateSize(); const h = byId(id); if (h && hasLoc(h)) { map.flyTo([h.lat, h.lng], 18, { duration: .6 }); setTimeout(() => markers.get(id)?.openPopup(), 650); } break; }
+    case 'fly': { document.body.classList.remove('list-full'); document.body.classList.add('show-map'); map.invalidateSize(); const h = byId(id); if (h && hasLoc(h)) { map.flyTo([h.lat, h.lng], 18, { duration: .6 }); setTimeout(() => markers.get(id)?.openPopup(), 650); } break; }
     case 'delete': {
       if (!can('delete')) { toast('Chỉ quản trị viên được xóa hộ.', 'err'); break; }
       const h = byId(id); if (!h) break;
@@ -4493,7 +4557,7 @@ async function onAct(act, el, e) {
       break;
     }
     case 'lf-back': leaveListFull(); showView('stats'); renderStats(); break;
-    case 'lf-map': document.body.classList.toggle('list-full'); setTimeout(() => map.invalidateSize(), 80); renderList(); break;
+    case 'lf-map': case 'map-toggle': document.body.classList.remove('list-full'); document.body.classList.toggle('show-map'); setTimeout(() => { map.invalidateSize(); if (ui.fitLater) fitAll(); }, 80); renderList(); break;
     case 'f-more': ui.fMore = !ui.fMore; renderExtFilters(); break;
     case 'f-clear': ui.f.ap = ''; ui.f.loai = new Set(); ui.f.noLoc = false; ui.f.x = {}; if ($('#fNoLoc')) $('#fNoLoc').checked = false; renderList(); break;
     case 'st-ap': ui.stApSel = el.dataset.ap || ''; renderStats(); setTimeout(() => { const d = $('#dsApd'); if (d) d.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30); break;
@@ -4671,7 +4735,7 @@ $$('i[data-ic]').forEach(i => { i.outerHTML = I(i.dataset.ic); });
   if (TOKEN && c && c.me && c.api === API) {
     ME = c.me; loadCache(c);
     const o = lsGet(OKEY); OUT = o && o.u === ME.u ? (o.items || []) : [];
-    S.households = (() => { const pend = new Map(OUT.map(x => [x.h.id, x.h])), ids = new Set(S.households.map(h => h.id)); return S.households.map(h => pend.get(h.id) || h).concat([...pend.values()].filter(h => !ids.has(h.id))); })();
+    S.households = (() => { const pend = new Map(OUT.map(x => [x.h.id, x.h])), ids = new Set(S.households.map(h => h.id)); return S.households.map(h => pend.get(h.id) || h).concat([...pend.values()].filter(h => !ids.has(h.id))); })(); splitNv(false);
     startApp(); sync({ quiet: true });
     return;
   }
