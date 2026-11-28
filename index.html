@@ -871,6 +871,15 @@ textarea{resize:vertical}
 .nv-n{flex:1;min-width:0;word-break:break-word}.nv-n small{display:block;color:var(--muted);font-size:12px}
 .nv-v{white-space:nowrap;font-variant-numeric:tabular-nums}.nv-b{display:flex;gap:2px;flex:none}
 .nv-list{margin-bottom:8px}
+#fRow,#fLoai,#fMoreBtn,#fExt{display:none!important}
+#addBtns{margin:0 0 10px}
+.nvq{border:1.5px solid #86efac;background:#f0fdf4;border-radius:12px;padding:0 12px;margin:0 0 10px}
+.nvq>summary{list-style:none;display:flex;align-items:center;gap:8px;padding:10px 0;cursor:pointer;color:#166534}
+.nvq>summary::-webkit-details-marker{display:none}
+.nvq>summary .grow{min-width:0}.nvq>summary small{display:block;color:var(--muted);font-weight:400;font-size:12px}
+.nvq-sum{white-space:nowrap;color:#15803d;font-size:16px}
+.nvq[open]{padding-bottom:12px}.nvq .ht{background:#fff}
+.nvq-tong{margin:10px 0}
 .dv-box{display:flex;flex-direction:column;gap:8px;margin:10px 0 12px;padding:12px 14px;border-radius:12px;background:#fff7ed;border:1.5px solid #fb923c}
 .dv-box .dv-go{min-height:52px;font-size:17px;justify-content:center}
 .ds-logo{display:block;width:60px;height:60px;object-fit:contain;background:#fff;border-radius:12px;padding:3px;flex:none}
@@ -1102,7 +1111,8 @@ code{background:var(--soft);padding:1px 5px;border-radius:5px;font-size:12.5px;w
   body[data-view=edit].e-focus:not(.map-big) #mapWrap{display:none}
   body[data-view=edit]:not(.map-big) .map-tools{flex-direction:row}
   body[data-view=edit]:not(.map-big) #baseSeg,body[data-view=edit]:not(.map-big) .map-tools [data-act=fit],body[data-view=edit]:not(.map-big) #btnLabels{display:none}
-  body.q-focus #addBtns,body.q-focus #banners,body.q-focus #fMoreBtn,body.q-focus #fExt{display:none!important}
+  body.q-focus #addBtns,body.q-focus #banners,body.q-focus #fMoreBtn,body.q-focus #fExt,body.q-focus #nvq{display:none!important}
+  body.n-focus[data-view=list] #mapWrap{display:none}
 }
 @media (max-width:520px){
   .topbar .brand>div:last-child{display:none}
@@ -1220,20 +1230,21 @@ input[type=color]{cursor:pointer}
       <div class="view-head">
         <div id="lfBar" hidden></div>
         <div class="search"><i data-ic="search"></i><input id="q" type="search" placeholder="Tìm chủ hộ, thành viên, mã hộ, địa chỉ, CCCD…" autocomplete="off"></div>
-        <div class="row gap mt8">
+        <div class="row gap mt8" id="fRow">
           <select id="fAp" class="grow" aria-label="Lọc theo ấp"></select>
           <label class="chk small"><input type="checkbox" id="fNoLoc"> Chưa định vị</label>
         </div>
         <div class="chips mt8" id="fLoai"></div>
         <button type="button" class="linkbtn f-more mt8" id="fMoreBtn" data-act="f-more" hidden></button>
         <div class="mt8" id="fExt" hidden></div>
-        <div class="row gap mt12" id="addBtns">
+      </div>
+      <div id="banners"></div>
+      <div class="view-body"><div id="nvq"></div>
+        <div class="row gap" id="addBtns">
           <button class="btn btn-primary grow" data-act="new"><i data-ic="plus"></i>Thêm hộ</button>
           <button class="btn grow" data-act="new-gps" title="Đứng tại nhà dân, bấm để lấy tọa độ GPS rồi nhập thông tin"><i data-ic="gps"></i>Thêm tại vị trí của tôi</button>
         </div>
-      </div>
-      <div id="banners"></div>
-      <div class="view-body"><div id="list"></div></div>
+        <div id="list"></div></div>
       <div class="list-foot" id="listFoot"></div>
     </section>
     <section class="view" id="v-detail">
@@ -1430,7 +1441,7 @@ const CRY = (() => {
 const APPID = 'ban-do-ho-ngheo';
 const KEY = 'bandoHoNgheo.v1', KEY2 = 'bandoHoNgheo.v2', SKEY = 'bandoHoNgheo.phien', RKEY = 'bandoHoNgheo.nho';
 const TKEY = 'bandoHoNgheo.v3.phien', CKEY = 'bandoHoNgheo.v3.dulieu', OKEY = 'bandoHoNgheo.v3.chogui', PKEY = 'bandoHoNgheo.v3.tuychon', AKEY = 'bandoHoNgheo.v3.maychu', UKEY = 'bandoHoNgheo.v3.ten';
-const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.29a';
+const IDLE_MS = 30 * 60 * 1000, ITER = 60000, APPVER = '2026.11.29b';
 /* Địa chỉ máy chủ Google Apps Script (URL ứng dụng web, kết thúc bằng /exec) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyQK7MM-eChjDwRAD09XkhV2U31841XXeDTuZT_hC2cjZuji1q0IQLkTVytq6rijuxD/exec';
 const YEAR = new Date().getFullYear();
@@ -2329,13 +2340,15 @@ function emptyHelp() {
     ${old.length ? `<p class="muted small" style="margin-top:12px">${esc(ui.f.ap)} chưa có hộ vì các hộ đang ghi tên ${esc(apl())} cũ: ${old.map(a => `<b>${esc(a)}</b> (${S.households.filter(h => h.ap === a).length} hộ)`).join(', ')}.</p>${old.map(a => `<button type="button" class="btn btn-sm" data-act="ap-move" data-ap="${esc(a)}">Chuyển các hộ “${esc(a)}” sang ${esc(ui.f.ap)}</button>`).join(' ')}` : ''}</div>`;
 }
 function filtered() {
-  const q = norm(ui.f.q);
+  const q = norm(ui.f.q), fs = !!ui.fromStats;
   return S.households.filter(h => {
-    if (ui.f.ap === '__none') { if (h.ap) return false; } else if (ui.f.ap && h.ap !== ui.f.ap) return false;
-    if (ui.f.loai.size && ![...ui.f.loai].some(k => inLoai(h, k))) return false;
-    if (ui.f.noLoc && hasLoc(h)) return false;
+    if (fs) {
+      if (ui.f.ap === '__none') { if (h.ap) return false; } else if (ui.f.ap && h.ap !== ui.f.ap) return false;
+      if (ui.f.loai.size && ![...ui.f.loai].some(k => inLoai(h, k))) return false;
+      if (ui.f.noLoc && hasLoc(h)) return false;
+      for (const [k, val] of Object.entries(ui.f.x)) if (val !== '' && !matchLoc(h, k, val)) return false;
+    }
     if (ui.dv && !can('edit', h)) return false;
-    for (const [k, val] of Object.entries(ui.f.x)) if (val !== '' && !matchLoc(h, k, val)) return false;
     if (q && !matchQ(h, q)) return false;
     return true;
   });
@@ -2379,7 +2392,8 @@ function renderFilters() {
   { const ks = loaiShown(); for (const k of [...ui.f.loai]) if (!ks.includes(k)) ui.f.loai.delete(k); }
   $('#fLoai').innerHTML = loaiShown().map(k => { const v = loaiOf(k); return `<button class="chip ${ui.f.loai.has(k) ? 'on' : ''}" data-act="f-loai" data-k="${esc(k)}" style="--c:${v.mau}" aria-pressed="${ui.f.loai.has(k)}"><span class="dot"></span>${esc(v.ten)} <b>${S.households.filter(h => inLoai(h, k)).length}</b></button>`; }).join('');
   renderExtFilters();
-  $('#addBtns').style.display = can('add') ? '' : 'none';
+  $('#addBtns').style.display = can('add') && !ui.fromStats ? '' : 'none';
+  renderNvq();
 }
 /* Phân loại hiện trên bộ lọc, chú giải: phân loại không ẩn + phân loại đang có hộ */
 const loaiShown = () => { const ks = Object.keys(LOAI).filter(k => !LOAI[k].an || S.households.some(h => inLoai(h, k))); for (const h of S.households) if (!ks.includes(h.loai)) ks.push(h.loai); return ks; };
@@ -2933,12 +2947,57 @@ const nvOf = k => { const d = nvData(); return k === NV_XA ? d.xa : Array.isArra
 const nvFlat = () => { const d = nvData(); return [...d.xa.map(e => Object.assign({}, e, { cap: NV_XA })), ...Object.entries(d.ap).flatMap(([a, l]) => (Array.isArray(l) ? l : []).filter(isObj).map(e => Object.assign({}, e, { cap: a })))]; };
 const nvSum = a => a.reduce((t, e) => t + (+e.giaTri || 0), 0);
 const nvTen = k => k === NV_XA ? `xã ${S.config.tenXa || ''}`.trim() : k;
-function nvBlock(k, title) {
-  const l = nvOf(k).filter(htOpen).sort((a, b) => String(b.ngay || '').localeCompare(String(a.ngay || ''))), ad = isAdmin();
-  return `<div class="nv-box"><div class="nv-h">${I('coins', 18)}<b>${esc(title)}</b><span class="nv-sum">${fmt(nvSum(l))} đ</span></div>
-    ${l.length ? `<div class="nv-list">${l.map(e => `<div class="nv-r"><div class="nv-n">${esc(e.noiDung || '')}<small>${e.ngay ? dateVN(e.ngay) : 'Chưa ghi ngày'}</small></div><b class="nv-v">${fmt(+e.giaTri || 0)} đ</b>${ad ? `<span class="nv-b"><button type="button" class="icon-btn" data-act="nv-edit" data-k="${esc(k)}" data-id="${esc(e.id)}" title="Sửa">${I('edit', 14)}</button><button type="button" class="icon-btn" data-act="nv-del" data-k="${esc(k)}" data-id="${esc(e.id)}" title="Xóa">${I('trash', 14)}</button></span>` : ''}</div>`).join('')}</div>`
-      : `<p class="muted small" style="margin:4px 0 8px">Chưa có khoản nào${htNamLabel() ? ' trong ' + htNamLabel() : ''}.</p>`}
-    ${ad ? `<button type="button" class="btn btn-sm btn-navy" data-act="nv-add" data-k="${esc(k)}">${I('plus', 14)}Thêm nguồn vận động</button>` : ''}</div>`;
+function nvBlock() {
+  const l = nvFlat().filter(htOpen).sort((a, b) => String(b.ngay || '').localeCompare(String(a.ngay || '')));
+  return `<div class="nv-box"><div class="nv-h">${I('coins', 18)}<b>Hỗ trợ đã nhận — nguồn vận động chung (không thuộc hộ nào)</b><span class="nv-sum">${fmt(nvSum(l))} đ</span></div>
+    ${l.length ? `<div class="nv-list">${l.map(e => `<div class="nv-r"><div class="nv-n">${esc(e.noiDung || '')}<small>${[e.ngay ? dateVN(e.ngay) : 'Chưa ghi ngày', e.donVi, e.cap && e.cap !== NV_XA ? e.cap : ''].filter(Boolean).map(esc).join(' · ')}</small></div><b class="nv-v">${fmt(+e.giaTri || 0)} đ</b></div>`).join('')}</div>`
+      : `<p class="muted small" style="margin:4px 0 8px">Chưa có lượt nào${htNamLabel() ? ' trong ' + htNamLabel() : ''}.</p>`}
+    ${isAdmin() ? `<button type="button" class="btn btn-sm btn-navy" data-act="nvq-go">${I('edit', 14)}Nhập, sửa ở trang Danh sách hộ</button>` : ''}</div>`;
+}
+/* Khối nhập ở trang Danh sách: các khoản đang mở (sau lần chốt gần nhất) của nguồn vận động chung */
+function nvqRow(e, i) {
+  return `<div class="ht nvq-r" data-id="${esc(e.id || '')}"><div class="tv-head"><span>Lượt ${i + 1}${e.cap && e.cap !== NV_XA ? ` <small class="muted">(${esc(e.cap)})</small>` : ''}</span><button type="button" class="icon-btn" data-act="nvq-del" data-i="${i}" title="Bớt">${I('x', 15)}</button></div>
+    <div class="grid2">
+      <label class="f span2"><span>Nội dung hỗ trợ</span><textarea data-nq="noiDung" rows="2" placeholder="Ví dụ: Doanh nghiệp A ủng hộ Quỹ Vì người nghèo; con em xa quê đóng góp…">${esc(e.noiDung || '')}</textarea></label>
+      <label class="f"><span>Ngày</span><input data-nq="ngay" type="date" value="${esc(e.ngay || '')}"></label>
+      <label class="f"><span>Trị giá (đồng)</span><input data-nq="giaTri" type="number" min="0" step="1000" inputmode="numeric" value="${e.giaTri ?? ''}"></label>
+      <label class="f span2"><span>Đơn vị / nguồn hỗ trợ</span><input data-nq="donVi" list="dlPhuTrach" value="${esc(e.donVi || '')}"></label>
+    </div></div>`;
+}
+function nvqRead() {
+  return $$('#nvq .nvq-r').map(r => { const v = k => (r.querySelector(`[data-nq=${k}]`) || {}).value || ''; return { id: r.dataset.id || '', noiDung: v('noiDung').trim(), ngay: v('ngay'), giaTri: toMoney(v('giaTri')), donVi: v('donVi').trim() }; });
+}
+function nvqTong() { const el = $('#nvqTong'); if (el) el.textContent = fmt(nvqRead().reduce((t, e) => t + (+e.giaTri || 0), 0)) + ' đ'; const b = $('#nvqSave'); if (b) b.disabled = JSON.stringify(nvqRead()) === ui.nvqSnap; }
+function renderNvq(mode) {   /* mode: 'keep' = vẽ lại từ các dòng đang sửa; 'force' = nạp lại từ dữ liệu; mặc định: nạp lại nếu không có thay đổi chưa lưu */
+  const box = $('#nvq'); if (!box) return;
+  if (!isAdmin() || ui.fromStats) { box.innerHTML = ''; return; }
+  const was = box.querySelector('details'), open = was ? was.open : !!ui.nvqOpen, keep = mode === 'keep';
+  if (!mode && was && ui.nvqSnap != null && JSON.stringify(nvqRead()) !== ui.nvqSnap) return;   /* đang sửa dở: không xóa chữ đang gõ */
+  if (!keep) ui.nvqRows = nvFlat().filter(htOpen).sort((a, b) => String(a.ngay || '').localeCompare(String(b.ngay || '')));
+  const rows = ui.nvqRows || [], tong = rows.reduce((t, e) => t + (+e.giaTri || 0), 0);
+  box.innerHTML = `<details class="nvq"${open ? ' open' : ''}><summary>${I('coins', 18)}<span class="grow"><b>Hỗ trợ đã nhận</b><small>Nguồn vận động chung của xã và các ${esc(apl())} — không thuộc hộ nào${htNamLabel() ? ' · ' + htNamLabel() : ''}</small></span><b class="nvq-sum">${fmt(tong)} đ</b></summary>
+    <div id="nvqList">${rows.map(nvqRow).join('') || `<p class="muted small" style="margin:6px 0">Chưa có lượt nào. Bấm “Thêm lượt hỗ trợ”.</p>`}</div>
+    <button type="button" class="btn btn-sm" data-act="nvq-add">${I('plus', 15)}Thêm lượt hỗ trợ</button>
+    <div class="ht-r ht-tong nvq-tong"><div class="ht-n">Tổng số tiền đã nhận<small>Tự cộng vào Tổng nguồn vận động ở trang Thống kê</small></div><b class="ht-v" id="nvqTong">${fmt(tong)} đ</b></div>
+    <div class="row gap"><span class="grow"></span><button type="button" class="btn btn-navy" id="nvqSave" data-act="nvq-save" disabled>${I('check', 15)}Lưu hỗ trợ đã nhận</button></div></details>`;
+  if (!keep) ui.nvqSnap = JSON.stringify(nvqRead());
+  nvqTong();
+}
+async function nvqSave() {
+  if (!isAdmin()) return;
+  if (SE.dirty) { toast('Đang có thay đổi Cấu trúc chưa lưu — lưu hoặc hủy trước.', 'err'); return; }
+  const rows = nvqRead().filter(e => e.noiDung || e.giaTri);
+  const bad = rows.find(e => !e.noiDung || !(e.giaTri > 0)); if (bad) { toast(bad.noiDung ? `Lượt “${bad.noiDung.slice(0, 30)}” chưa có trị giá.` : 'Có lượt chưa ghi nội dung hỗ trợ.', 'err'); return; }
+  const now = Date.now(), old = new Map(nvFlat().map(e => [e.id, e]));
+  const sc = clone(SCHEMA()), v = isObj(sc.ui.nv) ? sc.ui.nv : {};
+  /* giữ nguyên các khoản đã chốt; các khoản đang mở (kể cả khoản cũ ghi theo ấp) gộp chung vào nguồn vận động chung */
+  const keepClosed = l => (Array.isArray(l) ? l : []).filter(e => isObj(e) && !htOpen(e));
+  const ap = {}; if (isObj(v.ap)) for (const [a, l] of Object.entries(v.ap)) { const k = keepClosed(l); if (k.length) ap[a] = k; }
+  v.ap = ap;
+  v.xa = [...keepClosed(v.xa), ...rows.map(e => { const o = old.get(e.id), same = o && o.noiDung === e.noiDung && o.ngay === e.ngay && +o.giaTri === +e.giaTri && (o.donVi || '') === e.donVi;
+    return { id: e.id || 'nv' + now.toString(36) + Math.random().toString(36).slice(2, 6), ngay: /^\d{4}-\d{2}-\d{2}$/.test(e.ngay) ? e.ngay : '', noiDung: e.noiDung.slice(0, 300), donVi: e.donVi.slice(0, 120), giaTri: Math.round(e.giaTri), by: same ? o.by || curName() : curName(), at: same ? o.at || now : now }; })];
+  sc.ui.nv = v;
+  if (await quickSchema(sc, `Đã lưu hỗ trợ đã nhận: ${fmt(rows.reduce((t, e) => t + e.giaTri, 0))} đ.`)) renderNvq('force');
 }
 const nvToday = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
 async function nvSaveList(k, fn, msg) {
@@ -3022,12 +3081,11 @@ function renderStats() {
     return `<div class="ds-yr"><div class="ds-yh"><b>Năm ${r.nam}</b><span>${fmt(r.luot || 0)} lượt</span><b class="ds-ym">${fmt(tg)} đ</b></div>${ds.length ? `<div class="ds-yd">${esc(ds.join(' · '))}</div>` : ''}${live !== tg ? `<div class="ds-yd">Hiện có ${fmt(live)} đ (có khoản nhập/sửa sau khi chốt)</div>` : ''}</div>`; };
   const secII = SECH('hotro') ? '' : `<h3 class="ds-h" id="dsII">II. NGUỒN LỰC VẬN ĐỘNG VÀ HỖ TRỢ TRONG NĂM</h3>
     <div class="ds-money"><div class="ds-mt">${I('handheart', 20)} TỔNG NGUỒN VẬN ĐỘNG HỖ TRỢ</div><div class="ds-mv">${fmt(htSumOf(htAll) + nvSum(nvOpen))} ĐỒNG</div><div class="ds-ms">Tổng giá trị nguồn lực được ghi nhận ${namL ? 'trong ' + namL : '(chưa chốt năm)'}</div>
-      <div class="ds-mb"><span>Hỗ trợ trực tiếp các hộ<b>${fmt(htSumOf(htAll))} đ</b><small>${fmt(htAll.length)} lượt</small></span><span>Nguồn vận động của xã<b>${fmt(nvSum(nvXa))} đ</b><small>${fmt(nvXa.length)} khoản</small></span><span>Nguồn vận động các ${esc(apl())}<b>${fmt(nvSum(nvApL))} đ</b><small>${fmt(nvApL.length)} khoản</small></span></div></div>
+      <div class="ds-mb"><span>Hỗ trợ trực tiếp các hộ<b>${fmt(htSumOf(htAll))} đ</b><small>${fmt(htAll.length)} lượt</small></span><span>Hỗ trợ đã nhận chung (xã, ${esc(apl())})<b>${fmt(nvSum(nvOpen))} đ</b><small>${fmt(nvOpen.length)} lượt${isAdmin() ? ' · nhập ở trang Danh sách hộ' : ''}</small></span></div></div>
     <div class="ds-tiles ds-ht">${HT_LOAI.map(([k, t, c, u, ic]) => { const a = htAll.filter(x => htOf(x) === k); return `<div class="ds-tile" style="--c:${c}"><div class="ds-ti">${I(ic, 22)}</div><div class="ds-tn">${t}</div><div class="ds-tv">${fmt(a.length)} <small>${u}</small></div><div class="ds-ts">${fmt(htSumOf(a))} đồng</div></div>`; }).join('')}
       ${htUn.length ? `<div class="ds-tile" style="--c:#90a4ae"><div class="ds-ti">${I('clipboard', 22)}</div><div class="ds-tn">Chưa chọn hình thức</div><div class="ds-tv">${fmt(htUn.length)} <small>lượt</small></div><div class="ds-ts">${fmt(htSumOf(htUn))} đồng</div></div>` : ''}</div>
     <p class="ds-note">Theo dõi số lượng, kinh phí vận động, kinh phí phân bổ và kết quả thực hiện.</p>
-    ${nvBlock(NV_XA, `Nguồn vận động của xã ${S.config.tenXa || ''} (không thuộc hộ nào)`.replace('  ', ' '))}
-    ${nvApL.length ? `<p class="ds-note">Nguồn vận động các ${esc(apl())}: <b>${fmt(nvSum(nvApL))} đ</b> — ${[...new Set(nvApL.map(e => e.cap))].map(a => `${esc(a)} ${fmt(nvSum(nvApL.filter(e => e.cap === a)))} đ`).join('; ')}. Xem, thêm ở mục III (chọn từng ${esc(apl())}).</p>` : isAdmin() ? `<p class="ds-note">Nguồn vận động riêng của từng ${esc(apl())}: chọn ${esc(apl())} ở mục III rồi bấm “Thêm nguồn vận động”.</p>` : ''}
+
     <div class="ds-years" id="dsYears"><div class="ds-yt">${I('calendar', 17)} Số tiền hỗ trợ các năm đã chốt (4 năm gần nhất)</div>
       ${chs.length ? chs.slice(0, 4).map(yRow).join('') : `<p class="muted small" style="margin:6px 0">Chưa chốt năm nào. Cuối năm, quản trị viên bấm <b>Chốt năm</b>: số tiền ở trên được đưa xuống đây và tính lại từ đầu.</p>`}
       ${isAdmin() ? `<div class="row gap wrap mt8"><button type="button" class="btn btn-sm btn-navy" data-act="ht-chot">${I('lock', 14)} Chốt năm</button>${chs.length ? '<button type="button" class="btn btn-sm btn-ghost" data-act="ht-unchot">Hủy lần chốt gần nhất</button>' : ''}</div>` : ''}</div>`;
@@ -3045,9 +3103,7 @@ function renderStats() {
       <table class="tbl ds-t"><thead><tr><th>Nội dung</th><th class="num">Số lượng</th><th class="num">Kinh phí (đồng)</th></tr></thead><tbody>
         ${HT_LOAI.map(([k, t, c, u]) => { const x = selHT.filter(y => htOf(y) === k); return `<tr><td>${t}</td><td class="num">${fmt(x.length)} ${u}</td><td class="num">${fmt(htSumOf(x))}</td></tr>`; }).join('')}
         ${selHT.some(x => !htOf(x)) ? `<tr><td>Chưa chọn hình thức</td><td class="num">${fmt(selHT.filter(x => !htOf(x)).length)} lượt</td><td class="num">${fmt(htSumOf(selHT.filter(x => !htOf(x))))}</td></tr>` : ''}
-        ${(n => sel ? `<tr><td style="white-space:normal">Nguồn vận động riêng của ${esc(apl())}</td><td class="num">${fmt(n.length)} khoản</td><td class="num">${fmt(nvSum(n))}</td></tr>` : '')(nvOf(sel).filter(htOpen))}
-        <tr class="tot-row"><td>Tổng cộng</td><td class="num">${fmt(selHT.length)} lượt</td><td class="num">${fmt(htSumOf(selHT) + (sel ? nvSum(nvOf(sel).filter(htOpen)) : 0))}</td></tr></tbody></table>
-      ${sel ? nvBlock(sel, `Nguồn vận động của ${apName(sel)}`) : ''}`}
+        <tr class="tot-row"><td>Tổng cộng</td><td class="num">${fmt(selHT.length)} lượt</td><td class="num">${fmt(htSumOf(selHT))}</td></tr></tbody></table>`}
       <h4>3. Quản lý hồ sơ hộ dân</h4>
       <button type="button" class="ds-link" data-act="st-aplist" data-ap="${esc(sel)}">${I('users', 18)} Danh sách hộ gia đình và hoàn cảnh từng hộ <small>${fmt(selArr.length)} hộ</small></button>
       ${SECH('hotro') ? '' : `<button type="button" class="ds-link" data-act="st-aphist" data-ap="${esc(sel)}">${I('clipboard', 18)} Theo dõi tình trạng và lịch sử hỗ trợ <small>${fmt(selArr.reduce((t, h) => t + h.hoTro.length, 0))} lượt</small></button>`}
@@ -3280,6 +3336,11 @@ async function fixViewerScope() {
       if (r.config && isObj(r.config.schema)) { S.srv = r.config; S.config = mergeConfig(S.srv); saveCache(); if (SE.s) SE.s = clone(SCHEMA()); renderAll(); }
     }
     if (bad.length && ui.view === 'accounts') renderAccounts();
+    if (!SCHEMA().ui.gon2 && !SE.dirty) {
+      const sc = clone(SCHEMA()), x = sc.sec.find(y => y.k === 'nhucau'); if (x) x.an = true; sc.ui.gon2 = 1;
+      const r = await api('config', { config: { schema: normSchema(sc) } });
+      if (r.config && isObj(r.config.schema)) { S.srv = r.config; S.config = mergeConfig(S.srv); saveCache(); if (SE.s) SE.s = clone(SCHEMA()); renderAll(); if (x) toast(`Đã bỏ mục “${x.ten || 'Nhu cầu hỗ trợ'}” khỏi phần thêm hộ.`, 'ok'); }
+    }
   } catch (e) {} finally { ui.vsBusy = false; }
 }
 async function loadAccounts() { const [u, l] = await Promise.all([api('users'), api('log')]); USERS = u.users; LOG = l.log || []; }
@@ -3504,10 +3565,10 @@ async function buildWorkbook(list, { template = false } = {}) {
     const cats = [...new Set([...Object.keys(LOAI).filter(k => !LOAI[k].an), ...list.map(h => h.loai)])];
     const nkA = arr => arr.reduce((s, h) => s + h.thanhVien.length, 0);
     const full = list.length >= S.households.length, apsL = new Set(list.map(h => h.ap || ''));
-    const nvX = nvFlat().filter(e => full || (e.cap !== NV_XA && apsL.has(e.cap))).sort((a, b) => (a.cap === NV_XA ? -1 : 0) - (b.cap === NV_XA ? -1 : 0) || String(a.cap).localeCompare(String(b.cap)) || String(a.ngay || '').localeCompare(String(b.ngay || '')));
+    const nvX = nvFlat().filter(() => full).sort((a, b) => (a.cap === NV_XA ? -1 : 0) - (b.cap === NV_XA ? -1 : 0) || String(a.cap).localeCompare(String(b.cap)) || String(a.ngay || '').localeCompare(String(b.ngay || '')));
     if (nvX.length) {
-      const w6 = wb.addWorksheet('NguonVanDong'); w6.columns = [['STT', 6], ['Cấp', 18], ['Ngày', 12], ['Nội dung nguồn vận động', 50], ['Số tiền (đồng)', 16], ['Người nhập liệu', 22]].map(([h, w]) => ({ header: h, width: w }));
-      nvX.forEach((e, i) => w6.addRow([i + 1, e.cap === NV_XA ? nvTen(NV_XA).replace(/^x/, 'X') : e.cap, dateVN(e.ngay), e.noiDung, +e.giaTri || 0, e.by || '']));
+      const w6 = wb.addWorksheet('HoTroChung'); w6.columns = [['STT', 6], ['Ngày', 12], ['Nội dung hỗ trợ', 50], ['Đơn vị / nguồn hỗ trợ', 26], ['Trị giá (đồng)', 16], ['Người nhập liệu', 22]].map(([h, w]) => ({ header: h, width: w }));
+      nvX.forEach((e, i) => w6.addRow([i + 1, dateVN(e.ngay), e.noiDung, [e.donVi, e.cap !== NV_XA ? e.cap : ''].filter(Boolean).join(' — '), +e.giaTri || 0, e.by || '']));
       const tr6 = w6.addRow(['', 'Tổng cộng', '', '', nvSum(nvX), '']); w6.getColumn(5).numFmt = '#,##0';
       styleSheet(w6, 6, false); tr6.font = { bold: true, name: 'Times New Roman', size: 12 };
     }
@@ -4466,7 +4527,7 @@ async function onAct(act, el, e) {
     case 'f-more': ui.fMore = !ui.fMore; renderExtFilters(); break;
     case 'f-clear': ui.f.ap = ''; ui.f.loai = new Set(); ui.f.noLoc = false; ui.f.x = {}; if ($('#fNoLoc')) $('#fNoLoc').checked = false; renderList(); break;
     case 'st-ap': ui.stApSel = el.dataset.ap || ''; renderStats(); setTimeout(() => { const d = $('#dsApd'); if (d) d.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30); break;
-    case 'st-aplist': ui.f.q = ''; $('#q').value = ''; ui.f.loai = new Set(); ui.f.ap = el.dataset.ap || '__none'; ui.selId = null; showView('list'); renderAll(); if ($('#fAp')) $('#fAp').value = ui.f.ap; break;
+    case 'st-aplist': ui.f.q = ''; $('#q').value = ''; ui.f.loai = new Set(); ui.f.noLoc = false; ui.f.x = {}; ui.f.ap = el.dataset.ap || '__none'; ui.selId = null; ui.fromStats = true; document.body.classList.add('list-full'); showView('list'); renderAll(); if ($('#fAp')) $('#fAp').value = ui.f.ap; break;
     case 'st-aphist': apHistDlg(el.dataset.ap || ''); break;
     case 'st-apxlsx': exportXLSX(S.households.filter(h => (h.ap || '') === (el.dataset.ap || ''))); break;
     case 'st-go': if (el.dataset.t === 'list') { ui.selId = null; showView('list'); renderList(); } break;
@@ -4510,6 +4571,10 @@ async function onAct(act, el, e) {
       break; }
     case 'ap-info': await apInfoDlg(el.dataset.ap); break;
     case 'nv-add': await nvForm(el.dataset.k, ''); break;
+    case 'nvq-add': { ui.nvqRows = nvqRead(); ui.nvqRows.push({ id: '', ngay: nvToday(), noiDung: '', giaTri: null, donVi: '' }); renderNvq('keep'); const rs = $$('#nvq .nvq-r'), r = rs[rs.length - 1]; if (r) { r.scrollIntoView({ block: 'center' }); const t = r.querySelector('[data-nq=noiDung]'); if (t) t.focus({ preventScroll: true }); } break; }
+    case 'nvq-del': { ui.nvqRows = nvqRead(); ui.nvqRows.splice(+el.dataset.i, 1); renderNvq('keep'); break; }
+    case 'nvq-save': await nvqSave(); break;
+    case 'nvq-go': ui.nvqOpen = true; leaveListFull(); ui.selId = null; showView('list'); renderAll(); setTimeout(() => { const d = $('#nvq details'); if (d) { d.open = true; d.scrollIntoView({ block: 'start' }); } }, 60); break;
     case 'nv-edit': await nvForm(el.dataset.k, el.dataset.id); break;
     case 'nv-del': await nvDel(el.dataset.k, el.dataset.id); break;
     case 'go-schema': if (isAdmin()) { showView('schema'); seOpen(); } break;
@@ -4573,11 +4638,15 @@ $('#editForm').addEventListener('change', e => {
   if ((t.name === 'loai' || t.dataset.kem !== undefined) && draft && SCHEMA().f.some(f => f.loai.length)) rerenderEdit();   /* hiện/ẩn trường chỉ áp dụng cho một số phân loại */
 });
 $('#editForm').addEventListener('submit', e => e.preventDefault());
+$('#nvq').addEventListener('input', e => { if (e.target.dataset.nq !== undefined) nvqTong(); });
+/* Điện thoại: đang gõ ở khối Hỗ trợ đã nhận thì ẩn bản đồ cho dễ nhập */
+$('#nvq').addEventListener('focusin', e => { if (!eTyping(e.target) || !matchMedia('(max-width:860px)').matches) return; clearTimeout(ui._nb); document.body.classList.add('n-focus'); clearTimeout(ui._ek); ui._ek = setTimeout(eKeepVisible, 380); });
+$('#nvq').addEventListener('focusout', () => { clearTimeout(ui._nb); ui._nb = setTimeout(() => { const a = document.activeElement; if (eTyping(a) && a.closest('#nvq')) return; if (document.body.classList.contains('n-focus')) { document.body.classList.remove('n-focus'); setTimeout(() => map.invalidateSize(), 80); } }, 300); });
 if (window.ResizeObserver) new ResizeObserver(() => { const c = map.getContainer(); if (c.offsetHeight > 0 && c.offsetWidth > 0) { map.invalidateSize(); if (ui.fitLater) fitAll(); } }).observe(map.getContainer());
 /* Điện thoại: đang gõ trong biểu mẫu thì ẩn bản đồ, đưa ô đang nhập lên chỗ dễ thấy (không bị bàn phím che) */
 const eTyping = t => !!(t && t.matches && t.matches('textarea, input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=date]):not([type=hidden])'));
 function eKeepVisible() {
-  const t = document.activeElement; if (!eTyping(t) || !$('#editForm').contains(t)) return;
+  const t = document.activeElement; if (!eTyping(t) || !(t.closest('#editForm') || t.closest('#nvq'))) return;
   const vb = t.closest('.view-body'); if (!vb) return;
   const r = t.getBoundingClientRect(), vv = window.visualViewport, bottom = vv ? vv.offsetTop + vv.height : innerHeight, top = vb.getBoundingClientRect().top;
   if (r.bottom > bottom - 8 || r.top < top) vb.scrollTop += r.top - top - Math.max(30, (bottom - top) * 0.22);
